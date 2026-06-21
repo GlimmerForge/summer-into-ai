@@ -1,10 +1,14 @@
 # Summer Into AI Week 1: I gave an 8-bit cartridge the keys to the founding of America
 
+![Found a Republic title screen](assets/standalone-title.png)
+
 Theme 1 dropped and the brief was clear: retro aesthetics, America 250, weird and small enough to finish.
 
 My first instinct wasn't to build an action game. I kept thinking about what made NES games actually stick — not just the shooting, but the *choices*. So I built **Found a Republic**, an 8-bit civics simulator where you lead the United States from 1776, one founding-era dilemma at a time.
 
 The screen boots like an NES cartridge. A pixel advisory council hands you real tradeoffs — free press vs. order, roads vs. schools, strong executive vs. committee rule. You choose; Claude reasons out the consequences live: a period newspaper headline, a short chronicle with the civic lesson baked in, and shifts to four meters (Liberty, Prosperity, Unity, Order). Let any pillar hit zero and the republic fractures. After seven decisions, Claude writes your personal legacy — a different verdict of history every single time.
+
+![Gameplay screenshot](assets/01-republic-play.png)
 
 **The AI isn't decoration here — it's the game engine.** Every turn is a live call. The next dilemma adapts to where your republic is heading. No two playthroughs tell the same story.
 

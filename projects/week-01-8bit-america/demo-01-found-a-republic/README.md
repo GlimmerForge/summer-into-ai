@@ -4,6 +4,10 @@
 
 An 8-bit civics simulator set during the U.S. founding (1776–1791). A pixel advisory council hands you real founding-era dilemmas — free speech vs. order, roads vs. schools, a strong executive vs. committees. You choose; Claude reasons out the consequences live via a period newspaper headline, a short chronicle with the civic lesson, and shifts to your four meters: **Liberty · Prosperity · Unity · Order**. After seven decisions, AI writes your republic's legacy — a different verdict every playthrough.
 
+![Title Screen](assets/standalone-title.png)
+![Gameplay](assets/01-republic-play.png)
+![Consequence](assets/02-republic-play.png)
+
 ## How AI Powers It
 
 Every turn makes one live call to Claude that returns:

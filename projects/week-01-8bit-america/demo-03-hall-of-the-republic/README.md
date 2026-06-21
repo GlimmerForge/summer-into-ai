@@ -6,6 +6,11 @@ A first-person Wolfenstein-style walk through 250 years of American history. Mov
 
 > **Honesty note:** the witnesses' words are AI-generated historical impressions, not real quotations.
 
+![Title](assets/hall-title.png)
+![World](assets/01-hall-world.png)
+![Dialogue](assets/hall-dialogue-voice.png)
+![World 2](assets/02-hall-world.png)
+
 ## AI Stack
 
 | Feature | Service |
