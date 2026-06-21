@@ -1,23 +1,33 @@
-# Summer Into AI Week 1 (Demo 3): I built a haunted museum where the witnesses talk back
+# Summer into AI 2026: Hall of the Republic
 
-![Hall title screen](assets/hall-title.png)
+![Hall of the Republic](assets/hall-title.png)
 
-I watched **RevereBike** by Eric Rhea ([@advisoryhour](https://advisoryhour.substack.com/p/summer-into-ai-2026-reverebike-or)) do something genuinely smart — it pulled mechanics from Founderman, Parade Candy Chaos, and Sky King into one mashup and shipped it fast. That move — synthesizing what everyone around you built — is exactly how AI enables a different kind of creative process.
+I watched **RevereBike** by Eric Rhea ([@advisoryhour](https://advisoryhour.substack.com/p/summer-into-ai-2026-reverebike-or)) pull mechanics from Founderman, Parade Candy Chaos, and Sky King into one mashup and ship it fast. That move — synthesizing what everyone around you is building — is exactly the kind of thing AI makes possible now. It gave me a different question: what if instead of borrowing mechanics, I borrowed ambition?
 
-That gave me a different question: what if instead of borrowing mechanics, I borrowed *ambition*? What's the most AI-native thing I could build for this theme?
+**Hall of the Republic** is a first-person Wolfenstein-style walk through 250 years of American history. You move through a pixelated hall and meet witnesses at their moment in time — a Revolutionary-era founder, a Civil War soldier, a suffragette, a civil rights marcher. You talk to them in free text. Claude generates their responses in character. They talk back using ElevenLabs voices tuned to their era. You can also speak to them with the mic button.
 
-![Hall world view](assets/01-hall-world.png)
-![Dialogue with witness](assets/hall-dialogue-voice.png)
+![Hall world](assets/01-hall-world.png)
+![Talking to a witness](assets/hall-dialogue-voice.png)
 
-**Hall of the Republic** is a first-person Wolfenstein-style walk through 250 years of American history. You move through a pixelated hall and encounter witnesses — a Revolutionary-era founder, a Civil War soldier, a suffragette, a civil rights marcher — each standing at their moment in time. You talk to them in free text. Claude generates their responses in character, grounded in the historical context of their era. They speak back in cinematic voices via ElevenLabs — each witness has a distinct voice tuned to their period. If no ElevenLabs key is present, it falls back gracefully to the browser's own speech synthesis. You can also speak to them with the mic button.
+## How the AI works
 
-The wall plaques show real, verified facts. The dialogue is clearly AI — a historical impression, not a quotation. That distinction matters.
+Three services running together:
 
-Three demos, one week, one theme. Each one a different answer to the same question: *what does 8-bit America sound like when the AI talks back?*
+- **Claude** — generates witness dialogue in character, grounded in their historical era
+- **ElevenLabs** — distinct cinematic voice per witness (falls back to browser speech synthesis without a key)
+- **Web Speech API** — mic input so you can speak your questions instead of typing
 
-> Honesty note: the witnesses' words are AI-generated. Not quotations — impressions. The facts on the walls are real.
+The wall plaques show real verified facts. The dialogue is clearly AI — a historical impression, not a quotation. That distinction matters and it's called out in the game.
 
-**Play it:** [hall-of-the-republic.vercel.app](https://hall-of-the-republic.vercel.app)
+## Three demos, one week
+
+This is the third of three builds for Theme 1. Found a Republic was the civics sim. Liberty 1776 was the arcade shooter. This one is the most AI-native of the three — every conversation is generated live, every voice is synthesized, and no two visits to the hall sound the same.
+
+## Where to play
+
+**Demo:** [hall-of-the-republic.vercel.app](https://hall-of-the-republic.vercel.app)
 **Code:** [github.com/GlimmerForge/summer-into-ai](https://github.com/GlimmerForge/summer-into-ai/tree/master/projects/week-01-8bit-america/demo-03-hall-of-the-republic)
 
-*Theme connection: First-person retro hall aesthetic, 250 years of American history, three AI services working together — Claude, ElevenLabs, Web Speech API.*
+---
+
+*Summer into AI 2026 · Theme 1: 8-Bit America · Competitor reference: RevereBike by [@advisoryhour](https://advisoryhour.substack.com/p/summer-into-ai-2026-reverebike-or)*
