@@ -8,7 +8,7 @@ The screen boots like an NES cartridge. A pixel advisory council hands you real 
 
 **The AI isn't decoration here — it's the game engine.** Every turn is a live call. The next dilemma adapts to where your republic is heading. No two playthroughs tell the same story.
 
-I saw **Founderman** (@advisoryhour) take the Founding Fathers and turn them into Megaman characters with special weapons — Washington's charging brigade, Franklin's kite projectile. Brilliant action framing. It made me want to try the opposite angle: same era, same figures, but make *you* the one making the decisions they argued over in real life. Less boss fight, more constitutional convention.
+I saw **Founderman** by Eric Rhea ([@advisoryhour](https://advisoryhour.substack.com/p/summer-into-ai-2026-megaman-1776)) take the Founding Fathers and turn them into Megaman characters with special weapons — Washington's charging brigade, Franklin's kite projectile. Brilliant action framing. It made me want to try the opposite angle: same era, same figures, but make *you* the one making the decisions they argued over in real life. Less boss fight, more constitutional convention.
 
 **Play it:** [found-a-republic.vercel.app](https://found-a-republic.vercel.app)
 **Code:** [github.com/GlimmerForge/summer-into-ai](https://github.com/GlimmerForge/summer-into-ai/tree/master/projects/week-01-8bit-america/demo-01-found-a-republic)

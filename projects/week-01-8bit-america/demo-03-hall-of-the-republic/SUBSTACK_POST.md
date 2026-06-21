@@ -1,6 +1,6 @@
 # Summer Into AI Week 1 (Demo 3): I built a haunted museum where the witnesses talk back
 
-I watched **RevereBike** (@advisoryhour) do something genuinely smart — it pulled mechanics from Founderman, Parade Candy Chaos, and Sky King into one mashup and shipped it fast. That move — synthesizing what everyone around you built — is exactly how AI enables a different kind of creative process.
+I watched **RevereBike** by Eric Rhea ([@advisoryhour](https://advisoryhour.substack.com/p/summer-into-ai-2026-reverebike-or)) do something genuinely smart — it pulled mechanics from Founderman, Parade Candy Chaos, and Sky King into one mashup and shipped it fast. That move — synthesizing what everyone around you built — is exactly how AI enables a different kind of creative process.
 
 That gave me a different question: what if instead of borrowing mechanics, I borrowed *ambition*? What's the most AI-native thing I could build for this theme?
 
