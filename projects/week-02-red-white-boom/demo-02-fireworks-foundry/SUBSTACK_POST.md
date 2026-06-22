@@ -1,23 +1,22 @@
 # Summer into AI 2026: Fireworks Foundry
 
-The theme dropped as "Independence Engines" and I kept coming back to the same image: a pyrotechnician with a clipboard, calling out shells and timing to a crew. That's a director's job. What if you could be that person in a browser, and what if Claude could be your creative director when you handed it a napkin note?
+![Fireworks Foundry](assets/ff-1.png)
 
-**Fireworks Foundry** is a browser fireworks canvas set over an American skyline — Washington Monument, Capitol dome, lit windows, a crowd on the shore holding sparklers. Tap anywhere in the night sky to launch shells. Eight burst types, seven color palettes, music that syncs to the launches. The whole thing runs in one HTML file with no server required.
+**Dependency Day** by Myles ([@merlinforge](https://merlinforge.substack.com/p/dependency-day-a-single-file-in-browser)) made independence the literal mechanic — you sever supply lines from the Crown until colonies cascade free. Really sharp design thinking. It made me go the other direction: if that's the *work* of independence, what's the *celebration*? The moment after the vote passes?
 
-The AI runs two roles. The **Inspire** button asks Claude to pick a shell and palette combo, name it, and fire a preview burst immediately — "Sapphire Halo", "Frost Crackle", "Spectrum Storm". The **Director** is the bigger one: type a single sentence and Claude stages a full cinematic show. Title card, three broadcast-style narration captions, a palette arc across the performance, a music track, and a finale word spelled out in fireworks particles at the climax. "Wedding toast for Sara and Jo" gives you SARA+JO spelled in rose shells. "Triumphant July 4th" gives you 1776 in patriot colors.
+**Fireworks Foundry** is a browser fireworks canvas set over an American skyline — Washington Monument, Capitol dome, lit windows, a crowd on the shore holding sparklers. Tap anywhere in the night sky to launch shells. Eight burst types, seven color palettes, music that syncs to the beat. The whole thing runs in one HTML file.
 
-## What's in the box
+![Festive scene with crowd and string lights](assets/ff-festive.png)
+![Finale word spelled in fireworks](assets/ff-spell.png)
 
-- 8 shell types: Peony, Chrysanthemum, Willow, Ring, Palm, Heart, Crackle, Strobe
-- 7 palettes: Patriot, Gold, Emerald, Sapphire, Rose, Ice, Rainbow
-- Beat mode — fireworks launch on the music rhythm automatically
-- ★ Finale — a full barrage across the whole sky
-- 📸 Poster — saves a PNG of your current sky with a branded watermark
-- 5 synthesized music tracks (no audio files — pure Web Audio API): Fanfare, March, Anthem, Disco, Dreamy
+## How the AI works
 
-## What I was reacting to
+Two live Claude calls drive the creative layer:
 
-**Dependency Day** by Myles ([@merlinforge](https://merlinforge.substack.com/p/dependency-day-a-single-file-in-browser)) took the theme completely literally — independence *is* the mechanic. You sever supply lines from the Crown until colonies cascade free. Really sharp design thinking, and the "peel-and-secure" strategy it rewards feels genuinely period-accurate. It made me go the other direction entirely. If Dependency Day is the *work* of independence, Fireworks Foundry is the *celebration* of it — the moment after the vote passes.
+- **Inspire** — Claude picks a shell and palette combo, names it ("Sapphire Halo", "Frost Crackle"), and fires a preview burst immediately so you see it in the sky
+- **Director** — type a single sentence describing a vibe and Claude stages a full cinematic show: title card, three broadcast-style narration captions, a palette arc across the performance, a music track, and a finale word spelled out in fireworks particles at the climax. "Wedding toast for Sara and Jo" gives you SARA+JO in rose shells. "Triumphant July 4th" gives you 1776 in patriot colors.
+
+Both fall back to built-in presets if the API is unreachable. Beat mode, a Grand Finale barrage, and a Poster save round out the controls.
 
 ## Where to play
 
