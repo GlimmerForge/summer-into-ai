@@ -1,44 +1,49 @@
 # Substack Post Template
 
-Each demo gets a `SUBSTACK_POST.md` in its folder using the markdown format below.
-When creating the Substack draft via API, use the **HTML version** — the API does not render markdown.
-
----
+Reference post: https://jakestrait5.substack.com/p/summer-into-ai-2026-hall-of-the-republic
 
 ## Structure (always follow this order)
 
-1. Hero image (full Vercel URL)
-2. Competitor reference woven into the opening paragraph — no separate heading
-3. Bold demo name + one-paragraph description
-4. 2 gameplay screenshots
-5. `## How the AI works` — bullet list of live AI calls only
-6. `## Where to play` — demo link + code link
-7. Footer line (italic, one line)
+1. Hero image — full Vercel URL
+2. Opening paragraph — START with the competitor (bold name, inline @handle link), what was smart about it, then pivot to your different direction. No separate "What I was reacting to" heading.
+3. Bold demo name + description paragraph
+4. 2 gameplay screenshots — full Vercel URLs
+5. `## How the AI works` — one intro sentence, bullet list of AI calls, closing paragraph on fallback
+6. `## How to play` — bullet list of controls (or a demo-specific section if no controls)
+7. `## Where to play` — demo link + code link
+8. `---` + footer italic line
 
 ---
 
-## SUBSTACK_POST.md (markdown — for the repo file)
+## SUBSTACK_POST.md (markdown — save in each demo folder)
 
 ```markdown
 # Summer into AI 2026: [Demo Name]
 
 ![Demo Name](assets/[hero-image].png)
 
-**[Competitor Demo]** by [Author] ([@handle](competitor-substack-url)) [one sentence on what they built and what was smart about it]. [One sentence on how it made you go a different direction.]
+**[Competitor Demo]** by [Author] ([@handle](competitor-substack-url)) [one sentence on what they built and what was smart]. [One sentence on how it made you go a different direction — end with a question or pivot].
 
-**[Demo Name]** is [one sentence description]. [One more sentence on what you do / how it plays]. [One sentence on the tech if notable.]
+**[Demo Name]** is [one-sentence description]. [One more sentence on what you do]. [One sentence on tech if notable — e.g. runs in one HTML file].
 
 ![Screenshot caption](assets/[screenshot-1].png)
+
 ![Screenshot caption](assets/[screenshot-2].png)
 
 ## How the AI works
 
-[One sentence framing the AI role.]
+[One sentence framing the AI role]:
 
-- **[Feature name]** — [what Claude does, what the player sees]
-- **[Feature name]** — [what Claude does, what the player sees]
+- **[Feature]** — [what Claude does and what the player sees]
+- **[Feature]** — [what Claude does and what the player sees]
 
-[One sentence on fallback behavior if API is unreachable.]
+[One sentence on graceful fallback if API is unreachable.]
+
+## How to play
+
+- [control or action]
+- [control or action]
+- [control or action]
 
 ## Where to play
 
@@ -52,45 +57,52 @@ When creating the Substack draft via API, use the **HTML version** — the API d
 
 ---
 
-## Substack API body (HTML — paste into the create_draft_post call)
+## Substack API call (use markdown with full Vercel URLs for images)
 
-```html
-<img src="https://[slug].vercel.app/assets/[hero-image].png" alt="[Demo Name]" />
+Use the `mcp__substack-api__create_draft_post` tool. In the body, use markdown — NOT HTML. Images use full Vercel URLs:
 
-<p><strong>[Competitor Demo]</strong> by [Author] (<a href="competitor-substack-url">@handle</a>) [one sentence on what they built]. [One sentence on how it made you go a different direction.]</p>
+```
+![Demo Name](https://[slug].vercel.app/assets/[hero-image].png)
 
-<p><strong>[Demo Name]</strong> is [one sentence description]. [One more sentence on gameplay]. [Tech note if notable.]</p>
+**[Competitor Demo]** by [Author] ([@handle](url)) [opening paragraph]...
 
-<img src="https://[slug].vercel.app/assets/[screenshot-1].png" alt="[caption]" />
-<img src="https://[slug].vercel.app/assets/[screenshot-2].png" alt="[caption]" />
+**[Demo Name]** is [description paragraph]...
 
-<h2>How the AI works</h2>
+![caption](https://[slug].vercel.app/assets/[screenshot-1].png)
 
-<p>[One sentence framing the AI role.]</p>
+![caption](https://[slug].vercel.app/assets/[screenshot-2].png)
 
-<ul>
-<li><strong>[Feature name]</strong> — [what Claude does, what the player sees]</li>
-<li><strong>[Feature name]</strong> — [what Claude does, what the player sees]</li>
-</ul>
+## How the AI works
 
-<p>[One sentence on fallback behavior.]</p>
+[intro sentence]:
 
-<h2>Where to play</h2>
+- **[Feature]** — [description]
+- **[Feature]** — [description]
 
-<p><strong>Demo:</strong> <a href="https://[slug].vercel.app">[slug].vercel.app</a><br/><strong>Code:</strong> <a href="https://github.com/GlimmerForge/summer-into-ai/tree/master/projects/[week-folder]/[demo-folder]">github.com/GlimmerForge/summer-into-ai</a></p>
+[fallback sentence]
 
-<hr/>
+## How to play
 
-<p><em>Summer into AI 2026 · Theme [N]: [Theme Name] · Competitor reference: [Demo] by <a href="competitor-substack-url">@handle</a></em></p>
+- [item]
+- [item]
+
+## Where to play
+
+**Demo:** [[slug].vercel.app](https://[slug].vercel.app)
+**Code:** [github.com/GlimmerForge/summer-into-ai](https://github.com/GlimmerForge/summer-into-ai/tree/master/projects/[week]/[demo])
+
+---
+
+*Summer into AI 2026 · Theme [N]: [Theme Name] · Competitor reference: [Demo] by [@handle](url)*
 ```
 
 ---
 
 ## Checklist before publishing
 
-- [ ] Competitor reference confirmed — fetch their post, read it, write something specific
-- [ ] Hero image is the strongest screenshot (sky full of fireworks, not a UI screenshot)
-- [ ] Vercel project renamed so the URL is `[demo-name].vercel.app` (not `summer-into-ai.vercel.app`)
-- [ ] Both image URLs resolve in a browser before creating the draft
-- [ ] Delete older draft versions from Substack before publishing
+- [ ] Fetch the competitor's post — read it, write something specific about what was smart
+- [ ] Hero image is the strongest screenshot (action/sky, not UI)
+- [ ] Vercel project renamed so URL is `[demo-name].vercel.app` (not `summer-into-ai.vercel.app`)
+- [ ] Both screenshot URLs resolve in browser before creating draft
 - [ ] SUBSTACK_POST.md committed and pushed to GitHub
+- [ ] Delete older draft versions from Substack before publishing

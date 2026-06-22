@@ -2,21 +2,32 @@
 
 ![Fireworks Foundry](assets/ff-1.png)
 
-**Dependency Day** by Myles ([@merlinforge](https://merlinforge.substack.com/p/dependency-day-a-single-file-in-browser)) made independence the literal mechanic — you sever supply lines from the Crown until colonies cascade free. Really sharp design thinking. It made me go the other direction: if that's the *work* of independence, what's the *celebration*? The moment after the vote passes?
+**Dependency Day** by Myles ([@merlinforge](https://merlinforge.substack.com/p/dependency-day-a-single-file-in-browser)) made independence the literal mechanic — you sever supply lines from the Crown until colonies cascade free. Really sharp design thinking. It made me go the other direction entirely: if that's the *work* of independence, what's the *celebration*? The moment after the vote passes?
 
-**Fireworks Foundry** is a browser fireworks canvas set over an American skyline — Washington Monument, Capitol dome, lit windows, a crowd on the shore holding sparklers. Tap anywhere in the night sky to launch shells. Eight burst types, seven color palettes, music that syncs to the beat. The whole thing runs in one HTML file.
+**Fireworks Foundry** is a browser fireworks canvas set over an American skyline — Washington Monument, Capitol dome, lit windows, a crowd on the shore holding sparklers. Tap anywhere in the night sky to launch shells. Eight burst types, seven color palettes, music that syncs to the beat. The whole thing runs in one HTML file with no server required.
 
-![Festive scene with crowd and string lights](assets/ff-festive.png)
+![Festive crowd and string lights](assets/ff-festive.png)
+
 ![Finale word spelled in fireworks](assets/ff-spell.png)
 
 ## How the AI works
 
 Two live Claude calls drive the creative layer:
 
-- **Inspire** — Claude picks a shell and palette combo, names it ("Sapphire Halo", "Frost Crackle"), and fires a preview burst immediately so you see it in the sky
-- **Director** — type a single sentence describing a vibe and Claude stages a full cinematic show: title card, three broadcast-style narration captions, a palette arc across the performance, a music track, and a finale word spelled out in fireworks particles at the climax. "Wedding toast for Sara and Jo" gives you SARA+JO in rose shells. "Triumphant July 4th" gives you 1776 in patriot colors.
+- **Inspire** — Claude picks a shell and palette combo and names it — "Sapphire Halo", "Frost Crackle", "Spectrum Storm" — then fires a preview burst immediately so you see it in the sky
+- **Director** — type a single sentence describing a vibe and Claude stages a full cinematic show: title card, three narration captions, a palette arc, a music track, and a finale word spelled out in fireworks particles at the climax. "Wedding toast for Sara and Jo" gives you SARA+JO in rose shells. "Triumphant July 4th" gives you 1776 in patriot colors.
 
-Both fall back to built-in presets if the API is unreachable. Beat mode, a Grand Finale barrage, and a Poster save round out the controls.
+Both calls fall back to built-in presets if the API is unreachable — the canvas never breaks on someone trying it cold.
+
+## How to play
+
+- Pick a shell + palette, tap anywhere in the sky to launch
+- Hold down for rapid fire
+- ✦ Inspire — Claude picks a combo and fires a preview
+- ♪ Beat — fireworks auto-launch on the music rhythm
+- 🎬 Director — describe a vibe, Claude stages the full show
+- ★ Finale — launches a barrage of every shell type
+- 📸 Poster — saves a PNG of your current sky
 
 ## Where to play
 
