@@ -1,0 +1,988 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Turncoat — July 3rd, 1776</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: #000;
+    color: #e8dcc8;
+    font-family: 'Georgia', serif;
+    height: 100dvh;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* ── SCENE LAYER ────────────────────────────────── */
+  #scene-bg {
+    position: fixed;
+    inset: 0;
+    background: #0a0805;
+    transition: opacity 1.2s ease;
+  }
+  #scene-bg img {
+    width: 100%; height: 100%;
+    object-fit: cover;
+    opacity: 0.85;
+  }
+  #scene-bg::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+      to bottom,
+      rgba(0,0,0,0.3) 0%,
+      rgba(0,0,0,0.1) 40%,
+      rgba(0,0,0,0.7) 75%,
+      rgba(0,0,0,0.95) 100%
+    );
+  }
+
+  /* ── LETTERBOX ──────────────────────────────────── */
+  .letterbox {
+    position: fixed;
+    left: 0; right: 0;
+    height: 60px;
+    background: #000;
+    z-index: 10;
+  }
+  .letterbox.top { top: 0; }
+  .letterbox.bottom { bottom: 0; }
+
+  /* ── HUD ────────────────────────────────────────── */
+  #hud {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    height: 60px;
+    z-index: 20;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 32px;
+  }
+
+  #scene-label {
+    font-size: 11px;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    color: #8a7a5a;
+  }
+
+  #suspicion-wrap {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  #suspicion-label {
+    font-size: 11px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: #8a7a5a;
+  }
+  #suspicion-bar {
+    width: 140px;
+    height: 4px;
+    background: rgba(255,255,255,0.1);
+    border-radius: 2px;
+    overflow: hidden;
+  }
+  #suspicion-fill {
+    height: 100%;
+    background: #8b2e2e;
+    border-radius: 2px;
+    transition: width 0.8s ease, background 0.8s ease;
+    width: 0%;
+  }
+  #suspicion-value {
+    font-size: 11px;
+    color: #8a7a5a;
+    width: 32px;
+    text-align: right;
+  }
+
+  /* ── CHARACTER NAMEPLATE ────────────────────────── */
+  #nameplate {
+    position: fixed;
+    bottom: 260px;
+    left: 40px;
+    z-index: 20;
+    opacity: 0;
+    transition: opacity 0.6s ease;
+  }
+  #nameplate.visible { opacity: 1; }
+  #character-name {
+    font-size: 13px;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    color: #c8a96e;
+    text-shadow: 0 0 20px rgba(200,169,110,0.5);
+  }
+  #character-role {
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    color: #6a5a3a;
+    margin-top: 3px;
+  }
+
+  /* ── DIALOGUE PANEL ─────────────────────────────── */
+  #dialogue-panel {
+    position: fixed;
+    bottom: 60px;
+    left: 0; right: 0;
+    height: 200px;
+    z-index: 20;
+    padding: 20px 40px 16px;
+    background: linear-gradient(to top, rgba(0,0,0,0.97), rgba(0,0,0,0.7));
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  #dialogue-text {
+    flex: 1;
+    font-size: 15px;
+    line-height: 1.65;
+    color: #e8dcc8;
+    overflow-y: auto;
+    scrollbar-width: none;
+    text-shadow: 0 1px 3px rgba(0,0,0,0.8);
+  }
+  #dialogue-text::-webkit-scrollbar { display: none; }
+
+  /* ── INPUT ROW ──────────────────────────────────── */
+  #input-row {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+  }
+
+  #player-input {
+    flex: 1;
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(200,169,110,0.25);
+    border-radius: 4px;
+    color: #e8dcc8;
+    font-family: 'Georgia', serif;
+    font-size: 14px;
+    padding: 9px 14px;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  #player-input:focus { border-color: rgba(200,169,110,0.6); }
+  #player-input::placeholder { color: #4a3a2a; }
+
+  #mic-btn, #send-btn {
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(200,169,110,0.25);
+    border-radius: 4px;
+    color: #c8a96e;
+    cursor: pointer;
+    font-size: 14px;
+    padding: 9px 14px;
+    transition: background 0.2s, border-color 0.2s;
+    white-space: nowrap;
+  }
+  #mic-btn:hover, #send-btn:hover {
+    background: rgba(200,169,110,0.12);
+    border-color: rgba(200,169,110,0.5);
+  }
+  #mic-btn.listening {
+    background: rgba(139,46,46,0.3);
+    border-color: rgba(220,80,80,0.6);
+    color: #e08080;
+    animation: pulse 1.2s infinite;
+  }
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.6; }
+  }
+
+  /* ── LOADING OVERLAY ────────────────────────────── */
+  #loading {
+    position: fixed;
+    inset: 0;
+    background: #000;
+    z-index: 100;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 24px;
+    transition: opacity 0.8s ease;
+  }
+  #loading.fade-out { opacity: 0; pointer-events: none; }
+
+  #loading-title {
+    font-size: 42px;
+    letter-spacing: 0.15em;
+    color: #c8a96e;
+    text-shadow: 0 0 40px rgba(200,169,110,0.4);
+  }
+  #loading-year {
+    font-size: 14px;
+    letter-spacing: 0.5em;
+    color: #6a5a3a;
+  }
+  #loading-status {
+    font-size: 12px;
+    letter-spacing: 0.3em;
+    color: #4a3a2a;
+    text-transform: uppercase;
+    margin-top: 8px;
+  }
+  #loading-bar {
+    width: 220px;
+    height: 2px;
+    background: rgba(255,255,255,0.08);
+    border-radius: 1px;
+    margin-top: 12px;
+    overflow: hidden;
+  }
+  #loading-bar-fill {
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(to right, #8b2e2e, #c8a96e);
+    border-radius: 1px;
+    transition: width 0.6s ease;
+  }
+  .quill-anim {
+    width: 2px;
+    height: 40px;
+    background: linear-gradient(to bottom, #c8a96e, transparent);
+    animation: write 1.5s ease-in-out infinite alternate;
+    transform-origin: top;
+  }
+  @keyframes write {
+    from { transform: rotate(-10deg); opacity: 0.4; }
+    to   { transform: rotate(10deg);  opacity: 1; }
+  }
+
+  /* ── TITLE SCREEN ───────────────────────────────── */
+  #title-screen {
+    position: fixed;
+    inset: 0;
+    z-index: 50;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    transition: opacity 1s ease;
+  }
+  #title-screen.fade-out { opacity: 0; pointer-events: none; }
+
+  #title-bg {
+    position: absolute;
+    inset: 0;
+    background: #050302;
+  }
+  #title-bg img {
+    width: 100%; height: 100%;
+    object-fit: cover;
+    opacity: 0.75;
+  }
+  #title-bg::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: rgba(0,0,0,0.4);
+  }
+
+  #title-content {
+    position: relative;
+    z-index: 1;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+  }
+
+  #title-eyebrow {
+    font-size: 11px;
+    letter-spacing: 0.5em;
+    color: #6a5a3a;
+    text-transform: uppercase;
+  }
+  #title-main {
+    font-size: 68px;
+    letter-spacing: 0.08em;
+    color: #e8dcc8;
+    text-shadow: 0 0 60px rgba(200,169,110,0.3);
+  }
+  #title-sub {
+    font-size: 13px;
+    letter-spacing: 0.3em;
+    color: #8a7a5a;
+    text-transform: uppercase;
+  }
+  #title-desc {
+    max-width: 480px;
+    font-size: 14px;
+    line-height: 1.7;
+    color: #6a5a3a;
+    text-align: center;
+    margin-top: 8px;
+  }
+  #start-btn {
+    margin-top: 24px;
+    background: transparent;
+    border: 1px solid rgba(200,169,110,0.4);
+    border-radius: 3px;
+    color: #c8a96e;
+    cursor: pointer;
+    font-family: 'Georgia', serif;
+    font-size: 12px;
+    letter-spacing: 0.3em;
+    padding: 12px 36px;
+    text-transform: uppercase;
+    transition: all 0.3s;
+  }
+  #start-btn:hover {
+    background: rgba(200,169,110,0.1);
+    border-color: rgba(200,169,110,0.8);
+    color: #e8d0a0;
+  }
+
+  /* ── COVER BLOWN OVERLAY ────────────────────────── */
+  #blown-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 80;
+    background: rgba(100,0,0,0.0);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    gap: 20px;
+  }
+  #blown-overlay.show {
+    display: flex;
+    animation: redFlash 0.5s ease forwards;
+  }
+  @keyframes redFlash {
+    0%   { background: rgba(180,0,0,0.6); }
+    100% { background: rgba(0,0,0,0.92); }
+  }
+  #blown-title {
+    font-size: 48px;
+    color: #cc3333;
+    letter-spacing: 0.1em;
+  }
+  #blown-sub {
+    font-size: 14px;
+    letter-spacing: 0.3em;
+    color: #8a5a5a;
+    text-transform: uppercase;
+  }
+  #retry-btn {
+    margin-top: 16px;
+    background: transparent;
+    border: 1px solid rgba(200,80,80,0.4);
+    border-radius: 3px;
+    color: #cc6666;
+    cursor: pointer;
+    font-family: 'Georgia', serif;
+    font-size: 12px;
+    letter-spacing: 0.3em;
+    padding: 10px 28px;
+    text-transform: uppercase;
+    transition: all 0.3s;
+  }
+  #retry-btn:hover { background: rgba(200,80,80,0.1); border-color: #cc6666; }
+
+  /* ── SUCCESS OVERLAY ────────────────────────────── */
+  #success-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 80;
+    background: #000;
+    display: none;
+    align-items: center;
+    justify-content: center;
+  }
+  #success-overlay.show { display: flex; }
+  #fireworks-canvas {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+  }
+  #success-content {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+    text-align: center;
+    padding: 40px;
+    background: rgba(0,0,0,0.6);
+    border: 1px solid rgba(200,169,110,0.2);
+    border-radius: 4px;
+    max-width: 560px;
+  }
+  #success-date { font-size: 11px; letter-spacing: 0.5em; color: #c8a96e; text-transform: uppercase; }
+  #success-title { font-size: 38px; color: #e8dcc8; letter-spacing: 0.08em; }
+  #success-text { font-size: 15px; line-height: 1.75; color: #8a7a5a; }
+  #play-again-btn {
+    margin-top: 8px;
+    background: transparent;
+    border: 1px solid rgba(200,169,110,0.4);
+    border-radius: 3px;
+    color: #c8a96e;
+    cursor: pointer;
+    font-family: 'Georgia', serif;
+    font-size: 12px;
+    letter-spacing: 0.3em;
+    padding: 10px 28px;
+    text-transform: uppercase;
+    transition: all 0.3s;
+  }
+  #play-again-btn:hover { background: rgba(200,169,110,0.1); border-color: rgba(200,169,110,0.8); }
+
+  /* ── SCENE LOADING BAR ──────────────────────────── */
+  #scene-loader {
+    position: fixed;
+    top: 60px;
+    left: 0; right: 0;
+    height: 2px;
+    z-index: 30;
+    background: rgba(255,255,255,0.05);
+    display: none;
+  }
+  #scene-loader.active { display: block; }
+  #scene-loader-fill {
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(to right, #8b2e2e, #c8a96e);
+    transition: width 0.4s ease;
+  }
+
+  /* ── TYPING INDICATOR ───────────────────────────── */
+  .typing-dots {
+    display: inline-flex;
+    gap: 4px;
+    align-items: center;
+    height: 20px;
+  }
+  .typing-dots span {
+    width: 5px; height: 5px;
+    background: #8a7a5a;
+    border-radius: 50%;
+    animation: dot 1.2s ease-in-out infinite;
+  }
+  .typing-dots span:nth-child(2) { animation-delay: 0.2s; }
+  .typing-dots span:nth-child(3) { animation-delay: 0.4s; }
+  @keyframes dot {
+    0%, 80%, 100% { transform: scale(0.6); opacity: 0.4; }
+    40%            { transform: scale(1);   opacity: 1; }
+  }
+</style>
+</head>
+<body>
+
+<!-- Loading screen -->
+<div id="loading">
+  <div id="loading-title">THE TURNCOAT</div>
+  <div id="loading-year">· July 3rd, 1776 · Eve of Independence ·</div>
+  <div class="quill-anim"></div>
+  <div id="loading-status">Painting the scene...</div>
+  <div id="loading-bar"><div id="loading-bar-fill"></div></div>
+</div>
+
+<!-- Title screen -->
+<div id="title-screen" style="display:none">
+  <div id="title-bg"><img id="title-img" src="" alt=""></div>
+  <div id="title-content">
+    <div id="title-eyebrow">Summer into AI 2026 · Week 2 · Red, White, Boom</div>
+    <div id="title-main">The Turncoat</div>
+    <div id="title-sub">· July 3rd, 1776 · Eve of Independence ·</div>
+    <div id="title-desc">Tomorrow, the Continental Congress votes. Tonight, one spy must pass critical intelligence — or the Declaration dies with Washington's army. Navigate three encounters without breaking cover. Every word you say is evidence.</div>
+    <button id="start-btn">Begin the Mission</button>
+  </div>
+</div>
+
+<!-- Scene loading bar -->
+<div id="scene-loader"><div id="scene-loader-fill"></div></div>
+
+<!-- Scene background -->
+<div id="scene-bg"><img id="bg-img" src="" alt=""></div>
+
+<!-- HUD -->
+<div id="hud">
+  <div id="scene-label">Scene 1 of 3 — The Briefing</div>
+  <div id="suspicion-wrap">
+    <div id="suspicion-label">Suspicion</div>
+    <div id="suspicion-bar"><div id="suspicion-fill"></div></div>
+    <div id="suspicion-value">0</div>
+  </div>
+</div>
+
+<!-- Character nameplate -->
+<div id="nameplate">
+  <div id="character-name"></div>
+  <div id="character-role"></div>
+</div>
+
+<!-- Dialogue panel -->
+<div id="dialogue-panel">
+  <div id="dialogue-text"></div>
+  <div id="input-row">
+    <input id="player-input" type="text" placeholder="Speak your response..." autocomplete="off">
+    <button id="mic-btn" title="Click to speak">🎙</button>
+    <button id="send-btn">Send</button>
+  </div>
+</div>
+
+<!-- Cover blown -->
+<div id="blown-overlay">
+  <div id="blown-title">Cover Blown</div>
+  <div id="blown-sub">They know who you are</div>
+  <button id="retry-btn">Begin Again</button>
+</div>
+
+<!-- Mission complete -->
+<div id="success-overlay">
+  <canvas id="fireworks-canvas"></canvas>
+  <div id="success-content">
+    <div id="success-date">July 4th, 1776</div>
+    <div id="success-title">The Declaration is Signed</div>
+    <div id="success-text">Your intelligence reached Washington in time. The Continental Army held the line. In Philadelphia, fifty-six men pledged their lives, their fortunes, and their sacred honor.<br><br><em>The boom you hear? That's the sound of a nation being born.</em></div>
+    <button id="play-again-btn">Play Again</button>
+  </div>
+</div>
+
+<script>
+// ── GAME CONFIG ────────────────────────────────────────────────────────────
+const SCENES = [
+  {
+    id: 'hartwell',
+    label: 'Scene 1 of 3 — The Briefing',
+    characterName: 'Colonel Edmund Hartwell',
+    characterRole: 'British Army · Senior Intelligence Officer',
+    voiceId: 'pNInz6obpgDQGcFmaJgB',
+    imagePrompt: `Photorealistic oil painting portrait of a stern British Army colonel in his dimly lit quarters in 1776 Boston. Red military coat with gold epaulettes and brass buttons. Maps of Massachusetts pinned to the wall behind him. Candlelight casting dramatic shadows across his weathered, suspicious face. He stares directly at the viewer with cold authority. 18th century masterpiece portrait style, John Singleton Copley aesthetic, chiaroscuro lighting, highly detailed, cinematic.`,
+    openingLine: `Sit down, Captain Marlowe. The rebels grow bolder by the hour — we have word that Philadelphia is buzzing with sedition tonight. Tomorrow may prove consequential for the Crown. So I need men I can trust absolutely. I have a new assignment for you. Intelligence work. The kind that separates loyal officers from traitors.`,
+  },
+  {
+    id: 'catherine',
+    label: 'Scene 2 of 3 — The Contact',
+    characterName: 'Catherine Morse',
+    characterRole: 'Continental Intelligence · Undercover',
+    voiceId: 'EXAVITQu4vr4xnSDxMaL',
+    imagePrompt: `Photorealistic oil painting portrait of a young colonial American woman in a dimly lit Boston tavern in 1776. She wears a plain linen dress with an apron. Dark hair, intelligent eyes full of fear and determination. Candlelight flickers on her face as she glances nervously toward the door. She leans slightly forward as if whispering a secret. Period-accurate 18th century colonial setting, dark wooden tavern interior, dramatic candlelit portrait, John Singleton Copley style, photorealistic masterpiece.`,
+    openingLine: `You're late. Don't look at me — look at your ale. Tomorrow they vote in Philadelphia. If Washington doesn't have Hartwell's patrol schedules before dawn, the army can't move. What did Hartwell tell you tonight? We have minutes before Briggs does his rounds.`,
+  },
+  {
+    id: 'briggs',
+    label: 'Scene 3 of 3 — The Confrontation',
+    characterName: 'Sergeant Thomas Briggs',
+    characterRole: 'British Army · 8th Regiment of Foot',
+    voiceId: 'VR6AewLTigWG4xSOukaG',
+    imagePrompt: `Photorealistic oil painting portrait of a gruff British Army sergeant in 1776 Boston. Weathered face, thick build, red uniform worn from long service. He stands in a muddy military camp at dusk, arms crossed, staring at the viewer with open suspicion and barely contained aggression. Behind him the silhouettes of tents and soldiers. Dramatic late-day light, dark shadows. John Singleton Copley style 18th century portrait, highly detailed, cinematic photorealism.`,
+    openingLine: `Captain. A word. I saw you near the Green Dragon tonight. Talking to that serving girl. Funny thing — I asked around about her. Nobody knows much. Where exactly did you say you were this evening, sir?`,
+  },
+];
+
+// ── GAME STATE ─────────────────────────────────────────────────────────────
+const state = {
+  sceneIndex: 0,
+  suspicion: 0,
+  messages: [],        // conversation history for current scene
+  speaking: false,
+  thinking: false,
+  recognition: null,
+};
+
+// ── IMAGE CACHE ────────────────────────────────────────────────────────────
+const imageCache = {};
+
+// ── DOM REFS ───────────────────────────────────────────────────────────────
+const $ = id => document.getElementById(id);
+const loadingEl    = $('loading');
+const titleScreen  = $('title-screen');
+const titleImg     = $('title-img');
+const bgImg        = $('bg-img');
+const sceneLabel   = $('scene-label');
+const suspFill     = $('suspicion-fill');
+const suspVal      = $('suspicion-value');
+const nameplate    = $('nameplate');
+const charName     = $('character-name');
+const charRole     = $('character-role');
+const dialogueText = $('dialogue-text');
+const playerInput  = $('player-input');
+const micBtn       = $('mic-btn');
+const sendBtn      = $('send-btn');
+const blownOverlay = $('blown-overlay');
+const successOverlay = $('success-overlay');
+const loadStatus   = $('loading-status');
+
+// ── UTILITIES ──────────────────────────────────────────────────────────────
+function setSuspicion(val) {
+  state.suspicion = Math.max(0, Math.min(100, val));
+  const pct = state.suspicion;
+  suspFill.style.width = pct + '%';
+  suspVal.textContent = pct;
+  const hue = 10;
+  const sat = 40 + pct * 0.4;
+  const lit = 25 + pct * 0.15;
+  suspFill.style.background = `hsl(${hue}, ${sat}%, ${lit}%)`;
+}
+
+function appendDialogue(text, isPlayer = false) {
+  const p = document.createElement('p');
+  p.style.cssText = isPlayer
+    ? 'color:#7a9a7a;font-size:13px;margin:6px 0;padding-left:12px;border-left:2px solid #3a5a3a;'
+    : 'color:#e8dcc8;margin:8px 0;';
+  p.textContent = isPlayer ? `You: ${text}` : text;
+  dialogueText.appendChild(p);
+  dialogueText.scrollTop = dialogueText.scrollHeight;
+}
+
+function showTyping() {
+  const d = document.createElement('div');
+  d.id = 'typing-indicator';
+  d.innerHTML = '<div class="typing-dots"><span></span><span></span><span></span></div>';
+  dialogueText.appendChild(d);
+  dialogueText.scrollTop = dialogueText.scrollHeight;
+}
+function hideTyping() {
+  const t = $('typing-indicator');
+  if (t) t.remove();
+}
+
+async function typewriterAppend(text) {
+  const p = document.createElement('p');
+  p.style.cssText = 'color:#e8dcc8;margin:8px 0;';
+  dialogueText.appendChild(p);
+  for (const ch of text) {
+    p.textContent += ch;
+    dialogueText.scrollTop = dialogueText.scrollHeight;
+    await new Promise(r => setTimeout(r, 18));
+  }
+}
+
+// ── IMAGE LOADING ──────────────────────────────────────────────────────────
+async function generateImage(prompt) {
+  const res = await fetch('/api/image', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ prompt }),
+  });
+  const data = await res.json();
+  return data.url;
+}
+
+function crossfadeImage(imgEl, url) {
+  return new Promise(resolve => {
+    imgEl.style.opacity = '0';
+    imgEl.style.transition = 'opacity 1.2s ease';
+    const tmp = new Image();
+    const done = () => {
+      imgEl.src = url;
+      requestAnimationFrame(() => requestAnimationFrame(() => {
+        imgEl.style.opacity = '1';
+        setTimeout(resolve, 1200);
+      }));
+    };
+    tmp.onload = done;
+    tmp.onerror = done; // resolve even on failure — don't hang
+    tmp.src = url;
+  });
+}
+
+// ── VOICE ──────────────────────────────────────────────────────────────────
+async function speak(text, voiceId) {
+  try {
+    const res = await fetch('/api/speak', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ text, voiceId }),
+    });
+    if (!res.ok) return;
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    const audio = new Audio(url);
+    state.speaking = true;
+    await new Promise(resolve => {
+      const done = () => { state.speaking = false; resolve(); };
+      audio.onended = done;
+      audio.onerror = done;
+      const p = audio.play();
+      if (p && typeof p.catch === 'function') p.catch(done);
+    });
+  } catch { /* fail silently */ }
+}
+
+// ── CHAT ───────────────────────────────────────────────────────────────────
+async function sendMessage(playerText) {
+  if (state.thinking) return;
+  if (!playerText.trim()) return;
+
+  state.thinking = true;
+  playerInput.disabled = true;
+  sendBtn.disabled = true;
+
+  appendDialogue(playerText, true);
+  playerInput.value = '';
+
+  state.messages.push({ role: 'user', content: playerText });
+
+  showTyping();
+
+  const scene = SCENES[state.sceneIndex];
+  try {
+    const res = await fetch('/api/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        characterId: scene.id,
+        messages: state.messages,
+        suspicion: state.suspicion,
+      }),
+    });
+    const data = await res.json();
+    hideTyping();
+
+    if (data.error) {
+      appendDialogue('[Error contacting character]');
+      return;
+    }
+
+    state.messages.push({ role: 'assistant', content: data.dialogue });
+
+    setSuspicion(state.suspicion + (data.suspicionDelta || 0));
+    await Promise.all([
+      typewriterAppend(data.dialogue),
+      speak(data.dialogue, scene.voiceId),
+    ]);
+
+    if (data.coverBlown) {
+      blownOverlay.classList.add('show');
+      return;
+    }
+
+    if (data.advanceScene) {
+      await advanceScene();
+    }
+  } finally {
+    hideTyping();
+    state.thinking = false;
+    playerInput.disabled = false;
+    sendBtn.disabled = false;
+    playerInput.focus();
+  }
+}
+
+// ── FIREWORKS ──────────────────────────────────────────────────────────────
+function startFireworks() {
+  const canvas = $('fireworks-canvas');
+  const ctx = canvas.getContext('2d');
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+
+  const COLORS = ['#ff3333','#ff6666','#ffffff','#aabbff','#ffcc44','#ff8800','#cc2222'];
+  const particles = [];
+  let frame = 0;
+
+  function explode(x, y) {
+    const color = COLORS[Math.floor(Math.random() * COLORS.length)];
+    const count = 70 + Math.floor(Math.random() * 50);
+    for (let i = 0; i < count; i++) {
+      const angle = (Math.PI * 2 * i) / count + (Math.random() - 0.5) * 0.5;
+      const speed = 1.5 + Math.random() * 5;
+      particles.push({
+        x, y,
+        vx: Math.cos(angle) * speed,
+        vy: Math.sin(angle) * speed - Math.random() * 1.5,
+        alpha: 1,
+        decay: 0.01 + Math.random() * 0.013,
+        color,
+        size: 1.5 + Math.random() * 2,
+      });
+    }
+  }
+
+  // Initial burst — immediate wow
+  for (let i = 0; i < 6; i++) {
+    setTimeout(() => {
+      explode(canvas.width * (0.15 + Math.random() * 0.7), canvas.height * (0.1 + Math.random() * 0.45));
+    }, i * 180);
+  }
+
+  function animate() {
+    ctx.fillStyle = 'rgba(0,0,0,0.18)';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    if (frame % 28 === 0) {
+      explode(
+        canvas.width * (0.1 + Math.random() * 0.8),
+        canvas.height * (0.08 + Math.random() * 0.5),
+      );
+    }
+
+    for (let i = particles.length - 1; i >= 0; i--) {
+      const p = particles[i];
+      p.vy += 0.055;
+      p.vx *= 0.99;
+      p.x += p.vx;
+      p.y += p.vy;
+      p.alpha -= p.decay;
+      if (p.alpha <= 0) { particles.splice(i, 1); continue; }
+      ctx.save();
+      ctx.globalAlpha = p.alpha;
+      ctx.fillStyle = p.color;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    }
+
+    frame++;
+    requestAnimationFrame(animate);
+  }
+  animate();
+}
+
+// ── SCENE MANAGEMENT ───────────────────────────────────────────────────────
+async function loadScene(index) {
+  const scene = SCENES[index];
+  state.messages = [];
+  state.sceneIndex = index;
+
+  sceneLabel.textContent = scene.label;
+  charName.textContent = scene.characterName;
+  charRole.textContent = scene.characterRole;
+  nameplate.classList.add('visible');
+  dialogueText.innerHTML = '';
+
+  const url = imageCache[scene.id] || await generateImage(scene.imagePrompt);
+  await crossfadeImage(bgImg, url);
+
+  // Opening line
+  state.messages.push({ role: 'assistant', content: scene.openingLine });
+  await Promise.all([
+    typewriterAppend(scene.openingLine),
+    speak(scene.openingLine, scene.voiceId),
+  ]);
+}
+
+async function advanceScene() {
+  if (state.sceneIndex >= SCENES.length - 1) {
+    successOverlay.classList.add('show');
+    startFireworks();
+    return;
+  }
+
+  dialogueText.innerHTML = '';
+  nameplate.classList.remove('visible');
+
+  // Brief transition
+  bgImg.style.opacity = '0';
+  await new Promise(r => setTimeout(r, 800));
+
+  await loadScene(state.sceneIndex + 1);
+}
+
+// ── MIC INPUT ──────────────────────────────────────────────────────────────
+function setupMic() {
+  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SpeechRecognition) { micBtn.style.display = 'none'; return; }
+
+  const recognition = new SpeechRecognition();
+  recognition.continuous = false;
+  recognition.interimResults = false;
+  recognition.lang = 'en-US';
+  state.recognition = recognition;
+
+  recognition.onresult = e => {
+    const transcript = e.results[0][0].transcript;
+    playerInput.value = transcript;
+    micBtn.classList.remove('listening');
+    playerInput.focus();
+  };
+  recognition.onend = () => micBtn.classList.remove('listening');
+  recognition.onerror = () => micBtn.classList.remove('listening');
+
+  micBtn.addEventListener('click', () => {
+    if (micBtn.classList.contains('listening')) {
+      recognition.stop();
+      micBtn.classList.remove('listening');
+    } else {
+      playerInput.value = '';
+      recognition.start();
+      micBtn.classList.add('listening');
+    }
+  });
+}
+
+// ── INIT ───────────────────────────────────────────────────────────────────
+async function init() {
+  const barFill = $('loading-bar-fill');
+
+  const titlePrompt = `Dramatic oil painting of a British Army officer standing alone at night on a Boston harbor dock in 1776, viewed from behind, looking out at the dark water and the city lights. He wears a red coat. The scene is dark, atmospheric, mysterious. Fog on the water. A lantern nearby. John Singleton Copley style, chiaroscuro, cinematic, photorealistic masterpiece. Extremely detailed.`;
+
+  const allImages = [
+    { key: 'title', prompt: titlePrompt },
+    ...SCENES.map(s => ({ key: s.id, prompt: s.imagePrompt })),
+  ];
+
+  let completed = 0;
+  const updateProgress = () => {
+    completed++;
+    const pct = Math.round((completed / allImages.length) * 100);
+    barFill.style.width = pct + '%';
+    loadStatus.textContent = `Painting scene ${completed} of ${allImages.length}...`;
+  };
+
+  // Generate all images in parallel
+  await Promise.all(allImages.map(async ({ key, prompt }) => {
+    try {
+      imageCache[key] = await generateImage(prompt);
+    } catch {}
+    updateProgress();
+  }));
+
+  titleImg.src = imageCache['title'] || '';
+
+  loadingEl.classList.add('fade-out');
+  setTimeout(() => {
+    loadingEl.style.display = 'none';
+    titleScreen.style.display = 'flex';
+  }, 900);
+}
+
+// ── EVENT LISTENERS ────────────────────────────────────────────────────────
+$('start-btn').addEventListener('click', async () => {
+  titleScreen.classList.add('fade-out');
+  setTimeout(() => { titleScreen.style.display = 'none'; }, 1000);
+  await loadScene(0);
+});
+
+sendBtn.addEventListener('click', () => sendMessage(playerInput.value));
+playerInput.addEventListener('keydown', e => {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(playerInput.value); }
+});
+
+$('retry-btn').addEventListener('click', () => {
+  blownOverlay.classList.remove('show');
+  setSuspicion(0);
+  loadScene(0);
+});
+
+$('play-again-btn').addEventListener('click', () => {
+  successOverlay.classList.remove('show');
+  setSuspicion(0);
+  loadScene(0);
+});
+
+setupMic();
+init();
+</script>
+</body>
+</html>
