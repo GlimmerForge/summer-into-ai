@@ -166,7 +166,7 @@ const CHAR_IDS=['franklin','washington','revere'];
 let selectedChar='franklin';
 
 // ── STATE ─────────────────────────────────────────────────────────────────
-let state='title',frameCount=0,titleVoicePlayed=false;
+let state='title',frameCount=0,titleVoicePlayed=false,titleAudio=null;
 let distance,speed,score,boostTimer;
 let lives,invincTimer;
 let flashFrames,flashCol;
@@ -199,11 +199,13 @@ canvas.addEventListener('click',handleClick);
 async function speak(text,voiceId){
   try{
     const r=await fetch('/api/speak',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({text,voiceId})});
-    if(!r.ok)return;
+    if(!r.ok)return null;
     const a=new Audio(URL.createObjectURL(await r.blob()));
     const p=a.play();if(p&&p.catch)p.catch(()=>{});
-  }catch{}
+    return a;
+  }catch{return null;}
 }
+function stopAudio(a){if(a){a.pause();a.currentTime=0;}}
 
 // ── INIT ──────────────────────────────────────────────────────────────────
 function startGame(){
@@ -883,23 +885,22 @@ function handleClick(e){
     if(!titleVoicePlayed){
       titleVoicePlayed=true;
       const c=CHARS[selectedChar];
-      speak(c.intro,c.voiceId);
+      speak(c.intro,c.voiceId).then(a=>{titleAudio=a;});
     }
     const CW=130,CH=56,gap=10,csx=(W-3*CW-2*gap)/2;
     let picked=false;
     CHAR_IDS.forEach((id,i)=>{
       const bx=csx+i*(CW+gap),by=H-142;
       if(cx>bx&&cx<bx+CW&&cy>by&&cy<by+CH){
-        // Switching to a different character → play their intro
         if(id!==selectedChar){
+          stopAudio(titleAudio);titleAudio=null;
           selectedChar=id;
-          const c=CHARS[selectedChar];
-          speak(c.intro,c.voiceId);
+          speak(CHARS[selectedChar].intro,CHARS[selectedChar].voiceId).then(a=>{titleAudio=a;});
         }
         picked=true;
       }
     });
-    if(!picked)startGame();
+    if(!picked){stopAudio(titleAudio);titleAudio=null;startGame();}
   }else if(state==='win'||state==='lose'){
     titleVoicePlayed=false; // reset so they hear a line next title visit
     state='title';
