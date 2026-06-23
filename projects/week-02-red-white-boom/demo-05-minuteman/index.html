@@ -107,6 +107,7 @@ html,body{width:100%;height:100%;background:#000;overflow:hidden}
 <button class="btn" id="bstart">Load Musket &amp; Begin</button></div>
 <div class="screen hidden" id="sw"><div id="wa-n">WAVE 1 OF 3</div><div id="wa-t">THE REDCOATS ARE COMING</div><div id="wa-q">"Don't fire until you see the whites of their eyes."</div><div id="wa-c">3</div></div>
 <div class="screen hidden" id="sd"><div id="dt">CAPTURED BY THE CROWN</div><div id="ds2">Your mission has failed</div><div id="dstat"></div><button class="btn" style="margin-top:28px" id="bretry">Try Again</button></div>
+<div class="screen hidden" id="spaused" style="background:rgba(0,0,0,.55);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;"><div style="font-family:'Courier New',monospace;font-size:38px;letter-spacing:.18em;color:#c8a050">PAUSED</div><div style="font-family:'Courier New',monospace;font-size:11px;letter-spacing:.32em;color:#6a6050">CLICK TO RESUME</div></div>
 <div class="screen hidden" id="sw2">
   <canvas id="fwc"></canvas>
   <div id="iday-box">
@@ -309,8 +310,18 @@ const keys={};let mdx=0,locked=false;
 document.addEventListener('keydown',e=>{keys[e.code]=true;if(G.state!=='playing')return;if(e.code==='KeyR')startReload();if(e.code==='KeyE')bayonet();if(e.code==='Digit1')switchW(0);if(e.code==='Digit2')switchW(1);});
 document.addEventListener('keyup',e=>{keys[e.code]=false;});
 document.addEventListener('mousemove',e=>{if(locked)mdx+=e.movementX;});
-document.addEventListener('mousedown',e=>{if(!locked){canvas.requestPointerLock();return;}if(e.button===0&&G.state==='playing')fire();});
-document.addEventListener('pointerlockchange',()=>{locked=document.pointerLockElement===canvas;});
+document.addEventListener('mousedown',e=>{
+  if(!locked){
+    if(G.state==='paused')canvas.requestPointerLock();
+    return;
+  }
+  if(e.button===0&&G.state==='playing')fire();
+});
+document.addEventListener('pointerlockchange',()=>{
+  locked=document.pointerLockElement===canvas;
+  if(!locked&&G.state==='playing')setState('paused');
+  if(locked&&G.state==='paused')setState('playing');
+});
 
 // ── AUDIO ────────────────────────────────────────────
 let ac=null;
@@ -935,13 +946,14 @@ function initStars(){
 }
 
 // ── STATE MACHINE ────────────────────────────────────
-const SCRS=['ss','sw','sd','sw2'];
+const SCRS=['ss','sw','sd','sw2','spaused'];
 function show(id,v){document.getElementById(id).classList.toggle('hidden',!v);}
 function hideAll(){SCRS.forEach(id=>show(id,false));}
 function setState(s){
   G.state=s;hideAll();
   if(s==='start')show('ss',true);
   if(s==='announce')show('sw',true);
+  if(s==='paused')show('spaused',true);
   if(s==='dead'){show('sd',true);document.getElementById('dstat').textContent='Redcoats dispatched: '+G.kills+'  ·  Wave '+G.wave;if(document.pointerLockElement)document.exitPointerLock();musicOn=false;clearInterval(mTimer);}
   if(s==='win'){
     show('sw2',true);
