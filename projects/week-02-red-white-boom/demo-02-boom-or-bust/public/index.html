@@ -147,14 +147,17 @@ const NEBULAS=[
 // ── CHARACTERS ────────────────────────────────────────────────────────────
 const CHARS={
   franklin:{name:'Benjamin Franklin',color:'#4a90d9',hat:null,hair:'#c0a060',voiceId:'pNInz6obpgDQGcFmaJgB',
+    intro:"I am Benjamin Franklin — inventor, statesman, and now... rocket pilot. Pick me.",
     start:"Lightning? Rockets? Nothing can stop me now!",
     win:"We did it! The Declaration is signed! America is FREE!",
     lose:"Science never surrenders — neither do I!"},
   washington:{name:'George Washington',color:'#2ecc71',hat:'#2c3e50',hair:'#e8e8e8',voiceId:'VR6AewLTigWG4xSOukaG',
+    intro:"I crossed the Delaware in a blizzard. A rocket is nothing. Choose wisely.",
     start:"Liberty or death — I choose LIBERTY and this rocket!",
     win:"Victory! America rises this glorious Fourth!",
     lose:"We regroup and strike again at dawn."},
   revere:{name:'Paul Revere',color:'#e74c3c',hat:'#5c1a00',hair:'#553300',voiceId:'yoZ06aMxZJJ28mfd3POQ',
+    intro:"The Redcoats are coming — and I'm going to run right through them. Ride with me.",
     start:"The British are NOT catching me on this rocket!",
     win:"Freedom! We lit up the whole sky!",
     lose:"The alarm goes silent... for now."},
@@ -163,7 +166,7 @@ const CHAR_IDS=['franklin','washington','revere'];
 let selectedChar='franklin';
 
 // ── STATE ─────────────────────────────────────────────────────────────────
-let state='title',frameCount=0;
+let state='title',frameCount=0,titleVoicePlayed=false;
 let distance,speed,score,boostTimer;
 let lives,invincTimer;
 let flashFrames,flashCol;
@@ -876,14 +879,31 @@ function handleClick(e){
   const rect=canvas.getBoundingClientRect();
   const cx=(e.clientX-rect.left)*(W/rect.width),cy=(e.clientY-rect.top)*(H/rect.height);
   if(state==='title'){
+    // First ever click on title → play the selected character's intro line
+    if(!titleVoicePlayed){
+      titleVoicePlayed=true;
+      const c=CHARS[selectedChar];
+      speak(c.intro,c.voiceId);
+    }
     const CW=130,CH=56,gap=10,csx=(W-3*CW-2*gap)/2;
     let picked=false;
     CHAR_IDS.forEach((id,i)=>{
       const bx=csx+i*(CW+gap),by=H-142;
-      if(cx>bx&&cx<bx+CW&&cy>by&&cy<by+CH){selectedChar=id;picked=true;}
+      if(cx>bx&&cx<bx+CW&&cy>by&&cy<by+CH){
+        // Switching to a different character → play their intro
+        if(id!==selectedChar){
+          selectedChar=id;
+          const c=CHARS[selectedChar];
+          speak(c.intro,c.voiceId);
+        }
+        picked=true;
+      }
     });
     if(!picked)startGame();
-  }else if(state==='win'||state==='lose'){state='title';}
+  }else if(state==='win'||state==='lose'){
+    titleVoicePlayed=false; // reset so they hear a line next title visit
+    state='title';
+  }
 }
 
 // ── MAIN LOOP ─────────────────────────────────────────────────────────────
