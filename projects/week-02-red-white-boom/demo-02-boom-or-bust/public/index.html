@@ -166,7 +166,7 @@ const CHAR_IDS=['franklin','washington','revere'];
 let selectedChar='franklin';
 
 // ── STATE ─────────────────────────────────────────────────────────────────
-let state='title',frameCount=0,titleVoicePlayed=false,titleAudio=null;
+let state='title',frameCount=0,titleVoicePlayed=false,titleAudio=null,titleAbort=null;
 let distance,speed,score,boostTimer;
 let lives,invincTimer;
 let flashFrames,flashCol;
@@ -199,13 +199,26 @@ canvas.addEventListener('click',handleClick);
 async function speak(text,voiceId){
   try{
     const r=await fetch('/api/speak',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({text,voiceId})});
-    if(!r.ok)return null;
+    if(!r.ok)return;
     const a=new Audio(URL.createObjectURL(await r.blob()));
     const p=a.play();if(p&&p.catch)p.catch(()=>{});
-    return a;
-  }catch{return null;}
+  }catch{}
 }
 function stopAudio(a){if(a){a.pause();a.currentTime=0;}}
+async function speakTitle(text,voiceId){
+  if(titleAbort)titleAbort.abort();
+  stopAudio(titleAudio);titleAudio=null;
+  titleAbort=new AbortController();
+  const sig=titleAbort.signal;
+  try{
+    const r=await fetch('/api/speak',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({text,voiceId}),signal:sig});
+    if(!r.ok||sig.aborted)return;
+    const blob=await r.blob();
+    if(sig.aborted)return;
+    titleAudio=new Audio(URL.createObjectURL(blob));
+    const p=titleAudio.play();if(p&&p.catch)p.catch(()=>{});
+  }catch(e){if(e.name!=='AbortError')console.warn('speakTitle',e);}
+}
 
 // ── INIT ──────────────────────────────────────────────────────────────────
 function startGame(){
@@ -882,25 +895,28 @@ function handleClick(e){
   const cx=(e.clientX-rect.left)*(W/rect.width),cy=(e.clientY-rect.top)*(H/rect.height);
   if(state==='title'){
     // First ever click on title → play the selected character's intro line
-    if(!titleVoicePlayed){
-      titleVoicePlayed=true;
-      const c=CHARS[selectedChar];
-      speak(c.intro,c.voiceId).then(a=>{titleAudio=a;});
-    }
     const CW=130,CH=56,gap=10,csx=(W-3*CW-2*gap)/2;
     let picked=false;
     CHAR_IDS.forEach((id,i)=>{
       const bx=csx+i*(CW+gap),by=H-142;
       if(cx>bx&&cx<bx+CW&&cy>by&&cy<by+CH){
-        if(id!==selectedChar){
-          stopAudio(titleAudio);titleAudio=null;
+        if(id!==selectedChar||!titleVoicePlayed){
           selectedChar=id;
-          speak(CHARS[selectedChar].intro,CHARS[selectedChar].voiceId).then(a=>{titleAudio=a;});
+          titleVoicePlayed=true;
+          speakTitle(CHARS[selectedChar].intro,CHARS[selectedChar].voiceId);
         }
         picked=true;
       }
     });
-    if(!picked){stopAudio(titleAudio);titleAudio=null;startGame();}
+    if(!titleVoicePlayed){
+      titleVoicePlayed=true;
+      speakTitle(CHARS[selectedChar].intro,CHARS[selectedChar].voiceId);
+    }
+    if(!picked){
+      if(titleAbort)titleAbort.abort();
+      stopAudio(titleAudio);titleAudio=null;
+      startGame();
+    }
   }else if(state==='win'||state==='lose'){
     titleVoicePlayed=false; // reset so they hear a line next title visit
     state='title';
