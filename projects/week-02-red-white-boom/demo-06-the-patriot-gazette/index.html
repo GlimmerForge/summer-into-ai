@@ -4,32 +4,10 @@
 <meta charset="UTF-8">
 <title>The Patriot Gazette — Harbor Defense 1776</title>
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400&display=swap" rel="stylesheet">
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 body{background:#000;overflow:hidden;width:100vw;height:100vh;display:flex;align-items:center;justify-content:center;cursor:crosshair}
 #c{display:block;max-width:100vw;max-height:100vh;object-fit:contain}
-#gazette{
-  position:fixed;right:-480px;top:50%;transform:translateY(-50%);
-  width:400px;max-height:70vh;overflow:hidden;
-  background:linear-gradient(160deg,#f5e8c0 0%,#ead9a0 45%,#dcc880 100%);
-  border:2px solid #8b6914;border-radius:3px;
-  padding:14px 16px 12px;
-  box-shadow:0 8px 40px rgba(0,0,0,.85),inset 0 0 30px rgba(80,50,10,.12);
-  font-family:'Playfair Display',Georgia,serif;
-  transition:right .55s cubic-bezier(.34,1.4,.64,1);
-  z-index:20;pointer-events:none;
-}
-#gazette.open{right:16px}
-.gr{height:2px;background:linear-gradient(90deg,transparent,#8b6914 20%,#8b6914 80%,transparent);margin:7px 0}
-.gr2{height:1px;background:linear-gradient(90deg,transparent,#8b6914 20%,#8b6914 80%,transparent);margin:4px 0}
-.gm{text-align:center;font-size:22px;font-weight:900;letter-spacing:3px;color:#1a0800;text-shadow:1px 1px 0 rgba(139,105,20,.3)}
-.gs{text-align:center;font-size:8px;letter-spacing:2.5px;color:#5a3a00;margin-top:1px;text-transform:uppercase}
-.gd{text-align:center;font-size:10px;color:#4a3000;margin:3px 0;font-style:italic}
-.gh{font-size:14px;font-weight:700;color:#1a0800;line-height:1.25;margin:5px 0;text-align:center}
-.gb{font-size:11.5px;color:#2a1600;line-height:1.65;margin-top:4px}
-.ge{text-align:center;font-size:20px;margin:3px 0}
 #ui-wave{
   position:fixed;top:0;left:0;right:0;text-align:center;
   font-family:'Playfair Display',Georgia,serif;
@@ -43,19 +21,6 @@ body{background:#000;overflow:hidden;width:100vw;height:100vh;display:flex;align
 </head>
 <body>
 <canvas id="c"></canvas>
-<div id="gazette">
-  <div class="gm">THE PATRIOT GAZETTE</div>
-  <div class="gr"></div>
-  <div class="gs">Harbor Bombardment Edition · Dispatches from Fort Liberty</div>
-  <div class="gr2"></div>
-  <div class="gd">July 4th, 1776 · Boston Harbor</div>
-  <div class="gr"></div>
-  <div class="ge">⚓</div>
-  <div class="gh" id="g-headline">PATRIOTS HOLD THE HARBOR</div>
-  <div class="gr2"></div>
-  <div class="gb" id="g-body"></div>
-  <div class="gr"></div>
-</div>
 <div id="ui-wave"></div>
 
 <script>
@@ -111,6 +76,9 @@ let balls = [];   // { x, y, vx, vy, from:'player'|'enemy', trail:[] }
 let ships = [];
 let particles = [];
 
+// ---- Auto-range aim ----
+let aimValid = false; // true when mouse is in a reachable zone
+
 // ---- Clouds (pre-generated) ----
 const clouds = Array.from({ length: 9 }, (_, i) => ({
   x: (i / 9) * W + Math.random() * 100,
@@ -134,13 +102,14 @@ const gulls = Array.from({ length: 6 }, () => ({
 // PARTICLE SYSTEM
 // =====================================================================
 const PCOLORS = {
-  fire:   ['#ff6200','#ff8800','#ffaa00','#ff3a00','#ffd000'],
-  smoke:  ['#aaa9a0','#8a8880','#c8c5b8','#6a6860'],
-  spark:  ['#ffff80','#ffe040','#fff','#ffb020'],
-  debris: ['#7a4012','#5a3008','#3e2000','#b89050','#a08040'],
-  water:  ['#3a8aaa','#58a8cc','#80c8ee','#a8daff','#ddf0ff'],
-  ember:  ['#ff6200','#ff8800','#ffd000'],
-  bubble: ['rgba(140,200,255,.55)','rgba(190,225,255,.35)'],
+  fire:     ['#ff6200','#ff8800','#ffaa00','#ff3a00','#ffd000'],
+  smoke:    ['#aaa9a0','#8a8880','#c8c5b8','#6a6860'],
+  spark:    ['#ffff80','#ffe040','#fff','#ffb020'],
+  debris:   ['#7a4012','#5a3008','#3e2000','#b89050','#a08040'],
+  water:    ['#3a8aaa','#58a8cc','#80c8ee','#a8daff','#ddf0ff'],
+  ember:    ['#ff6200','#ff8800','#ffd000'],
+  bubble:   ['rgba(140,200,255,.55)','rgba(190,225,255,.35)'],
+  firework: ['#ff4444','#ff8888','#4488ff','#88aaff','#ffffff','#ffff66','#ff66aa'],
 };
 
 function spawnP(type, x, y, vx, vy, opts = {}) {
@@ -158,8 +127,9 @@ function spawnP(type, x, y, vx, vy, opts = {}) {
                           0.013 + Math.random() * 0.018),
     color: cols[Math.floor(Math.random() * cols.length)],
     gravity: type === 'fire' ? -0.04 : type === 'smoke' ? -0.025 :
-             type === 'bubble' ? -0.09 : 0.12,
-    drag: type === 'smoke' ? 0.982 : type === 'fire' ? 0.965 : 0.955,
+             type === 'bubble' ? -0.09 : type === 'firework' ? 0.06 : 0.12,
+    drag: type === 'smoke' ? 0.982 : type === 'fire' ? 0.965 :
+          type === 'firework' ? 0.974 : 0.955,
   });
 }
 
@@ -203,6 +173,14 @@ function drawParticles() {
       ctx.rotate(p.life * 12);
       ctx.fillRect(-p.size * 0.5, -p.size * 0.2, p.size, p.size * 0.4);
       ctx.restore();
+    } else if (p.type === 'firework') {
+      ctx.globalAlpha = a * a;
+      const gr = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.size * 2);
+      gr.addColorStop(0, '#fff');
+      gr.addColorStop(0.25, p.color);
+      gr.addColorStop(1, 'transparent');
+      ctx.fillStyle = gr;
+      ctx.beginPath(); ctx.arc(p.x, p.y, p.size * 2, 0, Math.PI * 2); ctx.fill();
     } else {
       ctx.globalAlpha = a;
       ctx.fillStyle = p.color;
@@ -708,6 +686,22 @@ function drawShip(ship) {
   }
 
   ctx.restore(); // ship transform
+
+  // HP bar above ship — always visible so player knows how many hits left
+  if (!ship.dead && !ship.sinking) {
+    const bd = ship.getBounds();
+    const bw = bd.r - bd.l;
+    const bx = bd.l;
+    const by = bd.t - 10;
+    const hf = ship.hp / ship.maxHp;
+    ctx.save();
+    ctx.fillStyle = 'rgba(0,0,0,.65)'; ctx.fillRect(bx, by, bw, 6);
+    ctx.fillStyle = hf > 0.6 ? '#22c840' : hf > 0.3 ? '#ff8800' : '#cc2000';
+    ctx.fillRect(bx, by, bw * hf, 6);
+    ctx.strokeStyle = 'rgba(255,255,255,.2)'; ctx.lineWidth = 1;
+    ctx.strokeRect(bx, by, bw, 6);
+    ctx.restore();
+  }
 }
 
 // =====================================================================
@@ -732,12 +726,14 @@ function drawGulls() {
 // DRAW — FORT & RAMPART
 // =====================================================================
 function drawFort() {
-  // Stone wall gradient
-  const fg = ctx.createLinearGradient(0, CANNON_Y - 60, 0, H);
-  fg.addColorStop(0, '#484038'); fg.addColorStop(0.35,'#363028'); fg.addColorStop(1,'#181410');
+  // Main wall body — warm sandstone, lighter than before
+  const fg = ctx.createLinearGradient(0, CANNON_Y - 80, 0, H);
+  fg.addColorStop(0,    '#7a6a50');
+  fg.addColorStop(0.25, '#6a5a42');
+  fg.addColorStop(0.7,  '#504535');
+  fg.addColorStop(1,    '#352d22');
   ctx.fillStyle = fg;
   ctx.beginPath();
-  // Fort surface passes through (CANNON_X=175, CANNON_Y=530) for proper cannon placement
   ctx.moveTo(0, CANNON_Y + 35);
   ctx.lineTo(300, CANNON_Y - 25);
   ctx.lineTo(340, CANNON_Y - 15);
@@ -745,8 +741,20 @@ function drawFort() {
   ctx.lineTo(0, H);
   ctx.closePath(); ctx.fill();
 
+  // Edge highlight — lit top surface of parapet
+  const topGrad = ctx.createLinearGradient(0, CANNON_Y - 10, 0, CANNON_Y + 10);
+  topGrad.addColorStop(0, 'rgba(200,175,120,.45)');
+  topGrad.addColorStop(1, 'rgba(0,0,0,0)');
+  ctx.fillStyle = topGrad;
+  ctx.beginPath();
+  ctx.moveTo(0, CANNON_Y + 35);
+  ctx.lineTo(300, CANNON_Y - 25);
+  ctx.lineTo(300, CANNON_Y - 10);
+  ctx.lineTo(0, CANNON_Y + 50);
+  ctx.closePath(); ctx.fill();
+
   // Stone joint lines
-  ctx.save(); ctx.globalAlpha = 0.28; ctx.strokeStyle = '#000'; ctx.lineWidth = 1;
+  ctx.save(); ctx.globalAlpha = 0.22; ctx.strokeStyle = '#1a1208'; ctx.lineWidth = 1;
   for (let jy = CANNON_Y + 40; jy < H; jy += 22) {
     ctx.beginPath(); ctx.moveTo(0, jy); ctx.lineTo(300, jy - 10); ctx.stroke();
   }
@@ -755,42 +763,70 @@ function drawFort() {
   }
   ctx.restore();
 
-  // Battlement merlons — sit on top of the sloped fort surface
-  ctx.fillStyle = '#585048';
-  // [x, surfaceY offset from CANNON_Y+35 sloping to CANNON_Y-25]
-  const merlons = [[10,58],[62,62],[112,60],[165,56],[218,50],[270,46]];
-  for (const [mx, my] of merlons) {
-    // Fort surface at mx: interpolate between (0, CY+35) and (300, CY-25)
+  // Merlons (battlements) — taller, more visible
+  const merlon_color = ctx.createLinearGradient(0, CANNON_Y - 120, 0, CANNON_Y - 40);
+  merlon_color.addColorStop(0, '#8a7860');
+  merlon_color.addColorStop(1, '#5e5040');
+  const merlons = [[8,72],[56,68],[106,64],[158,60],[210,56],[262,52]];
+  for (const [mx, mh] of merlons) {
     const surfaceY = (CANNON_Y + 35) + (mx / 300) * (-60);
+    // Shadow side
+    ctx.fillStyle = '#3a3028';
+    ctx.fillRect(mx + 30, surfaceY - mh + 30, 6, mh - 30);
+    // Main face
+    ctx.fillStyle = merlon_color;
     ctx.beginPath();
-    ctx.roundRect(mx, surfaceY - my + 30, 34, my - 30, [2, 2, 0, 0]);
+    ctx.roundRect(mx, surfaceY - mh + 30, 34, mh - 28, [3, 3, 0, 0]);
     ctx.fill();
-    ctx.save(); ctx.globalAlpha = 0.18;
-    ctx.fillStyle = '#fff';
-    ctx.fillRect(mx, surfaceY - my + 30, 34, 4);
+    // Highlight top edge
+    ctx.save(); ctx.globalAlpha = 0.35; ctx.fillStyle = '#d4b880';
+    ctx.fillRect(mx, surfaceY - mh + 30, 34, 4);
     ctx.restore();
   }
 
-  // American flag on fort
-  const fpy = CANNON_Y - 80;
-  ctx.strokeStyle = '#8b6914'; ctx.lineWidth = 2;
-  ctx.beginPath(); ctx.moveTo(38, fpy); ctx.lineTo(38, fpy - 46); ctx.stroke();
-  ctx.fillStyle = '#BF0A30';
+  // Torch / lantern on leftmost merlon
+  const tox = 25, toy = CANNON_Y + 35 - 72 + 30 - 14;
+  ctx.fillStyle = '#5a3a10'; ctx.fillRect(tox - 2, toy, 4, 14);
+  ctx.save();
+  ctx.shadowColor = 'rgba(255,160,30,0.9)'; ctx.shadowBlur = 18;
+  ctx.fillStyle = '#ffcc44';
+  ctx.beginPath(); ctx.arc(tox, toy - 2, 5, 0, Math.PI * 2); ctx.fill();
+  ctx.restore();
+  ctx.save(); ctx.globalAlpha = 0.18;
+  ctx.fillStyle = '#ffcc44';
+  ctx.beginPath(); ctx.arc(tox, toy - 2, 22, 0, Math.PI * 2); ctx.fill();
+  ctx.restore();
+
+  // Flag pole + American flag
+  const fpy = CANNON_Y - 45;
+  ctx.strokeStyle = '#9a7820'; ctx.lineWidth = 2.5;
+  ctx.beginPath(); ctx.moveTo(52, fpy + 14); ctx.lineTo(52, fpy - 52); ctx.stroke();
+  // Flag waves — 7 stripes
   for (let r = 0; r < 7; r++) {
-    ctx.fillStyle = r % 2 === 0 ? '#BF0A30' : '#fff';
-    ctx.fillRect(38, fpy - 50 + r * 3.85, 28, 3.85);
+    ctx.fillStyle = r % 2 === 0 ? '#CC0020' : '#f0f0f0';
+    ctx.beginPath();
+    ctx.moveTo(52, fpy - 52 + r * 4.5);
+    ctx.quadraticCurveTo(66, fpy - 52 + r * 4.5 + 2, 80, fpy - 52 + r * 4.5);
+    ctx.lineTo(80, fpy - 52 + r * 4.5 + 4.5);
+    ctx.quadraticCurveTo(66, fpy - 52 + r * 4.5 + 2.5, 52, fpy - 52 + r * 4.5 + 4.5);
+    ctx.closePath(); ctx.fill();
   }
   ctx.fillStyle = '#002868';
-  ctx.fillRect(38, fpy - 50, 12, 15);
+  ctx.beginPath();
+  ctx.moveTo(52, fpy - 52);
+  ctx.quadraticCurveTo(64, fpy - 52 + 2, 75, fpy - 52);
+  ctx.lineTo(75, fpy - 52 + 18);
+  ctx.quadraticCurveTo(64, fpy - 52 + 16, 52, fpy - 52 + 18);
+  ctx.closePath(); ctx.fill();
 
   // Fort HP bar
   const hpf = G.fortHp / G.fortMaxHp;
   ctx.save();
-  ctx.fillStyle = 'rgba(0,0,0,.55)'; ctx.fillRect(10, H - 28, 130, 14);
+  ctx.fillStyle = 'rgba(0,0,0,.6)'; ctx.fillRect(10, H - 30, 140, 16);
   ctx.fillStyle = hpf > 0.5 ? '#22c840' : hpf > 0.25 ? '#ff8800' : '#cc2000';
-  ctx.fillRect(10, H - 28, 130 * hpf, 14);
-  ctx.strokeStyle = '#666'; ctx.lineWidth = 1; ctx.strokeRect(10, H - 28, 130, 14);
-  ctx.fillStyle = '#fff'; ctx.font = 'bold 9px sans-serif';
+  ctx.fillRect(10, H - 30, 140 * hpf, 16);
+  ctx.strokeStyle = 'rgba(255,255,255,.3)'; ctx.lineWidth = 1; ctx.strokeRect(10, H - 30, 140, 16);
+  ctx.fillStyle = '#fff'; ctx.font = 'bold 10px sans-serif';
   ctx.fillText('FORT LIBERTY', 12, H - 17);
   ctx.restore();
 }
@@ -868,37 +904,48 @@ function drawCannon(t) {
 
   ctx.restore();
 
-  // Muzzle flash
+  // Muzzle flash + fort wall illumination
   if (cannon.flashFrames > 0) {
     cannon.flashFrames--;
     const fa = cannon.flashFrames / 8;
+
+    // Large amber wash on the fort stones around the cannon
+    const wg = ctx.createRadialGradient(cx, cy, 5, cx, cy, 110);
+    wg.addColorStop(0, `rgba(255,190,60,${fa * 0.55})`);
+    wg.addColorStop(0.6, `rgba(255,120,20,${fa * 0.2})`);
+    wg.addColorStop(1, 'transparent');
+    ctx.fillStyle = wg;
+    ctx.beginPath(); ctx.arc(cx, cy, 110, 0, Math.PI * 2); ctx.fill();
+
+    // Tight muzzle tip flash
     const fx = cx + Math.cos(cannon.angle) * 54;
     const fy = cy + Math.sin(cannon.angle) * 54;
-    const fg2 = ctx.createRadialGradient(fx,fy,0,fx,fy,34);
-    fg2.addColorStop(0, `rgba(255,255,210,${fa})`);
-    fg2.addColorStop(.4, `rgba(255,160,40,${fa*.7})`);
+    const fg2 = ctx.createRadialGradient(fx, fy, 0, fx, fy, 40);
+    fg2.addColorStop(0, `rgba(255,255,230,${fa})`);
+    fg2.addColorStop(0.3, `rgba(255,180,50,${fa * 0.85})`);
     fg2.addColorStop(1, 'transparent');
     ctx.fillStyle = fg2;
-    ctx.beginPath(); ctx.arc(fx,fy,34,0,Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.arc(fx, fy, 40, 0, Math.PI * 2); ctx.fill();
   }
 }
 
 // =====================================================================
-// DRAW — TRAJECTORY PREVIEW
+// DRAW — TRAJECTORY PREVIEW + TARGET RETICLE
 // =====================================================================
 function drawTrajectory() {
-  if (cannon.reloading) return;
+  if (cannon.reloading || !aimValid) return;
   const sx = CANNON_X + Math.cos(cannon.angle) * 55;
   const sy = CANNON_Y + Math.sin(cannon.angle) * 55;
   let vx = Math.cos(cannon.angle) * LAUNCH_SPEED;
   let vy = Math.sin(cannon.angle) * LAUNCH_SPEED;
+
   ctx.save();
   ctx.setLineDash([5, 9]);
-  ctx.strokeStyle = 'rgba(255,220,80,.38)';
+  ctx.strokeStyle = 'rgba(255,220,80,.55)';
   ctx.lineWidth = 2;
   ctx.beginPath(); ctx.moveTo(sx, sy);
   let x = sx, y = sy;
-  for (let i = 0; i < 95; i++) {
+  for (let i = 0; i < 130; i++) {
     x += vx; y += vy; vy += GRAVITY;
     if (y > H || x > W || x < 0) break;
     ctx.lineTo(x, y);
@@ -906,26 +953,60 @@ function drawTrajectory() {
   ctx.stroke(); ctx.restore();
 }
 
+function drawTargetReticle() {
+  if (cannon.reloading || !aimValid) return;
+  ctx.save();
+  const r = 13;
+  ctx.strokeStyle = 'rgba(255,200,50,.8)';
+  ctx.lineWidth = 2;
+  ctx.setLineDash([3, 4]);
+  ctx.beginPath(); ctx.arc(mouseX, mouseY, r, 0, Math.PI * 2); ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.beginPath();
+  ctx.moveTo(mouseX - r * 1.6, mouseY); ctx.lineTo(mouseX + r * 1.6, mouseY);
+  ctx.moveTo(mouseX, mouseY - r * 1.6); ctx.lineTo(mouseX, mouseY + r * 1.6);
+  ctx.stroke();
+  ctx.restore();
+}
+
 // =====================================================================
 // DRAW — CANNONBALLS
 // =====================================================================
 function drawBalls() {
   for (const b of balls) {
-    // Glow trail
-    for (let i = 0; i < b.trail.length; i++) {
-      const tr = b.trail[i];
-      const a = (i / b.trail.length) * 0.48;
-      const r = (i / b.trail.length) * 4.5;
-      ctx.save(); ctx.globalAlpha = a;
-      ctx.fillStyle = b.from === 'player' ? '#ff8800' : '#ff3030';
-      ctx.beginPath(); ctx.arc(tr.x, tr.y, r, 0, Math.PI * 2); ctx.fill();
+    if (b.from === 'player') {
+      // Bright orange ember trail with glow
+      ctx.save();
+      ctx.shadowColor = '#ff8800'; ctx.shadowBlur = 12;
+      for (let i = 0; i < b.trail.length; i++) {
+        const tr = b.trail[i];
+        const frac = i / b.trail.length;
+        ctx.globalAlpha = frac * 0.75;
+        const hue = 28 - frac * 18;
+        ctx.fillStyle = `hsl(${hue},100%,${55 + frac * 20}%)`;
+        ctx.beginPath(); ctx.arc(tr.x, tr.y, 1 + frac * 5.5, 0, Math.PI * 2); ctx.fill();
+      }
       ctx.restore();
+    } else {
+      // Enemy: simple red trail
+      for (let i = 0; i < b.trail.length; i++) {
+        const tr = b.trail[i];
+        const a = (i / b.trail.length) * 0.45;
+        ctx.save(); ctx.globalAlpha = a; ctx.fillStyle = '#ff3030';
+        ctx.beginPath(); ctx.arc(tr.x, tr.y, (i / b.trail.length) * 4, 0, Math.PI * 2); ctx.fill();
+        ctx.restore();
+      }
     }
-    // Ball
-    const bg = ctx.createRadialGradient(b.x-2,b.y-2,1,b.x,b.y,7);
-    bg.addColorStop(0,'#aaa'); bg.addColorStop(.5,'#444'); bg.addColorStop(1,'#111');
+    // Ball core
+    const bg = ctx.createRadialGradient(b.x-2, b.y-2, 1, b.x, b.y, 7);
+    bg.addColorStop(0, b.from === 'player' ? '#ffe0a0' : '#ffaaaa');
+    bg.addColorStop(.4, b.from === 'player' ? '#555' : '#550000');
+    bg.addColorStop(1, '#111');
+    ctx.save();
+    if (b.from === 'player') { ctx.shadowColor = '#ff8800'; ctx.shadowBlur = 20; }
     ctx.fillStyle = bg;
     ctx.beginPath(); ctx.arc(b.x, b.y, 7, 0, Math.PI * 2); ctx.fill();
+    ctx.restore();
   }
 }
 
@@ -982,15 +1063,15 @@ function drawTitle() {
   ctx.fillText('HARBOR DEFENSE · JULY 4, 1776', W*.5, H*.5-32);
 
   ctx.fillStyle='#9ad4f8'; ctx.font='16px sans-serif';
-  ctx.fillText('Move your mouse to aim · Click to fire · Defend Fort Liberty!', W*.5, H*.5+18);
+  ctx.fillText('Move mouse to target  ·  Click to fire', W*.5, H*.5+18);
   ctx.fillStyle='#8888aa'; ctx.font='13px sans-serif';
-  ctx.fillText('Sink the British fleet before they breach the harbor.', W*.5, H*.5+48);
-  ctx.fillStyle='#aaa'; ctx.font='12px sans-serif';
-  ctx.fillText('After every hit, The Patriot Gazette streams a live dispatch from the front.', W*.5, H*.5+74);
+  ctx.fillText('Sink the British fleet before they breach the harbor.', W*.5, H*.5+46);
+  ctx.fillStyle='#888'; ctx.font='12px sans-serif';
+  ctx.fillText('The ball lands where you click — aim true, Patriot!', W*.5, H*.5+70);
 
   if (Math.floor(G.frame / 36) % 2 === 0) {
     ctx.fillStyle='#fff'; ctx.font='bold 18px sans-serif';
-    ctx.fillText('[ CLICK TO DEFEND THE HARBOR ]', W*.5, H*.5+118);
+    ctx.fillText('[ CLICK TO DEFEND THE HARBOR ]', W*.5, H*.5+110);
   }
   ctx.textAlign='left';
 }
@@ -1015,13 +1096,32 @@ function drawGameOver() {
 
 function drawVictory() {
   ctx.fillStyle='rgba(0,15,55,.88)'; ctx.fillRect(0,0,W,H);
-  // Victory fireworks
-  if (G.frame % 18 === 0) {
-    const fx=80+Math.random()*(W-160), fy=60+Math.random()*(H*.55);
-    const cols=['#ff4444','#4444ff','#fff','#ffff44','#ff44ff','#44ff44'];
-    for (let i=0;i<22;i++) {
-      const a=Math.random()*Math.PI*2, s=2+Math.random()*7;
-      spawnP('spark', fx, fy, Math.cos(a)*s, Math.sin(a)*s);
+  // Victory fireworks — large bursts every 20 frames, small accents every 7
+  if (G.frame % 20 === 0) {
+    const fx = 100 + Math.random() * (W - 200), fy = 50 + Math.random() * (H * 0.5);
+    // Patriotic color sets: red, white, blue
+    const palettes = [
+      ['#ff3333','#ff6666','#ffaaaa'],
+      ['#ffffff','#ddeeff','#aaccff'],
+      ['#3355ff','#5577ff','#88aaff'],
+    ];
+    const pal = palettes[Math.floor(G.frame / 20) % 3];
+    for (let i = 0; i < 38; i++) {
+      const a = Math.random() * Math.PI * 2, s = 3 + Math.random() * 9;
+      spawnP('firework', fx, fy, Math.cos(a) * s, Math.sin(a) * s,
+        { size: 3 + Math.random() * 4, decay: 0.01 + Math.random() * 0.008 });
+    }
+    // Central flash
+    for (let i = 0; i < 14; i++) {
+      const a = Math.random() * Math.PI * 2, s = 1 + Math.random() * 3;
+      spawnP('spark', fx, fy, Math.cos(a) * s, Math.sin(a) * s);
+    }
+  }
+  if (G.frame % 7 === 0) {
+    const fx = 80 + Math.random() * (W - 160), fy = 80 + Math.random() * (H * 0.6);
+    for (let i = 0; i < 10; i++) {
+      const a = Math.random() * Math.PI * 2, s = 1.5 + Math.random() * 4;
+      spawnP('spark', fx, fy, Math.cos(a) * s, Math.sin(a) * s);
     }
   }
   ctx.textAlign='center';
@@ -1049,7 +1149,7 @@ function updateBalls() {
   for (let i = balls.length - 1; i >= 0; i--) {
     const b = balls[i];
     b.trail.push({ x: b.x, y: b.y });
-    if (b.trail.length > 14) b.trail.shift();
+    if (b.trail.length > 22) b.trail.shift();
     b.x += b.vx; b.y += b.vy; b.vy += GRAVITY;
 
     if (b.x < -30 || b.x > W + 30 || b.y > H + 30) {
@@ -1068,25 +1168,28 @@ function updateBalls() {
           hit = true; break;
         }
       }
-      if (!hit && b.y > HORIZON + 5) {
+      if (!hit && b.y > HORIZON + 5 && b.vy > 0) {
         splash(b.x, HORIZON + 4);
         balls.splice(i, 1);
-        if (Math.random() < 0.28) narrateEvent('miss', null);
       }
     } else {
       // Enemy ball hits fort area
       if (b.x < 310 && b.y > CANNON_Y - 100 && b.y < H) {
         boom(b.x, b.y, true);
+        playFortHitSound();
         G.fortHp = Math.max(0, G.fortHp - (9 + G.wave * 2));
         G.shakeAmt = 16; G.flashAmt = 0.38;
         balls.splice(i, 1);
-        if (Math.random() < 0.5) narrateEvent('fort_hit', null);
         if (G.fortHp <= 0) G.state = 'gameover';
       } else if (b.y > H) {
         balls.splice(i, 1);
       }
     }
   }
+}
+
+function narrateEvent(type) {
+  if (type === 'sunk') playShipSinkSound();
 }
 
 function boom(x, y, isEnemy) {
@@ -1106,6 +1209,7 @@ function boom(x, y, isEnemy) {
 }
 
 function splash(x, y) {
+  playSplashSound();
   for (let i = 0; i < 22; i++) {
     const a = -Math.PI + Math.random()*Math.PI;
     spawnP('water', x, y, Math.cos(a)*(2+Math.random()*5), Math.sin(a)*(2+Math.random()*5)-2);
@@ -1116,18 +1220,19 @@ function splash(x, y) {
 // =====================================================================
 // FIRE CANNON
 // =====================================================================
-function fireCannon() {
+function fireCannon(speed = LAUNCH_SPEED) {
+  playCannonSound();
   cannon.canFire = false;
   cannon.reloading = true;
   cannon.reloadTimer = RELOAD_FRAMES;
   cannon.flashFrames = 8;
-  cannon.recoil = 20;
+  cannon.recoil = 20 + speed * 0.5;
 
   balls.push({
     x: CANNON_X + Math.cos(cannon.angle) * 55,
     y: CANNON_Y + Math.sin(cannon.angle) * 55,
-    vx: Math.cos(cannon.angle) * LAUNCH_SPEED,
-    vy: Math.sin(cannon.angle) * LAUNCH_SPEED,
+    vx: Math.cos(cannon.angle) * speed,
+    vy: Math.sin(cannon.angle) * speed,
     from: 'player', trail: [],
   });
 
@@ -1157,7 +1262,233 @@ function spawnWave(w) {
   for (const c of cfg) ships.push(new Ship(c.x, c.t, w));
 }
 
+// =====================================================================
+// AUDIO ENGINE  (Web Audio API — initialized on first user click)
+// =====================================================================
+let audioCtx = null;
+
+function initAudio() {
+  if (audioCtx) return;
+  audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+  // ---- Ocean waves: pink-ish noise → lowpass → slow LFO swell ----
+  const SR = audioCtx.sampleRate;
+  const bufLen = SR * 6; // 6-second looping buffer
+  const waveBuf = audioCtx.createBuffer(1, bufLen, SR);
+  const wd = waveBuf.getChannelData(0);
+  let b0=0,b1=0,b2=0,b3=0,b4=0,b5=0;
+  for (let i = 0; i < bufLen; i++) {
+    const w = Math.random() * 2 - 1;
+    b0=0.99886*b0+w*0.0555179; b1=0.99332*b1+w*0.0750759;
+    b2=0.96900*b2+w*0.1538520; b3=0.86650*b3+w*0.3104856;
+    b4=0.55000*b4+w*0.5329522; b5=-0.7616*b5-w*0.0168980;
+    wd[i] = (b0+b1+b2+b3+b4+b5+w*0.5362) / 7;
+  }
+  const waveSrc = audioCtx.createBufferSource();
+  waveSrc.buffer = waveBuf; waveSrc.loop = true;
+
+  const waveFlt = audioCtx.createBiquadFilter();
+  waveFlt.type = 'lowpass'; waveFlt.frequency.value = 320; waveFlt.Q.value = 1.2;
+
+  // LFO slowly modulates gain for wave swell
+  const lfo = audioCtx.createOscillator();
+  lfo.type = 'sine'; lfo.frequency.value = 0.08; // ~12 s period
+  const lfoGain = audioCtx.createGain(); lfoGain.gain.value = 0.06;
+  const waveGain = audioCtx.createGain(); waveGain.gain.value = 0.14;
+
+  lfo.connect(lfoGain); lfoGain.connect(waveGain.gain);
+  waveSrc.connect(waveFlt); waveFlt.connect(waveGain);
+  waveGain.connect(audioCtx.destination);
+  waveSrc.start(); lfo.start();
+}
+
+function playCannonSound() {
+  if (!audioCtx) return;
+  const t = audioCtx.currentTime;
+  const dest = audioCtx.destination;
+
+  // Master limiter — prevents clipping when layers stack
+  const limiter = audioCtx.createDynamicsCompressor();
+  limiter.threshold.value = -2; limiter.knee.value = 0;
+  limiter.ratio.value = 20;    limiter.attack.value = 0.001;
+  limiter.release.value = 0.15;
+  limiter.connect(dest);
+
+  // Waveshaper for saturation/grit
+  const curve = new Float32Array(512);
+  for (let i = 0; i < 512; i++) {
+    const x = (i * 2) / 512 - 1;
+    curve[i] = (Math.PI + 200) * x / (Math.PI + 200 * Math.abs(x));
+  }
+  const shaper = audioCtx.createWaveShaper(); shaper.curve = curve;
+  shaper.connect(limiter);
+
+  // ── Layer 1: sub-bass punch — sine starting at 90 Hz, falls to 20 Hz
+  const sub = audioCtx.createOscillator();
+  sub.type = 'sine';
+  sub.frequency.setValueAtTime(90, t);
+  sub.frequency.exponentialRampToValueAtTime(20, t + 0.55);
+  const subG = audioCtx.createGain();
+  subG.gain.setValueAtTime(3.5, t);
+  subG.gain.exponentialRampToValueAtTime(0.0001, t + 0.65);
+  sub.connect(subG); subG.connect(limiter);
+  sub.start(t); sub.stop(t + 0.7);
+
+  // ── Layer 2: mid-body — triangle at 130 Hz falls to 35 Hz, through shaper
+  const mid = audioCtx.createOscillator();
+  mid.type = 'triangle';
+  mid.frequency.setValueAtTime(130, t);
+  mid.frequency.exponentialRampToValueAtTime(35, t + 0.35);
+  const midG = audioCtx.createGain();
+  midG.gain.setValueAtTime(2.2, t);
+  midG.gain.exponentialRampToValueAtTime(0.0001, t + 0.45);
+  mid.connect(midG); midG.connect(shaper);
+  mid.start(t); mid.stop(t + 0.5);
+
+  // ── Layer 3: initial crack — very brief high-passed noise burst
+  const SR = audioCtx.sampleRate;
+  const crackBuf = audioCtx.createBuffer(1, Math.floor(SR * 0.06), SR);
+  const cd = crackBuf.getChannelData(0);
+  for (let i = 0; i < cd.length; i++) cd[i] = Math.random() * 2 - 1;
+  const crackSrc = audioCtx.createBufferSource(); crackSrc.buffer = crackBuf;
+  const crackHP = audioCtx.createBiquadFilter();
+  crackHP.type = 'highpass'; crackHP.frequency.value = 1800;
+  const crackG = audioCtx.createGain();
+  crackG.gain.setValueAtTime(2.5, t);
+  crackG.gain.exponentialRampToValueAtTime(0.0001, t + 0.055);
+  crackSrc.connect(crackHP); crackHP.connect(crackG); crackG.connect(limiter);
+  crackSrc.start(t);
+
+  // ── Layer 4: rumble tail — brown noise, slow 2-second decay
+  const rumbleLen = Math.floor(SR * 2.2);
+  const rumbleBuf = audioCtx.createBuffer(1, rumbleLen, SR);
+  const rd = rumbleBuf.getChannelData(0);
+  let last = 0;
+  for (let i = 0; i < rumbleLen; i++) {
+    last = (last + (Math.random() * 2 - 1) * 0.08) * 0.99;
+    rd[i] = last * 5;
+  }
+  const rumbleSrc = audioCtx.createBufferSource(); rumbleSrc.buffer = rumbleBuf;
+  const rumbleLP = audioCtx.createBiquadFilter();
+  rumbleLP.type = 'lowpass'; rumbleLP.frequency.value = 220;
+  const rumbleG = audioCtx.createGain();
+  rumbleG.gain.setValueAtTime(0.001, t);
+  rumbleG.gain.linearRampToValueAtTime(1.4, t + 0.012); // snap in immediately
+  rumbleG.gain.exponentialRampToValueAtTime(0.0001, t + 2.0);
+  rumbleSrc.connect(rumbleLP); rumbleLP.connect(rumbleG); rumbleG.connect(limiter);
+  rumbleSrc.start(t); rumbleSrc.stop(t + 2.2);
+
+  // ── Layer 5: echo reflections — two low-passed delays for stone fort bounce
+  [[0.16, 0.28], [0.34, 0.14]].forEach(([delayTime, gain]) => {
+    const del = audioCtx.createDelay(1); del.delayTime.value = delayTime;
+    const delLP = audioCtx.createBiquadFilter();
+    delLP.type = 'lowpass'; delLP.frequency.value = 500;
+    const delG = audioCtx.createGain(); delG.gain.value = gain;
+    subG.connect(del); del.connect(delLP); delLP.connect(delG); delG.connect(limiter);
+  });
+}
+
+function playSplashSound() {
+  if (!audioCtx) return;
+  const t = audioCtx.currentTime;
+  const nBuf = audioCtx.createBuffer(1, Math.floor(audioCtx.sampleRate * 0.4), audioCtx.sampleRate);
+  const nd = nBuf.getChannelData(0);
+  for (let i = 0; i < nd.length; i++) nd[i] = Math.random() * 2 - 1;
+  const nSrc = audioCtx.createBufferSource(); nSrc.buffer = nBuf;
+  const nFlt = audioCtx.createBiquadFilter();
+  nFlt.type = 'bandpass'; nFlt.frequency.value = 600; nFlt.Q.value = 0.5;
+  const nGain = audioCtx.createGain();
+  nGain.gain.setValueAtTime(0.3, t);
+  nGain.gain.exponentialRampToValueAtTime(0.0001, t + 0.35);
+  nSrc.connect(nFlt); nFlt.connect(nGain); nGain.connect(audioCtx.destination);
+  nSrc.start(t); nSrc.stop(t + 0.4);
+}
+
+function playShipSinkSound() {
+  if (!audioCtx) return;
+  const t = audioCtx.currentTime, SR = audioCtx.sampleRate;
+
+  // Explosion crack
+  const crackBuf = audioCtx.createBuffer(1, Math.floor(SR * 0.08), SR);
+  const cd = crackBuf.getChannelData(0);
+  for (let i = 0; i < cd.length; i++) cd[i] = Math.random() * 2 - 1;
+  const crackSrc = audioCtx.createBufferSource(); crackSrc.buffer = crackBuf;
+  const crackHP = audioCtx.createBiquadFilter(); crackHP.type = 'highpass'; crackHP.frequency.value = 800;
+  const crackG = audioCtx.createGain();
+  crackG.gain.setValueAtTime(2.0, t); crackG.gain.exponentialRampToValueAtTime(0.0001, t + 0.07);
+  crackSrc.connect(crackHP); crackHP.connect(crackG); crackG.connect(audioCtx.destination);
+  crackSrc.start(t);
+
+  // Deep underwater boom
+  const boomO = audioCtx.createOscillator(); boomO.type = 'sine';
+  boomO.frequency.setValueAtTime(65, t + 0.04); boomO.frequency.exponentialRampToValueAtTime(18, t + 0.85);
+  const boomG = audioCtx.createGain();
+  boomG.gain.setValueAtTime(0, t); boomG.gain.linearRampToValueAtTime(2.8, t + 0.05);
+  boomG.gain.exponentialRampToValueAtTime(0.0001, t + 0.95);
+  boomO.connect(boomG); boomG.connect(audioCtx.destination);
+  boomO.start(t); boomO.stop(t + 1.0);
+
+  // Gurgle — filtered noise rising in pitch as ship goes under
+  const gBuf = audioCtx.createBuffer(1, Math.floor(SR * 1.6), SR);
+  const gd = gBuf.getChannelData(0);
+  for (let i = 0; i < gd.length; i++) gd[i] = Math.random() * 2 - 1;
+  const gSrc = audioCtx.createBufferSource(); gSrc.buffer = gBuf;
+  const gFlt = audioCtx.createBiquadFilter(); gFlt.type = 'bandpass'; gFlt.Q.value = 4;
+  gFlt.frequency.setValueAtTime(250, t + 0.3); gFlt.frequency.linearRampToValueAtTime(1400, t + 1.6);
+  const gG = audioCtx.createGain();
+  gG.gain.setValueAtTime(0, t + 0.3); gG.gain.linearRampToValueAtTime(0.65, t + 0.5);
+  gG.gain.exponentialRampToValueAtTime(0.0001, t + 1.6);
+  gSrc.connect(gFlt); gFlt.connect(gG); gG.connect(audioCtx.destination);
+  gSrc.start(t + 0.3); gSrc.stop(t + 1.65);
+}
+
+function playFortHitSound() {
+  if (!audioCtx) return;
+  const t = audioCtx.currentTime, SR = audioCtx.sampleRate;
+
+  // Stone thud — low sine with fast decay
+  const thud = audioCtx.createOscillator(); thud.type = 'sine';
+  thud.frequency.setValueAtTime(115, t); thud.frequency.exponentialRampToValueAtTime(32, t + 0.28);
+  const thudG = audioCtx.createGain();
+  thudG.gain.setValueAtTime(2.0, t); thudG.gain.exponentialRampToValueAtTime(0.0001, t + 0.32);
+  thud.connect(thudG); thudG.connect(audioCtx.destination);
+  thud.start(t); thud.stop(t + 0.36);
+
+  // Stone crumble noise burst
+  const nBuf = audioCtx.createBuffer(1, Math.floor(SR * 0.38), SR);
+  const nd = nBuf.getChannelData(0);
+  for (let i = 0; i < nd.length; i++) nd[i] = Math.random() * 2 - 1;
+  const nSrc = audioCtx.createBufferSource(); nSrc.buffer = nBuf;
+  const nFlt = audioCtx.createBiquadFilter(); nFlt.type = 'bandpass'; nFlt.frequency.value = 380; nFlt.Q.value = 0.9;
+  const nG = audioCtx.createGain();
+  nG.gain.setValueAtTime(0.75, t); nG.gain.exponentialRampToValueAtTime(0.0001, t + 0.32);
+  nSrc.connect(nFlt); nFlt.connect(nG); nG.connect(audioCtx.destination);
+  nSrc.start(t); nSrc.stop(t + 0.38);
+}
+
+function playVictoryFanfare() {
+  if (!audioCtx) return;
+  const t = audioCtx.currentTime;
+
+  // Bugle call — C4 E4 G4 C5 ascending
+  [261.63, 329.63, 392.00, 523.25].forEach((freq, i) => {
+    const dt = t + i * 0.24;
+    [1, 2].forEach((mult, j) => {
+      const osc = audioCtx.createOscillator();
+      osc.type = j === 0 ? 'triangle' : 'sine';
+      osc.frequency.value = freq * mult;
+      const g = audioCtx.createGain();
+      g.gain.setValueAtTime(0, dt); g.gain.linearRampToValueAtTime(j === 0 ? 0.55 : 0.18, dt + 0.04);
+      g.gain.setValueAtTime(j === 0 ? 0.55 : 0.18, dt + 0.18);
+      g.gain.exponentialRampToValueAtTime(0.0001, dt + (i === 3 ? 0.7 : 0.32));
+      osc.connect(g); g.connect(audioCtx.destination);
+      osc.start(dt); osc.stop(dt + (i === 3 ? 0.75 : 0.38));
+    });
+  });
+}
+
 function startGame() {
+  initAudio();
   G.state = 'playing';
   G.wave = 1; G.score = 0;
   G.fortHp = G.fortMaxHp;
@@ -1182,6 +1513,7 @@ function checkWaveClear() {
   // All ships sinking or dead
   if (G.wave >= G.maxWaves) {
     G.state = 'victory';
+    setTimeout(playVictoryFanfare, 400);
   } else {
     G.state = 'wave_clear';
     const nextWave = G.wave + 1;
@@ -1197,99 +1529,83 @@ function checkWaveClear() {
 }
 
 // =====================================================================
-// GAZETTE NARRATION (streaming Claude)
-// =====================================================================
-const gazette = document.getElementById('gazette');
-const gHeadline = document.getElementById('g-headline');
-const gBody = document.getElementById('g-body');
-let narrateThrottle = 0;
-let gazetteAutoClose = null;
-
-const HEADLINES = {
-  hit: ['PATRIOT SHOT FINDS ITS MARK!','REDCOAT HULL PUNCTURED!','BRILLIANT VOLLEY ROCKS BRITISH VESSEL!'],
-  sunk: ['BRITISH WARSHIP SENT TO THE DEEP!','PATRIOTS VANQUISH THE CROWN\'S FRIGATE!','GLORIOUS SINKING IN BOSTON HARBOR!'],
-  miss: ['SHOT FALLS WIDE — GARRISON UNDETERRED','HARBOR CHURNS AS CANNON ROARS'],
-  fort_hit: ['PATRIOTS HOLD FIRM UNDER FIRE!','FORT LIBERTY STANDS DESPITE BOMBARDMENT!'],
-  breach: ['ENEMY VESSEL BREACHES THE HARBOR!','REDCOATS PRESS FORWARD — GARRISON RALLIES!'],
-};
-
-const CONTEXTS = {
-  hit:      (ship) => `A patriot cannonball from Fort Liberty has struck the ${ship?.name ?? 'British vessel'}, a ${ship?.type ?? 'warship'}, dealing heavy damage to her hull. She is on fire and listing badly. Her guns fall silent.`,
-  sunk:     (ship) => `The ${ship?.name ?? 'British vessel'}, a ${ship?.type ?? 'warship'}, has been sunk by patriot cannon fire in Boston Harbor. She breaks apart and slips beneath the waves. The patriots cheer from the ramparts. Score: ${G.score}.`,
-  miss:     ()     => `A cannonball from Fort Liberty's 12-pounder arced wide, raising a great column of spray near the advancing British ships. The enemy fleet pressed on, though shaken by the proximity.`,
-  fort_hit: ()     => `A British roundshot from the advancing fleet has struck the walls of Fort Liberty, scattering stone and mortar. The garrison holds its position and returns fire with renewed fury. Fort integrity: ${G.fortHp}%.`,
-  breach:   (ship) => `A British ${ship?.type ?? 'vessel'} has sailed past Fort Liberty's cannon and entered the inner harbor, threatening the wharves. The garrison scrambles to respond to this dire breach.`,
-};
-
-async function narrateEvent(type, ship) {
-  if (narrateThrottle > 0) return;
-  narrateThrottle = 220;
-
-  const hl = HEADLINES[type] ?? HEADLINES.hit;
-  gHeadline.textContent = hl[Math.floor(Math.random() * hl.length)];
-  gBody.textContent = '';
-
-  gazette.classList.add('open');
-  if (gazetteAutoClose) clearTimeout(gazetteAutoClose);
-
-  const context = (CONTEXTS[type] ?? CONTEXTS.hit)(ship);
-
-  try {
-    const res = await fetch('/api/narrate', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ context }),
-    });
-    if (!res.ok) { closeGazette(3000); return; }
-
-    const reader = res.body.getReader();
-    const dec = new TextDecoder();
-    let buf = '';
-
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
-      buf += dec.decode(value, { stream: true });
-      const lines = buf.split('\n');
-      buf = lines.pop();
-      for (const line of lines) {
-        if (!line.startsWith('data: ')) continue;
-        const d = line.slice(6);
-        if (d === '[DONE]') break;
-        try { gBody.textContent += JSON.parse(d).text ?? ''; } catch {}
-      }
-    }
-  } catch (_) { /* silent — show headline only */ }
-
-  closeGazette(5500);
-}
-
-function closeGazette(delay) {
-  if (gazetteAutoClose) clearTimeout(gazetteAutoClose);
-  gazetteAutoClose = setTimeout(() => gazette.classList.remove('open'), delay);
-}
-
-// =====================================================================
-// INPUT
+// INPUT — click where you want the ball to land (auto-range)
 // =====================================================================
 let mouseX = W * .5, mouseY = H * .5;
+
+// Solve ballistic angle to hit (tx, ty) at fixed speed; returns angle or null
+function calcAngleForTarget(tx, ty) {
+  const dx = tx - CANNON_X;
+  if (dx <= 20) return null;
+  const dy = ty - CANNON_Y;
+  const v = LAUNCH_SPEED;
+  const g = GRAVITY;
+  const A = 0.5 * g * dx * dx / (v * v);
+  const D = dx * dx - 4 * A * (A - dy);
+  if (D < 0) return null; // out of range
+  const k = (-dx + Math.sqrt(D)) / (2 * A); // low-arc solution
+  const angle = Math.atan(k);
+  // Clamp to valid barrel range
+  return Math.max(-Math.PI * .82, Math.min(-0.06, angle));
+}
 
 canvas.addEventListener('mousemove', e => {
   const r = canvas.getBoundingClientRect();
   mouseX = (e.clientX - r.left) * (W / r.width);
   mouseY = (e.clientY - r.top)  * (H / r.height);
   if (G.state === 'playing' || G.state === 'wave_clear') {
-    const dx = mouseX - CANNON_X, dy = mouseY - CANNON_Y;
-    const raw = Math.atan2(dy, dx);
-    cannon.angle = Math.max(-Math.PI * .82, Math.min(-0.06, raw));
+    const angle = calcAngleForTarget(mouseX, mouseY);
+    if (angle !== null) {
+      cannon.angle = angle;
+      aimValid = true;
+    } else {
+      aimValid = false;
+    }
   }
 });
 
-canvas.addEventListener('click', () => {
+canvas.addEventListener('click', e => {
+  if (e.button !== 0) return;
   if (G.state === 'title')   { startGame(); return; }
   if (G.state === 'gameover' || G.state === 'victory') { G.state = 'title'; return; }
-  if (G.state === 'playing' && cannon.canFire && !cannon.reloading) fireCannon();
+  if (G.state === 'playing' && !cannon.reloading && aimValid) {
+    fireCannon();
+  }
 });
+
+// Touch support — convert to canvas coords and drive same logic
+function touchToCanvas(touch) {
+  const r = canvas.getBoundingClientRect();
+  return {
+    x: (touch.clientX - r.left) * (W / r.width),
+    y: (touch.clientY - r.top)  * (H / r.height),
+  };
+}
+canvas.addEventListener('touchmove', e => {
+  e.preventDefault();
+  const { x, y } = touchToCanvas(e.touches[0]);
+  mouseX = x; mouseY = y;
+  if (G.state === 'playing' || G.state === 'wave_clear') {
+    const angle = calcAngleForTarget(x, y);
+    if (angle !== null) { cannon.angle = angle; aimValid = true; }
+    else aimValid = false;
+  }
+}, { passive: false });
+canvas.addEventListener('touchstart', e => {
+  e.preventDefault();
+  const { x, y } = touchToCanvas(e.touches[0]);
+  mouseX = x; mouseY = y;
+  if (G.state === 'title') { startGame(); return; }
+  if (G.state === 'gameover' || G.state === 'victory') { G.state = 'title'; return; }
+  if (G.state === 'playing' || G.state === 'wave_clear') {
+    const angle = calcAngleForTarget(x, y);
+    if (angle !== null) { cannon.angle = angle; aimValid = true; }
+  }
+}, { passive: false });
+canvas.addEventListener('touchend', e => {
+  e.preventDefault();
+  if (G.state === 'playing' && !cannon.reloading && aimValid) fireCannon();
+}, { passive: false });
 
 // =====================================================================
 // MAIN LOOP
@@ -1323,7 +1639,7 @@ function loop(ts) {
 
   drawFort();
   if (G.state === 'playing' || G.state === 'wave_clear') drawCannon(G.frame);
-  if (G.state === 'playing') drawTrajectory();
+  if (G.state === 'playing') { drawTrajectory(); drawTargetReticle(); }
   drawBalls();
   drawParticles();
   drawVignette();
@@ -1359,14 +1675,12 @@ function loop(ts) {
       if (cannon.reloadTimer <= 0) { cannon.reloading = false; cannon.canFire = true; }
     }
     cannon.recoil = Math.max(0, cannon.recoil - 1.8);
-    narrateThrottle = Math.max(0, narrateThrottle - 1);
 
     checkWaveClear();
   } else if (G.state === 'wave_clear') {
     for (const s of ships) s.update();
     ships = ships.filter(s => !s.dead);
     updateParticles();
-    narrateThrottle = Math.max(0, narrateThrottle - 1);
   } else if (G.state === 'victory') {
     updateParticles();
   }
