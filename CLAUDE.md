@@ -126,13 +126,7 @@ Call the **Agent tool with `isolation: "worktree"`** for each demo simultaneousl
 > - `index.html` — complete app, vanilla JS, CSS in `<style>`, JS in `<script>`, calls `/api/` endpoints, themed UI matching the week's aesthetic, fully working
 > - `api/chat.js` — Vercel serverless function (ESM, Node.js); add other api files as needed
 > - `package.json` — `{ "type": "module", "dependencies": { "@anthropic-ai/sdk": "^0.39.0" } }`
-> - `vercel.json` — always include `ignoreCommand` so only this demo redeploys when its files change:
->   ```json
->   {
->     "functions": { "api/*.js": { "maxDuration": 30 } },
->     "ignoreCommand": "[ -z \"$VERCEL_GIT_PREVIOUS_SHA\" ] && exit 1; git diff $VERCEL_GIT_PREVIOUS_SHA HEAD --quiet -- ."
->   }
->   ```
+> - `vercel.json` — `{ "functions": { "api/*.js": { "maxDuration": 30 } } }`
 > - `.gitignore` — `node_modules/`, `.env.local`, `.vercel/`
 > - `.env.local` — `ANTHROPIC_API_KEY=your_key_here` (placeholder only)
 > - `README.md` — title, one-line description, how AI powers it, local dev instructions, Vercel deploy instructions
@@ -177,16 +171,7 @@ Demo folders: `demo-[NN]-[slug]` — zero-padded, e.g. `demo-08-liberty-forge`
 
 ## Vercel Deployment
 
-Each demo is its own Vercel project, all importing the same GitHub repo. To avoid every push redeploying all demos, **every `vercel.json` must include `ignoreCommand`**:
-
-```json
-{
-  "functions": { "api/*.js": { "maxDuration": 30 } },
-  "ignoreCommand": "[ -z \"$VERCEL_GIT_PREVIOUS_SHA\" ] && exit 1; git diff $VERCEL_GIT_PREVIOUS_SHA HEAD --quiet -- ."
-}
-```
-
-How it works: Vercel runs this from the project's Root Directory. `VERCEL_GIT_PREVIOUS_SHA` is empty on the very first deploy, so we exit 1 (force build). On subsequent deploys, we diff from the last deployed commit to HEAD — if no files in this folder changed, exit 0 (skip); if any changed, exit 1 (build). Result: initial deploy always works, and after that only the demo whose files actually changed gets redeployed.
+Each demo is its own Vercel project importing the same GitHub repo.
 
 **When importing a new demo into Vercel:**
 1. New project → Import Git Repository (same repo as all others)
