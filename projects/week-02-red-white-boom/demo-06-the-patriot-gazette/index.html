@@ -17,11 +17,24 @@ body{background:#000;overflow:hidden;width:100vw;height:100vh;display:flex;align
   opacity:0;transition:opacity .4s;
 }
 #ui-wave.show{opacity:1}
+#ui-dispatch{
+  position:fixed;bottom:0;left:0;right:0;
+  font-family:'Playfair Display',Georgia,serif;
+  font-size:15px;line-height:1.5;color:#f0e8c8;
+  text-shadow:0 1px 3px #000;
+  background:linear-gradient(transparent,rgba(0,0,0,.78) 28px);
+  padding:28px 18px 10px;pointer-events:none;z-index:15;
+  min-height:60px;
+  opacity:0;transition:opacity .5s;
+}
+#ui-dispatch.show{opacity:1}
+#ui-dispatch span{font-style:italic}
 </style>
 </head>
 <body>
 <canvas id="c"></canvas>
 <div id="ui-wave"></div>
+<div id="ui-dispatch"><span></span></div>
 
 <script>
 // =====================================================================
@@ -1188,8 +1201,62 @@ function updateBalls() {
   }
 }
 
-function narrateEvent(type) {
+// ── Narration ────────────────────────────────────────────────────────
+const dispatch = document.getElementById('ui-dispatch');
+const dispatchSpan = dispatch.querySelector('span');
+let narrateAbort = null;
+let dispatchTimer = null;
+
+const NARRATE_CTX = {
+  hit:    (s) => `A British ${s.type} takes a direct hit! ${s.hp} hull points remain.`,
+  sunk:   (s) => `The British ${s.type} has been sunk!`,
+  breach: (s) => `A British ${s.type} has breached the harbor! The fort is under attack!`,
+};
+
+function narrateEvent(type, ship) {
   if (type === 'sunk') playShipSinkSound();
+
+  const context = NARRATE_CTX[type]?.(ship ?? {});
+  if (!context) return;
+
+  // Cancel any in-flight stream
+  if (narrateAbort) { narrateAbort.abort(); narrateAbort = null; }
+  clearTimeout(dispatchTimer);
+
+  const ac = new AbortController();
+  narrateAbort = ac;
+  dispatchSpan.textContent = '';
+  dispatch.classList.add('show');
+
+  fetch('/api/narrate', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ context }),
+    signal: ac.signal,
+  }).then(async res => {
+    if (!res.ok || !res.body) return;
+    const reader = res.body.getReader();
+    const dec = new TextDecoder();
+    let buf = '';
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buf += dec.decode(value, { stream: true });
+      const lines = buf.split('\n');
+      buf = lines.pop();
+      for (const line of lines) {
+        if (!line.startsWith('data: ')) continue;
+        const payload = line.slice(6);
+        if (payload === '[DONE]') break;
+        try {
+          const { text } = JSON.parse(payload);
+          if (text) dispatchSpan.textContent += text;
+        } catch {}
+      }
+    }
+    // Auto-hide after 6s
+    dispatchTimer = setTimeout(() => dispatch.classList.remove('show'), 6000);
+  }).catch(() => {});
 }
 
 function boom(x, y, isEnemy) {
