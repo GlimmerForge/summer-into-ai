@@ -17,24 +17,38 @@ body{background:#000;overflow:hidden;width:100vw;height:100vh;display:flex;align
   opacity:0;transition:opacity .4s;
 }
 #ui-wave.show{opacity:1}
-#ui-dispatch{
-  position:fixed;bottom:0;left:0;right:0;
+#ui-banner{
+  position:fixed;top:0;left:0;right:0;
   font-family:'Playfair Display',Georgia,serif;
-  font-size:15px;line-height:1.5;color:#f0e8c8;
-  text-shadow:0 1px 3px #000;
-  background:linear-gradient(transparent,rgba(0,0,0,.78) 28px);
-  padding:28px 18px 10px;pointer-events:none;z-index:15;
-  min-height:60px;
-  opacity:0;transition:opacity .5s;
+  text-align:center;
+  background:linear-gradient(rgba(14,8,0,.92) 60%,transparent);
+  padding:10px 24px 22px;
+  pointer-events:none;z-index:14;
+  opacity:0;transition:opacity .7s;
 }
-#ui-dispatch.show{opacity:1}
-#ui-dispatch span{font-style:italic}
+#ui-banner.show{opacity:1}
+#ui-banner .masthead{
+  font-size:9px;letter-spacing:.3em;text-transform:uppercase;
+  color:#7a5a10;margin-bottom:6px;
+}
+#ui-banner .quote{
+  font-size:15px;line-height:1.6;color:#f0e4b8;
+  font-style:italic;min-height:26px;
+}
+#ui-banner .attrib{
+  font-size:11px;letter-spacing:.08em;color:#8a6a28;
+  margin-top:5px;
+}
 </style>
 </head>
 <body>
 <canvas id="c"></canvas>
 <div id="ui-wave"></div>
-<div id="ui-dispatch"><span></span></div>
+<div id="ui-banner">
+  <div class="masthead">The Patriot Gazette &middot; Dispatches from Fort Liberty</div>
+  <div class="quote"></div>
+  <div class="attrib"></div>
+</div>
 
 <script>
 // =====================================================================
@@ -1201,62 +1215,69 @@ function updateBalls() {
   }
 }
 
-// ── Narration ────────────────────────────────────────────────────────
-const dispatch = document.getElementById('ui-dispatch');
-const dispatchSpan = dispatch.querySelector('span');
-let narrateAbort = null;
-let dispatchTimer = null;
+// ── Newspaper Quotes ─────────────────────────────────────────────────
+const QUOTES = [
+  { text: "These are the times that try men's souls.", attrib: "— Thomas Paine, December 1776" },
+  { text: "Give me liberty, or give me death!", attrib: "— Patrick Henry, March 1775" },
+  { text: "We must all hang together, or assuredly we shall all hang separately.", attrib: "— Benjamin Franklin, 1776" },
+  { text: "I only regret that I have but one life to lose for my country.", attrib: "— Nathan Hale, September 1776" },
+  { text: "The harder the conflict, the more glorious the triumph.", attrib: "— Thomas Paine, 1776" },
+  { text: "The time is now at hand which must probably determine whether Americans are to be free men or slaves.", attrib: "— George Washington, 1776" },
+  { text: "Courage, then, my countrymen — our contest is not only whether we ourselves shall be free, but whether there shall be left to mankind an asylum for civil and religious liberty.", attrib: "— Samuel Adams, 1776" },
+  { text: "We hold these truths to be self-evident, that all men are created equal.", attrib: "— Thomas Jefferson, July 1776" },
+  { text: "It is not in numbers, but in unity, that our great strength lies.", attrib: "— Thomas Paine, 1776" },
+  { text: "Stand your ground. Don't fire unless fired upon. But if they mean to have a war, let it begin here.", attrib: "— Captain John Parker, April 1775" },
+];
 
-const NARRATE_CTX = {
-  hit:    (s) => `A British ${s.type} takes a direct hit! ${s.hp} hull points remain.`,
-  sunk:   (s) => `The British ${s.type} has been sunk!`,
-  breach: (s) => `A British ${s.type} has breached the harbor! The fort is under attack!`,
-};
+let quoteIdx = 0;
+let quoteTypeTimer = null;
+let quoteHideTimer = null;
+let audioUnlocked = false;
+const bannerEl  = document.getElementById('ui-banner');
+const quoteEl   = bannerEl.querySelector('.quote');
+const attribEl  = bannerEl.querySelector('.attrib');
 
-function narrateEvent(type, ship) {
-  if (type === 'sunk') playShipSinkSound();
+function showQuote() {
+  const q = QUOTES[quoteIdx % QUOTES.length];
+  quoteIdx++;
+  clearTimeout(quoteTypeTimer);
+  clearTimeout(quoteHideTimer);
 
-  const context = NARRATE_CTX[type]?.(ship ?? {});
-  if (!context) return;
+  quoteEl.textContent = '';
+  attribEl.textContent = '';
+  bannerEl.classList.add('show');
 
-  // Cancel any in-flight stream
-  if (narrateAbort) { narrateAbort.abort(); narrateAbort = null; }
-  clearTimeout(dispatchTimer);
-
-  const ac = new AbortController();
-  narrateAbort = ac;
-  dispatchSpan.textContent = '';
-  dispatch.classList.add('show');
-
-  fetch('/api/narrate', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ context }),
-    signal: ac.signal,
-  }).then(async res => {
-    if (!res.ok || !res.body) return;
-    const reader = res.body.getReader();
-    const dec = new TextDecoder();
-    let buf = '';
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
-      buf += dec.decode(value, { stream: true });
-      const lines = buf.split('\n');
-      buf = lines.pop();
-      for (const line of lines) {
-        if (!line.startsWith('data: ')) continue;
-        const payload = line.slice(6);
-        if (payload === '[DONE]') break;
-        try {
-          const { text } = JSON.parse(payload);
-          if (text) dispatchSpan.textContent += text;
-        } catch {}
-      }
+  // Typewriter — 42ms per character
+  let i = 0;
+  (function type() {
+    if (i < q.text.length) {
+      quoteEl.textContent += q.text[i++];
+      quoteTypeTimer = setTimeout(type, 42);
+    } else {
+      attribEl.textContent = q.attrib;
+      quoteHideTimer = setTimeout(() => bannerEl.classList.remove('show'), 5000);
     }
-    // Auto-hide after 6s
-    dispatchTimer = setTimeout(() => dispatch.classList.remove('show'), 6000);
-  }).catch(() => {});
+  })();
+
+  // ElevenLabs voice — only after user has interacted (audio unlocked)
+  if (audioUnlocked) {
+    fetch('/api/speak', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ text: q.text }),
+    }).then(async res => {
+      if (!res.ok) return;
+      const blob = await res.blob();
+      const url  = URL.createObjectURL(blob);
+      const aud  = new Audio(url);
+      aud.play().catch(() => {});
+      aud.onended = () => URL.revokeObjectURL(url);
+    }).catch(() => {});
+  }
+}
+
+function narrateEvent(type) {
+  if (type === 'sunk') playShipSinkSound();
 }
 
 function boom(x, y, isEnemy) {
@@ -1556,6 +1577,7 @@ function playVictoryFanfare() {
 
 function startGame() {
   initAudio();
+  audioUnlocked = true;
   G.state = 'playing';
   G.wave = 1; G.score = 0;
   G.fortHp = G.fortMaxHp;
@@ -1563,6 +1585,7 @@ function startGame() {
   cannon.canFire = true; cannon.reloading = false; cannon.reloadTimer = 0;
   spawnWave(1);
   showWaveBanner(`WAVE 1 — SLOOPS APPROACHING`);
+  showQuote();
 }
 
 function showWaveBanner(msg) {
@@ -1581,10 +1604,12 @@ function checkWaveClear() {
   if (G.wave >= G.maxWaves) {
     G.state = 'victory';
     setTimeout(playVictoryFanfare, 400);
+    showQuote();
   } else {
     G.state = 'wave_clear';
     const nextWave = G.wave + 1;
     const waveNames = ['','SLOOPS','FRIGATES ADVANCE','MAN-OF-WAR SIGHTED'];
+    showQuote();
     setTimeout(() => {
       if (G.state !== 'wave_clear') return;
       G.wave = nextWave;
