@@ -1,0 +1,1380 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>The Patriot Gazette — Harbor Defense 1776</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#000;overflow:hidden;width:100vw;height:100vh;display:flex;align-items:center;justify-content:center;cursor:crosshair}
+#c{display:block;max-width:100vw;max-height:100vh;object-fit:contain}
+#gazette{
+  position:fixed;right:-480px;top:50%;transform:translateY(-50%);
+  width:400px;max-height:70vh;overflow:hidden;
+  background:linear-gradient(160deg,#f5e8c0 0%,#ead9a0 45%,#dcc880 100%);
+  border:2px solid #8b6914;border-radius:3px;
+  padding:14px 16px 12px;
+  box-shadow:0 8px 40px rgba(0,0,0,.85),inset 0 0 30px rgba(80,50,10,.12);
+  font-family:'Playfair Display',Georgia,serif;
+  transition:right .55s cubic-bezier(.34,1.4,.64,1);
+  z-index:20;pointer-events:none;
+}
+#gazette.open{right:16px}
+.gr{height:2px;background:linear-gradient(90deg,transparent,#8b6914 20%,#8b6914 80%,transparent);margin:7px 0}
+.gr2{height:1px;background:linear-gradient(90deg,transparent,#8b6914 20%,#8b6914 80%,transparent);margin:4px 0}
+.gm{text-align:center;font-size:22px;font-weight:900;letter-spacing:3px;color:#1a0800;text-shadow:1px 1px 0 rgba(139,105,20,.3)}
+.gs{text-align:center;font-size:8px;letter-spacing:2.5px;color:#5a3a00;margin-top:1px;text-transform:uppercase}
+.gd{text-align:center;font-size:10px;color:#4a3000;margin:3px 0;font-style:italic}
+.gh{font-size:14px;font-weight:700;color:#1a0800;line-height:1.25;margin:5px 0;text-align:center}
+.gb{font-size:11.5px;color:#2a1600;line-height:1.65;margin-top:4px}
+.ge{text-align:center;font-size:20px;margin:3px 0}
+#ui-wave{
+  position:fixed;top:0;left:0;right:0;text-align:center;
+  font-family:'Playfair Display',Georgia,serif;
+  font-size:28px;font-weight:700;color:#f4d060;
+  text-shadow:0 0 20px #c87820,0 2px 4px #000;
+  padding:12px;pointer-events:none;z-index:15;
+  opacity:0;transition:opacity .4s;
+}
+#ui-wave.show{opacity:1}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="gazette">
+  <div class="gm">THE PATRIOT GAZETTE</div>
+  <div class="gr"></div>
+  <div class="gs">Harbor Bombardment Edition · Dispatches from Fort Liberty</div>
+  <div class="gr2"></div>
+  <div class="gd">July 4th, 1776 · Boston Harbor</div>
+  <div class="gr"></div>
+  <div class="ge">⚓</div>
+  <div class="gh" id="g-headline">PATRIOTS HOLD THE HARBOR</div>
+  <div class="gr2"></div>
+  <div class="gb" id="g-body"></div>
+  <div class="gr"></div>
+</div>
+<div id="ui-wave"></div>
+
+<script>
+// =====================================================================
+// THE PATRIOT GAZETTE — Harbor Defense 1776
+// Canvas artillery game with streaming AI narration
+// =====================================================================
+const canvas = document.getElementById('c');
+const ctx = canvas.getContext('2d');
+const W = 1280, H = 720;
+canvas.width = W; canvas.height = H;
+
+(function scaleCanvas() {
+  const s = Math.min(window.innerWidth / W, window.innerHeight / H);
+  canvas.style.width = W * s + 'px';
+  canvas.style.height = H * s + 'px';
+})();
+window.addEventListener('resize', () => {
+  const s = Math.min(window.innerWidth / W, window.innerHeight / H);
+  canvas.style.width = W * s + 'px';
+  canvas.style.height = H * s + 'px';
+});
+
+// ---- World constants ----
+const HORIZON = 390;
+const CANNON_X = 175;
+const CANNON_Y = 530;
+const LAUNCH_SPEED = 16;
+const GRAVITY = 0.17;
+const RELOAD_FRAMES = 150; // 2.5s at 60fps
+
+// ---- Game state ----
+const G = {
+  state: 'title', // title | playing | wave_clear | gameover | victory
+  wave: 1, maxWaves: 3,
+  score: 0,
+  fortHp: 100, fortMaxHp: 100,
+  shakeAmt: 0, flashAmt: 0,
+  frame: 0,
+};
+
+// ---- Cannon ----
+const cannon = {
+  angle: -0.55,
+  recoil: 0,
+  reloadTimer: 0,
+  reloading: false,
+  canFire: true,
+  flashFrames: 0,
+};
+
+let balls = [];   // { x, y, vx, vy, from:'player'|'enemy', trail:[] }
+let ships = [];
+let particles = [];
+
+// ---- Clouds (pre-generated) ----
+const clouds = Array.from({ length: 9 }, (_, i) => ({
+  x: (i / 9) * W + Math.random() * 100,
+  y: 45 + Math.random() * 110,
+  w: 120 + Math.random() * 220,
+  h: 28 + Math.random() * 55,
+  speed: 0.08 + Math.random() * 0.12,
+  alpha: 0.45 + Math.random() * 0.35,
+  phase: Math.random() * Math.PI * 2,
+}));
+
+// ---- Seagulls ----
+const gulls = Array.from({ length: 6 }, () => ({
+  x: Math.random() * W,
+  y: 80 + Math.random() * 130,
+  vx: 0.4 + Math.random() * 0.6,
+  flapPhase: Math.random() * Math.PI * 2,
+}));
+
+// =====================================================================
+// PARTICLE SYSTEM
+// =====================================================================
+const PCOLORS = {
+  fire:   ['#ff6200','#ff8800','#ffaa00','#ff3a00','#ffd000'],
+  smoke:  ['#aaa9a0','#8a8880','#c8c5b8','#6a6860'],
+  spark:  ['#ffff80','#ffe040','#fff','#ffb020'],
+  debris: ['#7a4012','#5a3008','#3e2000','#b89050','#a08040'],
+  water:  ['#3a8aaa','#58a8cc','#80c8ee','#a8daff','#ddf0ff'],
+  ember:  ['#ff6200','#ff8800','#ffd000'],
+  bubble: ['rgba(140,200,255,.55)','rgba(190,225,255,.35)'],
+};
+
+function spawnP(type, x, y, vx, vy, opts = {}) {
+  if (particles.length > 800) return;
+  const cols = PCOLORS[type] || ['#fff'];
+  particles.push({
+    type, x, y, vx, vy,
+    size: opts.size ?? (type === 'smoke' ? 9 + Math.random() * 14 :
+                        type === 'fire'  ? 5 + Math.random() * 10 : 2 + Math.random() * 5),
+    life: 1,
+    decay: opts.decay ?? (type === 'smoke'  ? 0.007 + Math.random() * 0.007 :
+                          type === 'fire'   ? 0.018 + Math.random() * 0.018 :
+                          type === 'water'  ? 0.014 + Math.random() * 0.018 :
+                          type === 'bubble' ? 0.012 + Math.random() * 0.01 :
+                          0.013 + Math.random() * 0.018),
+    color: cols[Math.floor(Math.random() * cols.length)],
+    gravity: type === 'fire' ? -0.04 : type === 'smoke' ? -0.025 :
+             type === 'bubble' ? -0.09 : 0.12,
+    drag: type === 'smoke' ? 0.982 : type === 'fire' ? 0.965 : 0.955,
+  });
+}
+
+function updateParticles() {
+  for (let i = particles.length - 1; i >= 0; i--) {
+    const p = particles[i];
+    p.x += p.vx; p.y += p.vy;
+    p.vx *= p.drag; p.vy *= p.drag;
+    p.vy += p.gravity;
+    if (p.type === 'smoke') p.size += 0.25;
+    else if (p.type === 'fire') p.size *= 0.988;
+    p.life -= p.decay;
+    if (p.life <= 0) { particles.splice(i, 1); }
+  }
+}
+
+function drawParticles() {
+  for (const p of particles) {
+    const a = Math.max(0, p.life);
+    ctx.save();
+    if (p.type === 'smoke') {
+      ctx.globalAlpha = a * 0.55;
+      const g = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.size);
+      g.addColorStop(0, p.color);
+      g.addColorStop(1, 'transparent');
+      ctx.fillStyle = g;
+      ctx.beginPath(); ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2); ctx.fill();
+    } else if (p.type === 'fire') {
+      ctx.globalAlpha = a * 0.9;
+      const g = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.size);
+      g.addColorStop(0, '#fff');
+      g.addColorStop(0.25, p.color);
+      g.addColorStop(1, 'transparent');
+      ctx.fillStyle = g;
+      ctx.beginPath(); ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2); ctx.fill();
+    } else if (p.type === 'debris') {
+      ctx.globalAlpha = a;
+      ctx.fillStyle = p.color;
+      ctx.save();
+      ctx.translate(p.x, p.y);
+      ctx.rotate(p.life * 12);
+      ctx.fillRect(-p.size * 0.5, -p.size * 0.2, p.size, p.size * 0.4);
+      ctx.restore();
+    } else {
+      ctx.globalAlpha = a;
+      ctx.fillStyle = p.color;
+      ctx.beginPath(); ctx.arc(p.x, p.y, Math.max(0.5, p.size), 0, Math.PI * 2); ctx.fill();
+    }
+    ctx.restore();
+  }
+}
+
+// =====================================================================
+// SHIP CLASS
+// =====================================================================
+const SHIP_NAMES = {
+  sloop:       ['HMS Petulance','HMS Arrogance','HMS Insolent','HMS Scoundrel','HMS Vainglory'],
+  frigate:     ['HMS Tyranny','HMS Oppressor','HMS Insolence','HMS Subjugation','HMS Iron Crown'],
+  'man-o-war': ['HMS Dominion','HMS Imperium','HMS Crown\'s Fury','HMS Subjugator','HMS Britannia Rex'],
+};
+
+class Ship {
+  constructor(x, type, wave) {
+    this.x = x;
+    this.type = type;
+    this.wave = wave;
+    this.name = SHIP_NAMES[type][Math.floor(Math.random() * 5)];
+    this.baseY = HORIZON - 28;
+    this.y = this.baseY;
+    this.bobPhase = Math.random() * Math.PI * 2;
+
+    const sc = { sloop: 0.72, frigate: 1.0, 'man-o-war': 1.38 };
+    this.scale = sc[type] ?? 1;
+    this.W = 186 * this.scale;
+    this.H = 98 * this.scale;
+
+    const hp = { sloop: 2, frigate: 4, 'man-o-war': 6 };
+    this.hp = hp[type] ?? 3;
+    this.maxHp = this.hp;
+
+    const spd = { sloop: 0.65, frigate: 0.42, 'man-o-war': 0.28 };
+    this.speed = (spd[type] ?? 0.5) * (1 + (wave - 1) * 0.15);
+
+    this.onFire = false;
+    this.sinking = false;
+    this.sinkProgress = 0;
+    this.dead = false;
+    this.listAngle = 0;
+    this.holes = [];
+    this.mastsDown = 0;
+    this.fireTimer = 180 + Math.random() * 240;
+    this.wakeTrail = [];
+  }
+
+  update() {
+    if (this.dead) return;
+    this.bobPhase += 0.016;
+    this.y = this.baseY + Math.sin(this.bobPhase) * 4.5 * this.scale;
+
+    if (this.sinking) {
+      this.sinkProgress += 0.0022;
+      this.listAngle = this.sinkProgress * 0.6;
+      this.baseY += 0.28;
+      if (Math.random() < 0.35) {
+        spawnP('bubble', this.x + (Math.random() - 0.5) * this.W * 0.5,
+          this.y + this.H * 0.25 * this.scale, 0, -0.8 - Math.random());
+      }
+      if (this.sinkProgress >= 1) this.dead = true;
+      return;
+    }
+
+    this.x -= this.speed;
+
+    // Wake trail
+    this.wakeTrail.unshift({ x: this.x + this.W * 0.48, y: this.y + 8 * this.scale });
+    if (this.wakeTrail.length > 40) this.wakeTrail.pop();
+
+    // Counter-fire
+    this.fireTimer--;
+    if (this.fireTimer <= 0 && G.state === 'playing') {
+      this.fireTimer = 200 + Math.random() * 200;
+      this.returnFire();
+    }
+
+    // Persistent fire particles
+    if (this.onFire && Math.random() < 0.45) {
+      const fx = this.x + (Math.random() - 0.5) * this.W * 0.55;
+      const fy = this.y - this.H * 0.15 * this.scale + Math.random() * 20 * this.scale;
+      spawnP('fire', fx, fy, (Math.random() - 0.5) * 0.4, -0.8 - Math.random() * 1.8);
+      if (Math.random() < 0.4) spawnP('smoke', fx, fy - 8, (Math.random() - 0.5) * 0.25, -0.4 - Math.random() * 0.5);
+    }
+
+    if (this.x + this.W * 0.5 < -30) {
+      // Ship breached the harbor
+      G.fortHp = Math.max(0, G.fortHp - 20);
+      G.shakeAmt = 22; G.flashAmt = 0.45;
+      this.dead = true;
+      narrateEvent('breach', this);
+      if (G.fortHp <= 0) G.state = 'gameover';
+    }
+  }
+
+  returnFire() {
+    const dx = CANNON_X - this.x;
+    const dy = CANNON_Y - this.y;
+    const dist = Math.sqrt(dx * dx + dy * dy);
+    const spd = 5.5 + Math.random() * 2.5;
+    const inaccuracy = 0.18 - (this.wave - 1) * 0.04;
+    const baseAngle = Math.atan2(dy, dx);
+    const angle = baseAngle + (Math.random() - 0.5) * inaccuracy;
+
+    balls.push({
+      x: this.x - this.W * 0.4,
+      y: this.y - 18 * this.scale,
+      vx: Math.cos(angle) * spd,
+      vy: Math.sin(angle) * spd,
+      from: 'enemy',
+      trail: [],
+    });
+
+    // Muzzle flash on ship
+    for (let i = 0; i < 12; i++) {
+      spawnP('spark', this.x - this.W * 0.38, this.y - 15 * this.scale,
+        -1.5 - Math.random(), (Math.random() - 0.5) * 2);
+    }
+    for (let i = 0; i < 8; i++) {
+      spawnP('smoke', this.x - this.W * 0.35, this.y - 15 * this.scale,
+        -0.8 - Math.random() * 0.5, (Math.random() - 0.5) * 0.5 - 0.3);
+    }
+  }
+
+  hit() {
+    this.hp--;
+    this.holes.push({ rx: (Math.random() - 0.4) * 0.75, ry: (Math.random() - 0.2) * 0.55 });
+    const dmgFrac = 1 - this.hp / this.maxHp;
+    this.onFire = dmgFrac > 0.35;
+    if (this.hp < this.maxHp * 0.35 && this.mastsDown === 0) this.mastsDown = 1;
+    this.listAngle = (Math.random() - 0.5) * 0.08 * dmgFrac;
+    if (this.hp <= 0) this.sink();
+    else narrateEvent('hit', this);
+  }
+
+  sink() {
+    if (this.sinking) return;
+    this.sinking = true;
+    G.score += { sloop: 150, frigate: 300, 'man-o-war': 600 }[this.type] ?? 200;
+    G.shakeAmt = 28; G.flashAmt = 0.65;
+    for (let i = 0; i < 70; i++) {
+      const a = Math.random() * Math.PI * 2, spd = 2 + Math.random() * 9;
+      spawnP('fire', this.x + (Math.random() - 0.5) * this.W * 0.35, this.y,
+        Math.cos(a) * spd, Math.sin(a) * spd - 2.5);
+    }
+    for (let i = 0; i < 35; i++) {
+      spawnP('smoke', this.x + (Math.random() - 0.5) * this.W * 0.4, this.y - 10,
+        (Math.random() - 0.5) * 1.5, -1 - Math.random() * 2);
+    }
+    for (let i = 0; i < 25; i++) {
+      spawnP('debris', this.x, this.y - 20,
+        (Math.random() - 0.5) * 11, -5 - Math.random() * 6);
+    }
+    narrateEvent('sunk', this);
+  }
+
+  getBounds() {
+    return {
+      l: this.x - this.W * 0.48,
+      r: this.x + this.W * 0.48,
+      t: this.y - this.H * 0.75 * this.scale,
+      b: this.y + this.H * 0.22 * this.scale,
+    };
+  }
+}
+
+// =====================================================================
+// DRAW — SKY
+// =====================================================================
+function drawSky() {
+  const g = ctx.createLinearGradient(0, 0, 0, HORIZON);
+  g.addColorStop(0,   '#0c1838');
+  g.addColorStop(0.28,'#1a3060');
+  g.addColorStop(0.55,'#7a3818');
+  g.addColorStop(0.75,'#c05018');
+  g.addColorStop(0.88,'#e07828');
+  g.addColorStop(1,   '#f0a840');
+  ctx.fillStyle = g; ctx.fillRect(0, 0, W, HORIZON);
+
+  // Sun
+  const sx = W * 0.72, sy = HORIZON - 58;
+  const sg = ctx.createRadialGradient(sx, sy, 4, sx, sy, 220);
+  sg.addColorStop(0,   'rgba(255,228,120,.92)');
+  sg.addColorStop(0.18,'rgba(255,170,60,.55)');
+  sg.addColorStop(0.45,'rgba(255,100,20,.22)');
+  sg.addColorStop(1,   'transparent');
+  ctx.fillStyle = sg; ctx.fillRect(0, 0, W, HORIZON);
+  ctx.fillStyle = '#fffae0';
+  ctx.beginPath(); ctx.arc(sx, sy, 26, 0, Math.PI * 2); ctx.fill();
+  ctx.save(); ctx.globalAlpha = 0.45; ctx.fillStyle = 'rgba(255,240,180,.4)';
+  ctx.beginPath(); ctx.arc(sx, sy, 44, 0, Math.PI * 2); ctx.fill();
+  ctx.restore();
+}
+
+// =====================================================================
+// DRAW — CLOUDS
+// =====================================================================
+function drawClouds() {
+  for (const c of clouds) {
+    c.x += c.speed;
+    if (c.x > W + c.w) c.x = -c.w;
+    ctx.save();
+    ctx.globalAlpha = c.alpha * 0.72;
+    const puff = (px, py, r) => {
+      const g = ctx.createRadialGradient(px, py, 0, px, py, r);
+      g.addColorStop(0, 'rgba(255,218,172,.92)');
+      g.addColorStop(0.7,'rgba(255,200,140,.55)');
+      g.addColorStop(1, 'transparent');
+      ctx.fillStyle = g;
+      ctx.beginPath(); ctx.arc(px, py, r, 0, Math.PI * 2); ctx.fill();
+    };
+    puff(c.x,             c.y,           c.h);
+    puff(c.x + c.w * .22, c.y - c.h*.28, c.h * .78);
+    puff(c.x + c.w * .48, c.y - c.h*.1,  c.h * .88);
+    puff(c.x + c.w * .72, c.y - c.h*.22, c.h * .72);
+    puff(c.x + c.w,       c.y,           c.h * .65);
+    ctx.restore();
+  }
+}
+
+// =====================================================================
+// DRAW — DISTANT COAST
+// =====================================================================
+function drawCoast() {
+  ctx.fillStyle = '#160c04';
+  ctx.beginPath(); ctx.moveTo(0, HORIZON);
+  const pts = [
+    [0,.89],[.04,.86],[.09,.91],[.14,.82],[.18,.88],[.23,.74],[.26,.69],[.30,.77],
+    [.34,.72],[.38,.80],[.42,.65],[.46,.71],[.50,.77],[.55,.68],[.60,.73],[.65,.80],
+    [.70,.70],[.75,.77],[.80,.84],[.85,.71],[.90,.79],[.95,.83],[1.0,.87],
+  ];
+  for (const [px, py] of pts) ctx.lineTo(px * W, HORIZON - py * 38);
+  ctx.lineTo(W, HORIZON); ctx.closePath(); ctx.fill();
+
+  // Church steeple
+  ctx.fillStyle = '#0e0804';
+  ctx.beginPath();
+  ctx.moveTo(W * .23, HORIZON - 32);
+  ctx.lineTo(W * .232, HORIZON - 76);
+  ctx.lineTo(W * .234, HORIZON - 32);
+  ctx.fill();
+}
+
+// =====================================================================
+// DRAW — WATER
+// =====================================================================
+function drawWater(t) {
+  const wTop = HORIZON;
+  const wg = ctx.createLinearGradient(0, wTop, 0, H);
+  wg.addColorStop(0, '#165878');
+  wg.addColorStop(0.3,'#0d3c58');
+  wg.addColorStop(0.65,'#092840');
+  wg.addColorStop(1,  '#051828');
+  ctx.fillStyle = wg; ctx.fillRect(0, wTop, W, H - wTop);
+
+  // Sun reflection column
+  const sx = W * 0.72;
+  for (let i = 0; i < 14; i++) {
+    const ry = wTop + 18 + i * 20;
+    const rw = 290 - i * 18;
+    const a = (0.38 - i * 0.025) * Math.max(0, 1 - i / 16);
+    if (a <= 0) break;
+    ctx.save(); ctx.globalAlpha = a;
+    ctx.beginPath();
+    ctx.moveTo(sx - rw * 0.5 + Math.sin(t * .022 + i) * 12, ry);
+    for (let x = sx - rw * 0.5; x <= sx + rw * 0.5; x += 5) {
+      ctx.lineTo(x, ry + Math.sin(x * 0.05 + t * 0.032 + i * .6) * 3);
+    }
+    ctx.lineTo(sx + rw * 0.5, ry + 7);
+    ctx.lineTo(sx - rw * 0.5, ry + 7);
+    ctx.closePath();
+    ctx.fillStyle = '#e89040'; ctx.fill();
+    ctx.restore();
+  }
+
+  // Wave layers
+  for (let layer = 0; layer < 9; layer++) {
+    const by = wTop + 28 + layer * 37;
+    const amp = 2.2 + layer * 0.38;
+    const freq = 0.014 - layer * .0008;
+    const off = t * (0.38 - layer * 0.036);
+    ctx.save(); ctx.globalAlpha = 0.14 + layer * 0.018;
+    ctx.strokeStyle = '#62b8d8'; ctx.lineWidth = 1;
+    ctx.beginPath();
+    for (let x = 0; x <= W; x += 4) {
+      const y = by + Math.sin(x * freq + off) * amp
+              + Math.sin(x * freq * 2.2 + off * 1.6) * amp * .38;
+      x === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+    }
+    ctx.stroke(); ctx.restore();
+  }
+
+  // Horizon foam
+  ctx.save(); ctx.globalAlpha = 0.28;
+  const hg = ctx.createLinearGradient(0, HORIZON - 2, 0, HORIZON + 9);
+  hg.addColorStop(0, '#a8dcf0'); hg.addColorStop(1, 'transparent');
+  ctx.fillStyle = hg; ctx.fillRect(0, HORIZON - 2, W, 11);
+  ctx.restore();
+}
+
+// =====================================================================
+// DRAW — SHIP WAKE
+// =====================================================================
+function drawWake(ship) {
+  if (ship.wakeTrail.length < 4) return;
+  ctx.save(); ctx.globalAlpha = 0.22;
+  ctx.strokeStyle = '#9ad8f0'; ctx.lineWidth = 3 * ship.scale;
+  ctx.setLineDash([6, 8]);
+  ctx.beginPath();
+  for (let i = 0; i < ship.wakeTrail.length; i++) {
+    const w = ship.wakeTrail[i];
+    const a = (1 - i / ship.wakeTrail.length);
+    if (i === 0) ctx.moveTo(w.x, w.y);
+    else ctx.lineTo(w.x, w.y);
+  }
+  ctx.stroke(); ctx.restore();
+}
+
+// =====================================================================
+// DRAW — SHIP (detailed)
+// =====================================================================
+function drawShip(ship) {
+  if (ship.dead) return;
+  const sc = ship.scale;
+  const W2 = ship.W * 0.5;
+  const H2 = ship.H * 0.5;
+
+  // Atmospheric haze for distant ships (entering from right)
+  const distFac = Math.max(0, Math.min(1, (ship.x - W * 0.5) / (W * 0.6)));
+
+  ctx.save();
+  ctx.globalAlpha = 0.82 + 0.18 * (1 - distFac);
+  ctx.translate(ship.x, ship.y + (ship.sinking ? ship.sinkProgress * 90 : 0));
+  ctx.rotate(ship.listAngle + Math.sin(ship.bobPhase * .68) * 0.018);
+
+  // === REFLECTION (shadow on water) ===
+  ctx.save(); ctx.globalAlpha = 0.18;
+  ctx.scale(1, -0.18); ctx.translate(0, -(H2 * .15 * sc + 6) * 2);
+  ctx.fillStyle = '#0a2030';
+  ctx.beginPath(); ctx.ellipse(0, 0, W2 * .88, H2 * .35, 0, 0, Math.PI * 2); ctx.fill();
+  ctx.restore();
+
+  // === HULL ===
+  const hg = ctx.createLinearGradient(0, -H2 * .08 * sc, 0, H2 * .44 * sc);
+  hg.addColorStop(0,   '#543018');
+  hg.addColorStop(0.35,'#3c2010');
+  hg.addColorStop(0.7, '#281408');
+  hg.addColorStop(1,   '#140a02');
+  ctx.fillStyle = hg;
+  ctx.beginPath();
+  ctx.moveTo(-W2 * .92, -H2 * .1 * sc);
+  ctx.lineTo( W2 * .68, -H2 * .04 * sc);
+  ctx.quadraticCurveTo(W2 * 1.02, H2 * .12 * sc, W2 * .82, H2 * .42 * sc);
+  ctx.lineTo(-W2 * .88, H2 * .42 * sc);
+  ctx.quadraticCurveTo(-W2 * 1.08, H2 * .18 * sc, -W2 * .92, -H2 * .1 * sc);
+  ctx.closePath(); ctx.fill();
+
+  // Hull highlight stripe
+  ctx.save(); ctx.globalAlpha = 0.55;
+  ctx.strokeStyle = '#c8a030'; ctx.lineWidth = 3.5 * sc;
+  ctx.beginPath();
+  ctx.moveTo(-W2 * .9, H2 * .04 * sc);
+  ctx.lineTo( W2 * .66, H2 * .01 * sc);
+  ctx.stroke(); ctx.restore();
+
+  // Copper sheathing (below waterline)
+  ctx.save(); ctx.globalAlpha = 0.35;
+  ctx.fillStyle = '#7a4018';
+  ctx.beginPath();
+  ctx.moveTo(-W2 * .88, H2 * .25 * sc);
+  ctx.lineTo( W2 * .8,  H2 * .22 * sc);
+  ctx.lineTo( W2 * .82, H2 * .42 * sc);
+  ctx.lineTo(-W2 * .88, H2 * .42 * sc);
+  ctx.closePath(); ctx.fill();
+  ctx.restore();
+
+  // Planking lines
+  ctx.save(); ctx.globalAlpha = 0.22;
+  ctx.strokeStyle = '#000'; ctx.lineWidth = 1;
+  for (let i = -2; i <= 4; i++) {
+    const py = H2 * .04 * sc + i * 7 * sc;
+    ctx.beginPath(); ctx.moveTo(-W2 * .88, py); ctx.lineTo(W2 * .65, py); ctx.stroke();
+  }
+  ctx.restore();
+
+  // Gun ports
+  const numPorts = { sloop: 5, frigate: 10, 'man-o-war': 14 }[ship.type] ?? 8;
+  const portSpan = W2 * 1.52;
+  ctx.fillStyle = '#0e0602';
+  ctx.strokeStyle = '#c8a030'; ctx.lineWidth = 1;
+  for (let i = 0; i < numPorts; i++) {
+    const px = -W2 * .74 + (i / (numPorts - 1)) * portSpan;
+    const pw = 8.5 * sc, ph = 6 * sc;
+    const py = H2 * .05 * sc;
+    ctx.fillRect(px - pw * .5, py - ph * .5, pw, ph);
+    ctx.strokeRect(px - pw * .5, py - ph * .5, pw, ph);
+  }
+
+  // Damage holes
+  for (const h of ship.holes) {
+    const hx = h.rx * W2 * .7, hy = h.ry * H2 * sc;
+    ctx.fillStyle = '#060200';
+    ctx.beginPath(); ctx.arc(hx, hy, 6 * sc, 0, Math.PI * 2); ctx.fill();
+    ctx.save(); ctx.globalAlpha = 0.6; ctx.strokeStyle = '#1e0e04'; ctx.lineWidth = 1;
+    ctx.stroke(); ctx.restore();
+  }
+
+  // === MASTS ===
+  const mastDefs = {
+    sloop:       [[ .18, .65], [-.32, .55]],
+    frigate:     [[ .28, .52], [-.08, .62], [-.44, .52]],
+    'man-o-war': [[ .30, .45], [ .02, .55], [-.28, .50], [-.55, .42]],
+  };
+  const mDefs = mastDefs[ship.type] ?? mastDefs.frigate;
+  const numMasts = mDefs.length - ship.mastsDown;
+
+  for (let mi = 0; mi < numMasts; mi++) {
+    const [mfx, mfh] = mDefs[mi];
+    const mx = mfx * W2;
+    const mastH = H2 * 2.3 * sc * mfh;
+
+    // Mast pole with gradient
+    const mg = ctx.createLinearGradient(mx - 2, 0, mx + 2, 0);
+    mg.addColorStop(0, '#7a5c10'); mg.addColorStop(0.5, '#c0900e'); mg.addColorStop(1, '#5a4008');
+    ctx.strokeStyle = mg; ctx.lineWidth = 4 * sc;
+    ctx.beginPath();
+    ctx.moveTo(mx, -H2 * .1 * sc);
+    ctx.lineTo(mx, -H2 * .1 * sc - mastH);
+    ctx.stroke();
+
+    // Fighting top
+    const topY = -H2 * .1 * sc - mastH * .54;
+    ctx.fillStyle = '#5a3808';
+    ctx.beginPath(); ctx.ellipse(mx, topY, 11 * sc, 4.5 * sc, 0, 0, Math.PI * 2); ctx.fill();
+
+    // Yards + sails
+    const yardFracs = [.27, .55, .80];
+    const numYards = ship.type === 'sloop' ? 2 : 3;
+    for (let yi = 0; yi < numYards; yi++) {
+      const yardY = -H2 * .1 * sc - mastH * yardFracs[yi];
+      const yw = (W2 * .42 - yi * W2 * .06) * mfh;
+      ctx.strokeStyle = '#7a5c10'; ctx.lineWidth = 2 * sc;
+      ctx.beginPath(); ctx.moveTo(mx - yw, yardY); ctx.lineTo(mx + yw, yardY); ctx.stroke();
+
+      // Sail
+      if (!ship.sinking || ship.sinkProgress < 0.45) {
+        const sailAlpha = (ship.hp / ship.maxHp) * 0.88;
+        ctx.save(); ctx.globalAlpha = sailAlpha;
+        const nextY = yi < numYards - 1
+          ? -H2 * .1 * sc - mastH * yardFracs[yi + 1]
+          : yardY - mastH * .18;
+        const sailH = Math.abs(yardY - nextY);
+        const sg2 = ctx.createLinearGradient(mx - yw, yardY, mx + yw, yardY);
+        sg2.addColorStop(0, '#d8c898'); sg2.addColorStop(.5, '#f0e8d0'); sg2.addColorStop(1, '#c8b880');
+        ctx.fillStyle = sg2;
+        ctx.beginPath();
+        ctx.moveTo(mx - yw, yardY);
+        ctx.quadraticCurveTo(mx - yw * .45, yardY + sailH * .5, mx - yw * .22, nextY);
+        ctx.lineTo(mx + yw * .22, nextY);
+        ctx.quadraticCurveTo(mx + yw * .45, yardY + sailH * .5, mx + yw, yardY);
+        ctx.closePath(); ctx.fill();
+        ctx.restore();
+      }
+    }
+
+    // Shroud rigging
+    ctx.save(); ctx.globalAlpha = 0.45; ctx.strokeStyle = '#7a5c10'; ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(mx, -H2 * .1 * sc - mastH * .48);
+    ctx.lineTo(mx + W2 * .28, -H2 * .06 * sc);
+    ctx.moveTo(mx, -H2 * .1 * sc - mastH * .48);
+    ctx.lineTo(mx - W2 * .28, -H2 * .06 * sc);
+    ctx.stroke(); ctx.restore();
+  }
+
+  // Bowsprit (diagonal forward mast)
+  ctx.strokeStyle = '#8a6010'; ctx.lineWidth = 3 * sc;
+  ctx.beginPath();
+  ctx.moveTo(W2 * .62, -H2 * .12 * sc);
+  ctx.lineTo(W2 * .98, -H2 * .38 * sc);
+  ctx.stroke();
+
+  // === UNION JACK FLAG ===
+  if (numMasts > 0 && (!ship.sinking || ship.sinkProgress < .28)) {
+    const [fmx, fmh] = mDefs[0];
+    const flagTop = -H2 * .1 * sc - H2 * 2.3 * sc * fmh * .97;
+    const fx = fmx * W2;
+    const fw = 22 * sc, fh = 15 * sc;
+    ctx.save(); ctx.translate(fx, flagTop);
+    ctx.fillStyle = '#002868'; ctx.fillRect(0, 0, fw, fh);
+    ctx.strokeStyle = '#fff'; ctx.lineWidth = 2.5;
+    ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(fw, fh);
+    ctx.moveTo(fw, 0); ctx.lineTo(0, fh); ctx.stroke();
+    ctx.strokeStyle = '#bf0a30'; ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.moveTo(fw * .5, 0); ctx.lineTo(fw * .5, fh);
+    ctx.moveTo(0, fh * .5); ctx.lineTo(fw, fh * .5);
+    ctx.stroke(); ctx.restore();
+  }
+
+  ctx.restore(); // ship transform
+}
+
+// =====================================================================
+// DRAW — SEAGULLS
+// =====================================================================
+function drawGulls() {
+  for (const g of gulls) {
+    g.x += g.vx;
+    if (g.x > W + 20) g.x = -20;
+    g.flapPhase += 0.04;
+    const wingY = Math.sin(g.flapPhase) * 4;
+    ctx.save(); ctx.globalAlpha = 0.55; ctx.strokeStyle = '#ccc'; ctx.lineWidth = 1.2;
+    ctx.beginPath();
+    ctx.moveTo(g.x - 8, g.y + wingY);
+    ctx.quadraticCurveTo(g.x - 4, g.y, g.x, g.y);
+    ctx.quadraticCurveTo(g.x + 4, g.y, g.x + 8, g.y + wingY);
+    ctx.stroke(); ctx.restore();
+  }
+}
+
+// =====================================================================
+// DRAW — FORT & RAMPART
+// =====================================================================
+function drawFort() {
+  // Stone wall gradient
+  const fg = ctx.createLinearGradient(0, CANNON_Y - 60, 0, H);
+  fg.addColorStop(0, '#484038'); fg.addColorStop(0.35,'#363028'); fg.addColorStop(1,'#181410');
+  ctx.fillStyle = fg;
+  ctx.beginPath();
+  // Fort surface passes through (CANNON_X=175, CANNON_Y=530) for proper cannon placement
+  ctx.moveTo(0, CANNON_Y + 35);
+  ctx.lineTo(300, CANNON_Y - 25);
+  ctx.lineTo(340, CANNON_Y - 15);
+  ctx.lineTo(340, H);
+  ctx.lineTo(0, H);
+  ctx.closePath(); ctx.fill();
+
+  // Stone joint lines
+  ctx.save(); ctx.globalAlpha = 0.28; ctx.strokeStyle = '#000'; ctx.lineWidth = 1;
+  for (let jy = CANNON_Y + 40; jy < H; jy += 22) {
+    ctx.beginPath(); ctx.moveTo(0, jy); ctx.lineTo(300, jy - 10); ctx.stroke();
+  }
+  for (let jx = 0; jx < 340; jx += 38) {
+    ctx.beginPath(); ctx.moveTo(jx, CANNON_Y - 10); ctx.lineTo(jx + 10, H); ctx.stroke();
+  }
+  ctx.restore();
+
+  // Battlement merlons — sit on top of the sloped fort surface
+  ctx.fillStyle = '#585048';
+  // [x, surfaceY offset from CANNON_Y+35 sloping to CANNON_Y-25]
+  const merlons = [[10,58],[62,62],[112,60],[165,56],[218,50],[270,46]];
+  for (const [mx, my] of merlons) {
+    // Fort surface at mx: interpolate between (0, CY+35) and (300, CY-25)
+    const surfaceY = (CANNON_Y + 35) + (mx / 300) * (-60);
+    ctx.beginPath();
+    ctx.roundRect(mx, surfaceY - my + 30, 34, my - 30, [2, 2, 0, 0]);
+    ctx.fill();
+    ctx.save(); ctx.globalAlpha = 0.18;
+    ctx.fillStyle = '#fff';
+    ctx.fillRect(mx, surfaceY - my + 30, 34, 4);
+    ctx.restore();
+  }
+
+  // American flag on fort
+  const fpy = CANNON_Y - 80;
+  ctx.strokeStyle = '#8b6914'; ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.moveTo(38, fpy); ctx.lineTo(38, fpy - 46); ctx.stroke();
+  ctx.fillStyle = '#BF0A30';
+  for (let r = 0; r < 7; r++) {
+    ctx.fillStyle = r % 2 === 0 ? '#BF0A30' : '#fff';
+    ctx.fillRect(38, fpy - 50 + r * 3.85, 28, 3.85);
+  }
+  ctx.fillStyle = '#002868';
+  ctx.fillRect(38, fpy - 50, 12, 15);
+
+  // Fort HP bar
+  const hpf = G.fortHp / G.fortMaxHp;
+  ctx.save();
+  ctx.fillStyle = 'rgba(0,0,0,.55)'; ctx.fillRect(10, H - 28, 130, 14);
+  ctx.fillStyle = hpf > 0.5 ? '#22c840' : hpf > 0.25 ? '#ff8800' : '#cc2000';
+  ctx.fillRect(10, H - 28, 130 * hpf, 14);
+  ctx.strokeStyle = '#666'; ctx.lineWidth = 1; ctx.strokeRect(10, H - 28, 130, 14);
+  ctx.fillStyle = '#fff'; ctx.font = 'bold 9px sans-serif';
+  ctx.fillText('FORT LIBERTY', 12, H - 17);
+  ctx.restore();
+}
+
+// =====================================================================
+// DRAW — CANNON (detailed, 3D-ish)
+// =====================================================================
+function drawCannon(t) {
+  const cx = CANNON_X - Math.cos(cannon.angle) * cannon.recoil;
+  const cy = CANNON_Y - Math.sin(cannon.angle) * cannon.recoil;
+  ctx.save(); ctx.translate(cx, cy); ctx.rotate(cannon.angle);
+
+  // Carriage cheeks
+  const cg = ctx.createLinearGradient(-32, -10, 32, 10);
+  cg.addColorStop(0, '#8b5a18'); cg.addColorStop(.5,'#6b4010'); cg.addColorStop(1,'#4a2808');
+  ctx.fillStyle = cg;
+  ctx.beginPath(); ctx.roundRect(-32, -10, 68, 24, 4); ctx.fill();
+  ctx.save(); ctx.globalAlpha = 0.3; ctx.strokeStyle = '#2a1800'; ctx.lineWidth = 1;
+  ctx.strokeRect(-32, -10, 68, 24); ctx.restore();
+
+  // Wheels
+  for (const wx of [-18, 18]) {
+    ctx.save(); ctx.translate(wx, 14);
+    const wg = ctx.createRadialGradient(-3,-3,1,0,0,12);
+    wg.addColorStop(0,'#a07830'); wg.addColorStop(1,'#3a2008');
+    ctx.fillStyle = wg;
+    ctx.beginPath(); ctx.arc(0, 0, 13, 0, Math.PI * 2); ctx.fill();
+    ctx.strokeStyle = '#1e1000'; ctx.lineWidth = 2;
+    ctx.stroke();
+    for (let sp = 0; sp < 8; sp++) {
+      const sa = (sp / 8) * Math.PI * 2 + t * 0.01;
+      ctx.beginPath(); ctx.moveTo(0,0); ctx.lineTo(Math.cos(sa)*10,Math.sin(sa)*10);
+      ctx.strokeStyle = '#7a5818'; ctx.lineWidth = 1.5; ctx.stroke();
+    }
+    ctx.fillStyle = '#d4a020';
+    ctx.beginPath(); ctx.arc(0,0,3,0,Math.PI*2); ctx.fill();
+    ctx.restore();
+  }
+
+  // Barrel — bronze gradient
+  const bg = ctx.createLinearGradient(0,-13,0,10);
+  bg.addColorStop(0,  '#d4b040');
+  bg.addColorStop(0.3,'#a08020');
+  bg.addColorStop(0.7,'#684e08');
+  bg.addColorStop(1,  '#2a1e00');
+  ctx.fillStyle = bg;
+  ctx.beginPath();
+  ctx.moveTo(-6, -9);
+  ctx.lineTo(48, -7.5);
+  ctx.lineTo(48,  7.5);
+  ctx.lineTo(-6,  9);
+  ctx.quadraticCurveTo(-16, 0, -6, -9);
+  ctx.closePath(); ctx.fill();
+
+  // Barrel rings (reinforce bands)
+  ctx.strokeStyle = '#c0940e'; ctx.lineWidth = 3.5;
+  for (const rx of [0, 13, 26]) {
+    ctx.beginPath(); ctx.arc(rx, 0, 9.5, -Math.PI*.28, Math.PI*.28); ctx.stroke();
+  }
+  // Cascabel (rear knob)
+  ctx.fillStyle = '#d4b040';
+  ctx.beginPath(); ctx.arc(-9, 0, 5, 0, Math.PI*2); ctx.fill();
+  // Muzzle
+  const mz = ctx.createRadialGradient(48,0,0,48,0,9.5);
+  mz.addColorStop(0,'#100800'); mz.addColorStop(.6,'#5a4008'); mz.addColorStop(1,'#a08020');
+  ctx.fillStyle = mz;
+  ctx.beginPath(); ctx.ellipse(48,0,5,9.5,0,0,Math.PI*2); ctx.fill();
+
+  // Reload arc
+  if (cannon.reloading) {
+    const prog = 1 - cannon.reloadTimer / RELOAD_FRAMES;
+    ctx.strokeStyle = '#ff5500'; ctx.lineWidth = 3.5;
+    ctx.beginPath(); ctx.arc(16, 0, 20, -Math.PI*.5, -Math.PI*.5 + prog * Math.PI * 2); ctx.stroke();
+  }
+
+  ctx.restore();
+
+  // Muzzle flash
+  if (cannon.flashFrames > 0) {
+    cannon.flashFrames--;
+    const fa = cannon.flashFrames / 8;
+    const fx = cx + Math.cos(cannon.angle) * 54;
+    const fy = cy + Math.sin(cannon.angle) * 54;
+    const fg2 = ctx.createRadialGradient(fx,fy,0,fx,fy,34);
+    fg2.addColorStop(0, `rgba(255,255,210,${fa})`);
+    fg2.addColorStop(.4, `rgba(255,160,40,${fa*.7})`);
+    fg2.addColorStop(1, 'transparent');
+    ctx.fillStyle = fg2;
+    ctx.beginPath(); ctx.arc(fx,fy,34,0,Math.PI*2); ctx.fill();
+  }
+}
+
+// =====================================================================
+// DRAW — TRAJECTORY PREVIEW
+// =====================================================================
+function drawTrajectory() {
+  if (cannon.reloading) return;
+  const sx = CANNON_X + Math.cos(cannon.angle) * 55;
+  const sy = CANNON_Y + Math.sin(cannon.angle) * 55;
+  let vx = Math.cos(cannon.angle) * LAUNCH_SPEED;
+  let vy = Math.sin(cannon.angle) * LAUNCH_SPEED;
+  ctx.save();
+  ctx.setLineDash([5, 9]);
+  ctx.strokeStyle = 'rgba(255,220,80,.38)';
+  ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.moveTo(sx, sy);
+  let x = sx, y = sy;
+  for (let i = 0; i < 95; i++) {
+    x += vx; y += vy; vy += GRAVITY;
+    if (y > H || x > W || x < 0) break;
+    ctx.lineTo(x, y);
+  }
+  ctx.stroke(); ctx.restore();
+}
+
+// =====================================================================
+// DRAW — CANNONBALLS
+// =====================================================================
+function drawBalls() {
+  for (const b of balls) {
+    // Glow trail
+    for (let i = 0; i < b.trail.length; i++) {
+      const tr = b.trail[i];
+      const a = (i / b.trail.length) * 0.48;
+      const r = (i / b.trail.length) * 4.5;
+      ctx.save(); ctx.globalAlpha = a;
+      ctx.fillStyle = b.from === 'player' ? '#ff8800' : '#ff3030';
+      ctx.beginPath(); ctx.arc(tr.x, tr.y, r, 0, Math.PI * 2); ctx.fill();
+      ctx.restore();
+    }
+    // Ball
+    const bg = ctx.createRadialGradient(b.x-2,b.y-2,1,b.x,b.y,7);
+    bg.addColorStop(0,'#aaa'); bg.addColorStop(.5,'#444'); bg.addColorStop(1,'#111');
+    ctx.fillStyle = bg;
+    ctx.beginPath(); ctx.arc(b.x, b.y, 7, 0, Math.PI * 2); ctx.fill();
+  }
+}
+
+// =====================================================================
+// DRAW — VIGNETTE
+// =====================================================================
+function drawVignette() {
+  const vg = ctx.createRadialGradient(W*.5,H*.5,H*.28,W*.5,H*.5,H*.88);
+  vg.addColorStop(0,'transparent'); vg.addColorStop(1,'rgba(0,0,0,.68)');
+  ctx.fillStyle = vg; ctx.fillRect(0,0,W,H);
+}
+
+// =====================================================================
+// DRAW — HUD
+// =====================================================================
+function drawHUD() {
+  // Score panel
+  ctx.save();
+  ctx.fillStyle = 'rgba(0,0,0,.52)'; ctx.fillRect(W-192,10,182,68);
+  ctx.strokeStyle = 'rgba(200,170,40,.4)'; ctx.lineWidth=1; ctx.strokeRect(W-192,10,182,68);
+  ctx.fillStyle = '#f4d060'; ctx.font = 'bold 14px sans-serif'; ctx.textAlign = 'right';
+  ctx.fillText(`SCORE: ${G.score}`, W-18, 32);
+  ctx.fillStyle = '#a8ddf8'; ctx.fillText(`WAVE: ${G.wave} / ${G.maxWaves}`, W-18, 52);
+  const alv = ships.filter(s => !s.dead).length;
+  ctx.fillStyle = '#ffaaaa'; ctx.fillText(`SHIPS: ${alv}`, W-18, 70);
+  ctx.textAlign = 'left'; ctx.restore();
+
+  // Reload bar bottom-center
+  if (cannon.reloading) {
+    const prog = 1 - cannon.reloadTimer / RELOAD_FRAMES;
+    ctx.save();
+    ctx.fillStyle='rgba(0,0,0,.6)'; ctx.fillRect(W*.5-90,H-38,180,22);
+    ctx.fillStyle='#c84400'; ctx.fillRect(W*.5-90,H-38,180*prog,22);
+    ctx.strokeStyle='#555'; ctx.lineWidth=1; ctx.strokeRect(W*.5-90,H-38,180,22);
+    ctx.fillStyle='#fff'; ctx.font='bold 11px sans-serif'; ctx.textAlign='center';
+    ctx.fillText('RELOADING — STAND CLEAR', W*.5, H-22);
+    ctx.textAlign='left'; ctx.restore();
+  }
+}
+
+// =====================================================================
+// OVERLAY SCREENS
+// =====================================================================
+function drawTitle() {
+  ctx.fillStyle='rgba(0,0,18,.72)'; ctx.fillRect(0,0,W,H);
+  ctx.textAlign='center';
+
+  ctx.save(); ctx.shadowColor='#c86020'; ctx.shadowBlur=30;
+  ctx.fillStyle='#f4d060'; ctx.font='bold 68px Georgia,serif';
+  ctx.fillText('THE PATRIOT GAZETTE', W*.5, H*.5-85);
+  ctx.restore();
+
+  ctx.fillStyle='#e09040'; ctx.font='26px Georgia,serif';
+  ctx.fillText('HARBOR DEFENSE · JULY 4, 1776', W*.5, H*.5-32);
+
+  ctx.fillStyle='#9ad4f8'; ctx.font='16px sans-serif';
+  ctx.fillText('Move your mouse to aim · Click to fire · Defend Fort Liberty!', W*.5, H*.5+18);
+  ctx.fillStyle='#8888aa'; ctx.font='13px sans-serif';
+  ctx.fillText('Sink the British fleet before they breach the harbor.', W*.5, H*.5+48);
+  ctx.fillStyle='#aaa'; ctx.font='12px sans-serif';
+  ctx.fillText('After every hit, The Patriot Gazette streams a live dispatch from the front.', W*.5, H*.5+74);
+
+  if (Math.floor(G.frame / 36) % 2 === 0) {
+    ctx.fillStyle='#fff'; ctx.font='bold 18px sans-serif';
+    ctx.fillText('[ CLICK TO DEFEND THE HARBOR ]', W*.5, H*.5+118);
+  }
+  ctx.textAlign='left';
+}
+
+function drawGameOver() {
+  ctx.fillStyle='rgba(70,0,0,.82)'; ctx.fillRect(0,0,W,H);
+  ctx.textAlign='center';
+  ctx.save(); ctx.shadowColor='#ff0000'; ctx.shadowBlur=25;
+  ctx.fillStyle='#ff4444'; ctx.font='bold 60px Georgia,serif';
+  ctx.fillText('FORT LIBERTY HAS FALLEN!', W*.5, H*.5-48);
+  ctx.restore();
+  ctx.fillStyle='#fff'; ctx.font='22px Georgia,serif';
+  ctx.fillText(`Final Score: ${G.score}`, W*.5, H*.5+12);
+  ctx.fillStyle='#aaa'; ctx.font='15px sans-serif';
+  ctx.fillText('The Crown reclaims Boston Harbor.', W*.5, H*.5+46);
+  if (Math.floor(G.frame/36)%2===0) {
+    ctx.fillStyle='#ccc'; ctx.font='bold 15px sans-serif';
+    ctx.fillText('[ CLICK TO TRY AGAIN ]', W*.5, H*.5+90);
+  }
+  ctx.textAlign='left';
+}
+
+function drawVictory() {
+  ctx.fillStyle='rgba(0,15,55,.88)'; ctx.fillRect(0,0,W,H);
+  // Victory fireworks
+  if (G.frame % 18 === 0) {
+    const fx=80+Math.random()*(W-160), fy=60+Math.random()*(H*.55);
+    const cols=['#ff4444','#4444ff','#fff','#ffff44','#ff44ff','#44ff44'];
+    for (let i=0;i<22;i++) {
+      const a=Math.random()*Math.PI*2, s=2+Math.random()*7;
+      spawnP('spark', fx, fy, Math.cos(a)*s, Math.sin(a)*s);
+    }
+  }
+  ctx.textAlign='center';
+  ctx.save(); ctx.shadowColor='#f4a030'; ctx.shadowBlur=35;
+  ctx.fillStyle='#f4d060'; ctx.font='bold 54px Georgia,serif';
+  ctx.fillText('THE HARBOR IS OURS!', W*.5, H*.5-58);
+  ctx.restore();
+  ctx.fillStyle='#fff'; ctx.font='26px Georgia,serif';
+  ctx.fillText('The British fleet has been repelled from Boston Harbor.', W*.5, H*.5+4);
+  ctx.fillStyle='#f4d060'; ctx.font='20px sans-serif';
+  ctx.fillText(`FINAL SCORE: ${G.score}`, W*.5, H*.5+50);
+  ctx.fillStyle='#aaa'; ctx.font='13px sans-serif';
+  ctx.fillText('Freedom rings on this Fourth of July, 1776.', W*.5, H*.5+84);
+  if (Math.floor(G.frame/36)%2===0) {
+    ctx.fillStyle='#ccc'; ctx.font='bold 15px sans-serif';
+    ctx.fillText('[ CLICK TO PLAY AGAIN ]', W*.5, H*.5+124);
+  }
+  ctx.textAlign='left';
+}
+
+// =====================================================================
+// PHYSICS — UPDATE BALLS
+// =====================================================================
+function updateBalls() {
+  for (let i = balls.length - 1; i >= 0; i--) {
+    const b = balls[i];
+    b.trail.push({ x: b.x, y: b.y });
+    if (b.trail.length > 14) b.trail.shift();
+    b.x += b.vx; b.y += b.vy; b.vy += GRAVITY;
+
+    if (b.x < -30 || b.x > W + 30 || b.y > H + 30) {
+      balls.splice(i, 1); continue;
+    }
+
+    if (b.from === 'player') {
+      let hit = false;
+      for (const ship of ships) {
+        if (ship.dead || ship.sinking) continue;
+        const bd = ship.getBounds();
+        if (b.x >= bd.l && b.x <= bd.r && b.y >= bd.t && b.y <= bd.b) {
+          boom(b.x, b.y, false);
+          ship.hit();
+          balls.splice(i, 1);
+          hit = true; break;
+        }
+      }
+      if (!hit && b.y > HORIZON + 5) {
+        splash(b.x, HORIZON + 4);
+        balls.splice(i, 1);
+        if (Math.random() < 0.28) narrateEvent('miss', null);
+      }
+    } else {
+      // Enemy ball hits fort area
+      if (b.x < 310 && b.y > CANNON_Y - 100 && b.y < H) {
+        boom(b.x, b.y, true);
+        G.fortHp = Math.max(0, G.fortHp - (9 + G.wave * 2));
+        G.shakeAmt = 16; G.flashAmt = 0.38;
+        balls.splice(i, 1);
+        if (Math.random() < 0.5) narrateEvent('fort_hit', null);
+        if (G.fortHp <= 0) G.state = 'gameover';
+      } else if (b.y > H) {
+        balls.splice(i, 1);
+      }
+    }
+  }
+}
+
+function boom(x, y, isEnemy) {
+  for (let i = 0; i < 45; i++) {
+    const a = Math.random()*Math.PI*2, s = 2+Math.random()*9;
+    spawnP('fire', x, y, Math.cos(a)*s, Math.sin(a)*s-2);
+  }
+  for (let i = 0; i < 22; i++) {
+    spawnP('smoke', x, y, (Math.random()-.5)*1.8, -1-Math.random()*2);
+  }
+  for (let i = 0; i < 16; i++) {
+    spawnP('debris', x, y, (Math.random()-.5)*10, -5-Math.random()*6);
+  }
+  for (let i = 0; i < 10; i++) {
+    spawnP('spark', x, y, (Math.random()-.5)*14, -7-Math.random()*4);
+  }
+}
+
+function splash(x, y) {
+  for (let i = 0; i < 22; i++) {
+    const a = -Math.PI + Math.random()*Math.PI;
+    spawnP('water', x, y, Math.cos(a)*(2+Math.random()*5), Math.sin(a)*(2+Math.random()*5)-2);
+  }
+  G.shakeAmt = 3;
+}
+
+// =====================================================================
+// FIRE CANNON
+// =====================================================================
+function fireCannon() {
+  cannon.canFire = false;
+  cannon.reloading = true;
+  cannon.reloadTimer = RELOAD_FRAMES;
+  cannon.flashFrames = 8;
+  cannon.recoil = 20;
+
+  balls.push({
+    x: CANNON_X + Math.cos(cannon.angle) * 55,
+    y: CANNON_Y + Math.sin(cannon.angle) * 55,
+    vx: Math.cos(cannon.angle) * LAUNCH_SPEED,
+    vy: Math.sin(cannon.angle) * LAUNCH_SPEED,
+    from: 'player', trail: [],
+  });
+
+  for (let i = 0; i < 18; i++) {
+    spawnP('smoke',
+      CANNON_X + Math.cos(cannon.angle) * 54,
+      CANNON_Y + Math.sin(cannon.angle) * 54,
+      Math.cos(cannon.angle)*(1+Math.random())+(Math.random()-.5),
+      Math.sin(cannon.angle)*(1+Math.random())+(Math.random()-.5)-.4);
+  }
+  G.shakeAmt = 5;
+}
+
+// =====================================================================
+// WAVE MANAGEMENT
+// =====================================================================
+const WAVE_CONFIGS = [
+  [{ t:'sloop', x:W+140 },{ t:'sloop', x:W+440 },{ t:'sloop', x:W+780 }],
+  [{ t:'frigate',x:W+150 },{ t:'sloop',x:W+500 },{ t:'frigate',x:W+850 }],
+  [{ t:'man-o-war',x:W+180 },{ t:'frigate',x:W+560 },{ t:'frigate',x:W+920 }],
+];
+
+function spawnWave(w) {
+  ships = [];
+  balls = balls.filter(b => b.from === 'player'); // keep player balls in flight
+  const cfg = WAVE_CONFIGS[Math.min(w - 1, WAVE_CONFIGS.length - 1)];
+  for (const c of cfg) ships.push(new Ship(c.x, c.t, w));
+}
+
+function startGame() {
+  G.state = 'playing';
+  G.wave = 1; G.score = 0;
+  G.fortHp = G.fortMaxHp;
+  balls = []; particles = [];
+  cannon.canFire = true; cannon.reloading = false; cannon.reloadTimer = 0;
+  spawnWave(1);
+  showWaveBanner(`WAVE 1 — SLOOPS APPROACHING`);
+}
+
+function showWaveBanner(msg) {
+  const el = document.getElementById('ui-wave');
+  el.textContent = msg;
+  el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), 2800);
+}
+
+function checkWaveClear() {
+  if (G.state !== 'playing') return;
+  if (ships.length === 0) return;
+  const active = ships.filter(s => !s.sinking && !s.dead);
+  if (active.length > 0) return;
+  // All ships sinking or dead
+  if (G.wave >= G.maxWaves) {
+    G.state = 'victory';
+  } else {
+    G.state = 'wave_clear';
+    const nextWave = G.wave + 1;
+    const waveNames = ['','SLOOPS','FRIGATES ADVANCE','MAN-OF-WAR SIGHTED'];
+    setTimeout(() => {
+      if (G.state !== 'wave_clear') return;
+      G.wave = nextWave;
+      spawnWave(nextWave);
+      G.state = 'playing';
+      showWaveBanner(`WAVE ${nextWave} — ${waveNames[nextWave] ?? 'REINFORCE!'}`);
+    }, 3500);
+  }
+}
+
+// =====================================================================
+// GAZETTE NARRATION (streaming Claude)
+// =====================================================================
+const gazette = document.getElementById('gazette');
+const gHeadline = document.getElementById('g-headline');
+const gBody = document.getElementById('g-body');
+let narrateThrottle = 0;
+let gazetteAutoClose = null;
+
+const HEADLINES = {
+  hit: ['PATRIOT SHOT FINDS ITS MARK!','REDCOAT HULL PUNCTURED!','BRILLIANT VOLLEY ROCKS BRITISH VESSEL!'],
+  sunk: ['BRITISH WARSHIP SENT TO THE DEEP!','PATRIOTS VANQUISH THE CROWN\'S FRIGATE!','GLORIOUS SINKING IN BOSTON HARBOR!'],
+  miss: ['SHOT FALLS WIDE — GARRISON UNDETERRED','HARBOR CHURNS AS CANNON ROARS'],
+  fort_hit: ['PATRIOTS HOLD FIRM UNDER FIRE!','FORT LIBERTY STANDS DESPITE BOMBARDMENT!'],
+  breach: ['ENEMY VESSEL BREACHES THE HARBOR!','REDCOATS PRESS FORWARD — GARRISON RALLIES!'],
+};
+
+const CONTEXTS = {
+  hit:      (ship) => `A patriot cannonball from Fort Liberty has struck the ${ship?.name ?? 'British vessel'}, a ${ship?.type ?? 'warship'}, dealing heavy damage to her hull. She is on fire and listing badly. Her guns fall silent.`,
+  sunk:     (ship) => `The ${ship?.name ?? 'British vessel'}, a ${ship?.type ?? 'warship'}, has been sunk by patriot cannon fire in Boston Harbor. She breaks apart and slips beneath the waves. The patriots cheer from the ramparts. Score: ${G.score}.`,
+  miss:     ()     => `A cannonball from Fort Liberty's 12-pounder arced wide, raising a great column of spray near the advancing British ships. The enemy fleet pressed on, though shaken by the proximity.`,
+  fort_hit: ()     => `A British roundshot from the advancing fleet has struck the walls of Fort Liberty, scattering stone and mortar. The garrison holds its position and returns fire with renewed fury. Fort integrity: ${G.fortHp}%.`,
+  breach:   (ship) => `A British ${ship?.type ?? 'vessel'} has sailed past Fort Liberty's cannon and entered the inner harbor, threatening the wharves. The garrison scrambles to respond to this dire breach.`,
+};
+
+async function narrateEvent(type, ship) {
+  if (narrateThrottle > 0) return;
+  narrateThrottle = 220;
+
+  const hl = HEADLINES[type] ?? HEADLINES.hit;
+  gHeadline.textContent = hl[Math.floor(Math.random() * hl.length)];
+  gBody.textContent = '';
+
+  gazette.classList.add('open');
+  if (gazetteAutoClose) clearTimeout(gazetteAutoClose);
+
+  const context = (CONTEXTS[type] ?? CONTEXTS.hit)(ship);
+
+  try {
+    const res = await fetch('/api/narrate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ context }),
+    });
+    if (!res.ok) { closeGazette(3000); return; }
+
+    const reader = res.body.getReader();
+    const dec = new TextDecoder();
+    let buf = '';
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buf += dec.decode(value, { stream: true });
+      const lines = buf.split('\n');
+      buf = lines.pop();
+      for (const line of lines) {
+        if (!line.startsWith('data: ')) continue;
+        const d = line.slice(6);
+        if (d === '[DONE]') break;
+        try { gBody.textContent += JSON.parse(d).text ?? ''; } catch {}
+      }
+    }
+  } catch (_) { /* silent — show headline only */ }
+
+  closeGazette(5500);
+}
+
+function closeGazette(delay) {
+  if (gazetteAutoClose) clearTimeout(gazetteAutoClose);
+  gazetteAutoClose = setTimeout(() => gazette.classList.remove('open'), delay);
+}
+
+// =====================================================================
+// INPUT
+// =====================================================================
+let mouseX = W * .5, mouseY = H * .5;
+
+canvas.addEventListener('mousemove', e => {
+  const r = canvas.getBoundingClientRect();
+  mouseX = (e.clientX - r.left) * (W / r.width);
+  mouseY = (e.clientY - r.top)  * (H / r.height);
+  if (G.state === 'playing' || G.state === 'wave_clear') {
+    const dx = mouseX - CANNON_X, dy = mouseY - CANNON_Y;
+    const raw = Math.atan2(dy, dx);
+    cannon.angle = Math.max(-Math.PI * .82, Math.min(-0.06, raw));
+  }
+});
+
+canvas.addEventListener('click', () => {
+  if (G.state === 'title')   { startGame(); return; }
+  if (G.state === 'gameover' || G.state === 'victory') { G.state = 'title'; return; }
+  if (G.state === 'playing' && cannon.canFire && !cannon.reloading) fireCannon();
+});
+
+// =====================================================================
+// MAIN LOOP
+// =====================================================================
+let lastT = 0;
+function loop(ts) {
+  const dt = ts - lastT; lastT = ts;
+  G.frame++;
+
+  // Screen shake offset
+  let sx = 0, sy = 0;
+  if (G.shakeAmt > 0) {
+    sx = (Math.random()-.5)*G.shakeAmt;
+    sy = (Math.random()-.5)*G.shakeAmt;
+    G.shakeAmt = Math.max(0, G.shakeAmt - 1.6);
+  }
+
+  ctx.save(); ctx.translate(sx, sy);
+
+  // --- RENDER ---
+  drawSky();
+  drawClouds();
+  drawGulls();
+  drawCoast();
+  drawWater(G.frame);
+
+  // Ship wakes (below ships)
+  for (const s of ships) drawWake(s);
+  // Ships
+  for (const s of ships) drawShip(s);
+
+  drawFort();
+  if (G.state === 'playing' || G.state === 'wave_clear') drawCannon(G.frame);
+  if (G.state === 'playing') drawTrajectory();
+  drawBalls();
+  drawParticles();
+  drawVignette();
+
+  // Screen flash
+  if (G.flashAmt > 0) {
+    ctx.save(); ctx.globalAlpha = G.flashAmt;
+    ctx.fillStyle = '#fff'; ctx.fillRect(0,0,W,H);
+    ctx.restore();
+    G.flashAmt = Math.max(0, G.flashAmt - 0.045);
+  }
+
+  if (G.state === 'playing' || G.state === 'wave_clear') drawHUD();
+  if (G.state === 'title')    drawTitle();
+  if (G.state === 'gameover') drawGameOver();
+  if (G.state === 'victory')  drawVictory();
+
+  ctx.restore();
+
+  // --- UPDATE ---
+  if (G.state === 'playing') {
+    // Update ships
+    for (const s of ships) s.update();
+    // Remove fully-sunk ships
+    ships = ships.filter(s => !s.dead);
+
+    updateBalls();
+    updateParticles();
+
+    // Reload
+    if (cannon.reloading) {
+      cannon.reloadTimer--;
+      if (cannon.reloadTimer <= 0) { cannon.reloading = false; cannon.canFire = true; }
+    }
+    cannon.recoil = Math.max(0, cannon.recoil - 1.8);
+    narrateThrottle = Math.max(0, narrateThrottle - 1);
+
+    checkWaveClear();
+  } else if (G.state === 'wave_clear') {
+    for (const s of ships) s.update();
+    ships = ships.filter(s => !s.dead);
+    updateParticles();
+    narrateThrottle = Math.max(0, narrateThrottle - 1);
+  } else if (G.state === 'victory') {
+    updateParticles();
+  }
+
+  requestAnimationFrame(loop);
+}
+
+requestAnimationFrame(loop);
+</script>
+</body>
+</html>
