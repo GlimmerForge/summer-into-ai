@@ -126,7 +126,10 @@ Call the **Agent tool with `isolation: "worktree"`** for each demo simultaneousl
 > - `index.html` — complete app, vanilla JS, CSS in `<style>`, JS in `<script>`, calls `/api/` endpoints, themed UI matching the week's aesthetic, fully working
 > - `api/chat.js` — Vercel serverless function (ESM, Node.js); add other api files as needed
 > - `package.json` — `{ "type": "module", "dependencies": { "@anthropic-ai/sdk": "^0.39.0" } }`
-> - `vercel.json` — `{ "functions": { "api/*.js": { "maxDuration": 30 } } }`
+> - `vercel.json` — always include `outputDirectory: "."` so Vercel serves `index.html` from the demo root (not from `public/` if that folder exists):
+>   ```json
+>   { "outputDirectory": ".", "functions": { "api/*.js": { "maxDuration": 30 } } }
+>   ```
 > - `.gitignore` — `node_modules/`, `.env.local`, `.vercel/`
 > - `.env.local` — `ANTHROPIC_API_KEY=your_key_here` (placeholder only)
 > - `README.md` — title, one-line description, how AI powers it, local dev instructions, Vercel deploy instructions
