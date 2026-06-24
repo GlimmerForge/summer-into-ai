@@ -1,0 +1,1339 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Drafted — Committee of Five · 1776</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IM+Fell+English:ital@0;1&family=IM+Fell+English+SC&display=swap" rel="stylesheet">
+<style>
+/* ── RESET ── */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+
+/* ── ROOT ── */
+:root{
+  --parchment:#f2e8c6;
+  --parchment-mid:#e8d8a8;
+  --ink:#1a0f05;
+  --ink-mid:#3d2510;
+  --ink-faded:#7a5c34;
+  --gold:#c8a050;
+  --gold-dim:rgba(200,160,80,0.35);
+  --panel:#231508;
+  --panel-text:#d4c090;
+  --green:#3d7a3d;
+  --red:#8a1a1a;
+}
+
+html,body{height:100%;overflow:hidden}
+body{
+  background:var(--panel);
+  color:var(--ink);
+  font-family:'IM Fell English',Georgia,serif;
+  display:flex;
+  flex-direction:column;
+}
+
+/* ─────────────────────────────────────────
+   LOADING
+───────────────────────────────────────── */
+#screen-loading{
+  position:fixed;inset:0;
+  background:var(--panel);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px;
+  z-index:200;
+  transition:opacity .8s ease;
+}
+#screen-loading.out{opacity:0;pointer-events:none}
+
+.candle-wrap{font-size:56px;animation:flicker 2.4s ease-in-out infinite}
+@keyframes flicker{
+  0%,100%{transform:scale(1) rotate(-1deg)}
+  30%{transform:scale(1.05) rotate(1.5deg)}
+  60%{transform:scale(.97) rotate(-2deg)}
+}
+.load-title{
+  font-family:'IM Fell English SC',serif;
+  font-size:32px;letter-spacing:.18em;color:var(--gold);
+}
+.load-sub{font-size:13px;font-style:italic;color:rgba(212,192,144,.55);letter-spacing:.06em}
+.load-bar-wrap{width:180px;height:2px;background:rgba(200,160,80,.18)}
+.load-bar{height:100%;background:var(--gold);width:0;transition:width 1.4s ease}
+
+/* ─────────────────────────────────────────
+   INTRO
+───────────────────────────────────────── */
+#screen-intro{
+  position:fixed;inset:0;
+  background:var(--parchment);
+  background-image:
+    radial-gradient(ellipse 70% 55% at 20% 25%,rgba(180,140,60,.09) 0%,transparent 60%),
+    radial-gradient(ellipse 55% 40% at 80% 72%,rgba(140,100,40,.07) 0%,transparent 55%);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  padding:40px 20px;
+  z-index:190;
+  opacity:0;pointer-events:none;
+  transition:opacity .7s ease;
+}
+#screen-intro.in{opacity:1;pointer-events:all}
+#screen-intro.out{opacity:0;pointer-events:none}
+
+.intro-eyebrow{font-size:10px;letter-spacing:.45em;color:var(--ink-faded);text-transform:uppercase;margin-bottom:14px}
+.intro-title{
+  font-family:'IM Fell English SC',serif;
+  font-size:clamp(40px,7vw,80px);
+  color:var(--ink);letter-spacing:.07em;
+  line-height:1;margin-bottom:6px;
+}
+.intro-sub{font-size:16px;font-style:italic;color:var(--ink-faded);margin-bottom:28px}
+.intro-rule{width:100px;height:1px;background:var(--gold);margin:0 auto 28px}
+.intro-body{
+  max-width:520px;text-align:center;
+  font-size:15.5px;line-height:1.75;color:var(--ink-mid);
+  margin-bottom:36px;
+}
+.intro-body p+p{margin-top:12px}
+.intro-note{font-size:12.5px;font-style:italic;color:var(--ink-faded);margin-top:8px}
+
+.btn-begin{
+  font-family:'IM Fell English SC',serif;
+  font-size:13px;letter-spacing:.22em;
+  color:var(--parchment);background:var(--ink);
+  border:none;padding:14px 44px;cursor:pointer;
+  transition:background .2s,transform .1s;
+}
+.btn-begin:hover{background:var(--ink-mid);transform:translateY(-1px)}
+.btn-begin:active{transform:translateY(0)}
+
+/* ─────────────────────────────────────────
+   GAME SCREEN
+───────────────────────────────────────── */
+#screen-game{
+  position:fixed;inset:0;
+  display:grid;
+  grid-template-rows:44px auto 1fr 34px;
+  opacity:0;pointer-events:none;
+  transition:opacity .6s ease;
+}
+#screen-game.in{opacity:1;pointer-events:all}
+#screen-game.out{opacity:0;pointer-events:none}
+
+/* Header */
+#g-header{
+  background:var(--ink);
+  display:flex;align-items:center;justify-content:space-between;
+  padding:0 22px;
+  border-bottom:1px solid rgba(200,160,80,.2);
+  flex-shrink:0;
+}
+.g-title{font-family:'IM Fell English SC',serif;font-size:16px;letter-spacing:.18em;color:var(--gold)}
+.g-date{font-size:13px;font-style:italic;color:rgba(212,192,144,.6)}
+.g-dots{display:flex;gap:7px;align-items:center}
+.g-dot{
+  width:9px;height:9px;border-radius:50%;
+  border:1px solid rgba(200,160,80,.35);
+  transition:background .4s,border-color .4s;
+}
+.g-dot.done{background:var(--gold);border-color:var(--gold)}
+.g-dot.active{border-color:var(--gold);background:rgba(200,160,80,.25)}
+
+/* Body: doc + committee side by side */
+#g-body{
+  display:grid;
+  grid-template-columns:1fr 320px;
+  overflow:hidden;
+  min-height:0;
+}
+
+/* ── Doc Panel ── */
+#doc-panel{
+  background:var(--parchment);
+  background-image:
+    radial-gradient(ellipse 90% 55% at 12% 18%,rgba(180,140,60,.08) 0%,transparent 58%),
+    radial-gradient(ellipse 65% 45% at 88% 82%,rgba(140,100,40,.06) 0%,transparent 52%);
+  padding:24px 36px 20px;
+  display:flex;flex-direction:column;
+  overflow-y:auto;
+  border-right:1px solid rgba(100,70,30,.18);
+  transition:opacity .35s ease;
+}
+
+.p-num{font-size:10px;letter-spacing:.42em;color:var(--ink-faded);text-transform:uppercase;margin-bottom:4px}
+.p-title{
+  font-family:'IM Fell English SC',serif;
+  font-size:21px;color:var(--ink);letter-spacing:.04em;margin-bottom:16px;
+}
+.p-context{
+  font-size:16px;font-style:italic;color:#5a3e1c;
+  line-height:1.75;margin-bottom:20px;padding-bottom:18px;
+  border-bottom:1px solid rgba(100,70,30,.14);
+}
+
+.doc-text{
+  font-size:19px;line-height:2;color:var(--ink);
+  flex:1;margin-bottom:24px;
+}
+
+.phrase{
+  background:rgba(200,160,80,.22);
+  border-bottom:2px solid var(--gold);
+  padding:0 3px;
+  transition:background .5s,color .5s,border-bottom-color .5s;
+  display:inline;
+}
+/* kept = green tint */
+.phrase.kept{
+  background:rgba(61,122,61,.13);
+  border-bottom-color:var(--green);
+}
+/* cut = strikethrough drawn by animation */
+.phrase.cut{
+  background:transparent;
+  border-bottom:none;
+  color:var(--ink-faded);
+  position:relative;
+  white-space:nowrap;
+}
+.phrase.cut::after{
+  content:'';
+  position:absolute;left:0;top:52%;
+  height:1.5px;background:var(--ink-mid);
+  width:0;
+  animation:strike .7s ease forwards;
+}
+@keyframes strike{to{width:100%}}
+/* revised = amber tint, new text */
+.phrase.revised{
+  background:rgba(180,130,40,.18);
+  border-bottom-color:#a07020;
+}
+
+/* Choices */
+.choices-wrap{margin-top:auto}
+.choices-label{font-size:10px;letter-spacing:.38em;color:var(--ink-faded);text-transform:uppercase;margin-bottom:8px}
+.choices-row{display:flex;gap:10px}
+
+.c-btn{
+  flex:1;
+  font-family:'IM Fell English',serif;
+  font-size:14px;
+  padding:13px 16px;
+  border:1px solid var(--ink-mid);
+  background:transparent;color:var(--ink);
+  cursor:pointer;text-align:left;
+  transition:background .18s,color .18s,opacity .3s;
+}
+.c-btn:hover{background:var(--ink);color:var(--parchment)}
+.c-btn.chosen{background:var(--ink);color:var(--parchment);pointer-events:none}
+.c-btn.unchosen{opacity:.28;pointer-events:none}
+.c-btn-lbl{display:block;font-family:'IM Fell English SC',serif;font-size:14px;letter-spacing:.08em;margin-bottom:4px}
+.c-btn-desc{display:block;font-size:13px;font-style:italic;opacity:.8;line-height:1.4}
+
+.btn-next{
+  font-family:'IM Fell English SC',serif;
+  font-size:12px;letter-spacing:.2em;
+  color:var(--parchment);background:var(--ink);
+  border:none;padding:10px 26px;cursor:pointer;
+  margin-top:10px;align-self:flex-end;
+  opacity:0;pointer-events:none;
+  transition:opacity .45s;
+}
+.btn-next.show{opacity:1;pointer-events:all}
+.btn-next:hover{background:var(--ink-mid)}
+
+/* ── Committee Panel ── */
+#cmt-panel{
+  background:var(--panel);
+  background-image:radial-gradient(ellipse 100% 40% at 50% 0%,rgba(50,28,8,.8) 0%,transparent 55%);
+  display:flex;flex-direction:column;
+  overflow-y:auto;
+}
+
+.cmt-section{padding:12px 16px 10px}
+.cmt-section-title{
+  font-size:13px;letter-spacing:.24em;
+  color:rgba(200,160,80,.8);text-transform:uppercase;
+  margin-bottom:10px;
+}
+
+/* committee reaction text */
+#cmt-divider{height:1px;background:rgba(200,160,80,.12);margin:0 16px}
+
+#cmt-reaction{
+  padding:10px 16px 16px;
+  display:flex;flex-direction:column;gap:8px;
+}
+#cmt-reaction-label{
+  font-size:13px;letter-spacing:.24em;
+  color:rgba(200,160,80,.8);text-transform:uppercase;
+}
+#cmt-choice-display{
+  font-size:14px;letter-spacing:.06em;
+  color:rgba(200,160,80,.9);
+  padding:8px 12px;
+  border-left:2px solid rgba(200,160,80,.5);
+  font-style:normal;
+  display:none;
+}
+#cmt-choice-display.show{display:block}
+#cmt-text{
+  font-size:16px;line-height:1.85;
+  color:#e8d8a8;font-style:normal;
+  min-height:56px;
+}
+
+/* ── Footer ── */
+#g-footer{
+  background:var(--ink);
+  border-top:1px solid rgba(200,160,80,.18);
+  display:flex;align-items:center;justify-content:flex-end;
+  padding:0 20px;height:34px;
+  flex-shrink:0;
+}
+.colony-dot{
+  border-radius:50%;
+  transition:background .55s ease,box-shadow .55s ease;
+}
+.colony-dot[data-s="2"] {background:#3d7a3d;box-shadow:0 0 6px rgba(61,122,61,.7)}
+.colony-dot[data-s="1"] {background:#6a9a3a}
+.colony-dot[data-s="0"] {background:#9a7a20}
+.colony-dot[data-s="-1"]{background:#9a3820}
+.colony-dot[data-s="-2"]{background:#7a1212;box-shadow:0 0 6px rgba(122,18,18,.7)}
+.colony-abbr{font-size:10px;letter-spacing:.04em;color:rgba(212,192,144,.6)}
+
+/* Speaking indicator */
+#speak-indicator{
+  display:flex;align-items:center;gap:5px;
+  font-size:12px;letter-spacing:.18em;color:rgba(200,160,80,.7);
+  text-transform:uppercase;
+  opacity:0;transition:opacity .4s;
+  flex-shrink:0;
+}
+#speak-indicator.on{opacity:1}
+.speak-bars{display:flex;gap:2px;align-items:flex-end;height:12px}
+.speak-bar{
+  width:2px;background:var(--gold);border-radius:1px;
+  animation:speakPulse 0.9s ease-in-out infinite;
+}
+.speak-bar:nth-child(2){animation-delay:.15s;height:8px}
+.speak-bar:nth-child(3){animation-delay:.3s;height:12px}
+.speak-bar:nth-child(4){animation-delay:.15s;height:6px}
+.speak-bar:nth-child(1){height:10px}
+@keyframes speakPulse{
+  0%,100%{transform:scaleY(0.4);opacity:.5}
+  50%{transform:scaleY(1);opacity:1}
+}
+
+/* ─────────────────────────────────────────
+   FULL-WIDTH COLONY SCOREBOARD
+───────────────────────────────────────── */
+#g-colonies{
+  background:rgba(0,0,0,.28);
+  border-bottom:1px solid rgba(200,160,80,.2);
+  padding:10px 28px 12px;
+  flex-shrink:0;
+}
+.gc-label{
+  font-size:9px;letter-spacing:.46em;
+  color:rgba(200,160,80,.45);
+  text-transform:uppercase;
+  margin-bottom:8px;
+  text-align:center;
+}
+#gc-strip{
+  display:flex;
+  justify-content:space-between;
+  align-items:flex-end;
+  gap:4px;
+}
+#gc-strip .colony-item{
+  display:flex;flex-direction:column;align-items:center;gap:5px;
+  flex:1;cursor:default;
+}
+#gc-strip .colony-dot{
+  width:18px;height:18px;
+  transition:background .55s ease,box-shadow .55s ease,transform .3s ease;
+}
+#gc-strip .colony-abbr{
+  font-size:10px;letter-spacing:.06em;
+  color:rgba(212,192,144,.75);
+}
+@keyframes colonyPulse{
+  0%  {transform:scale(1);filter:brightness(1)}
+  35% {transform:scale(1.9);filter:brightness(1.6)}
+  100%{transform:scale(1);filter:brightness(1)}
+}
+.colony-dot.pulse{animation:colonyPulse .55s ease-out}
+
+/* ─────────────────────────────────────────
+   COLONY EFFECTS PANEL
+───────────────────────────────────────── */
+#colony-effects-panel{
+  display:none;
+  border-top:1px solid rgba(200,160,80,.12);
+  margin-top:12px;padding-top:12px;
+}
+#colony-effects-panel.show{display:block}
+.ce-label{
+  font-size:13px;letter-spacing:.24em;
+  color:rgba(200,160,80,.8);text-transform:uppercase;
+  margin-bottom:10px;
+}
+.ce-row{
+  display:grid;
+  grid-template-columns:120px 32px 1fr;
+  gap:6px;
+  align-items:start;
+  padding:5px 0;
+  border-bottom:1px solid rgba(200,160,80,.08);
+  font-size:13px;
+}
+.ce-row:last-child{border-bottom:none}
+.ce-colony{
+  color:#e8d8a8;
+  font-family:'IM Fell English SC',serif;
+  font-size:13px;letter-spacing:.04em;
+}
+.ce-delta{font-size:14px;font-weight:bold;text-align:center}
+.ce-gain .ce-delta{color:#6abf6a}
+.ce-loss .ce-delta{color:#d06050}
+.ce-why{
+  color:rgba(212,192,144,.85);
+  font-size:12px;line-height:1.45;
+}
+.ce-section-head{
+  font-size:11px;letter-spacing:.28em;text-transform:uppercase;
+  margin:10px 0 5px;font-weight:bold;
+}
+.ce-section-head:first-child{margin-top:0}
+.ce-gain-head{color:#6abf6a}
+.ce-loss-head{color:#d06050}
+
+/* ─────────────────────────────────────────
+   RESULTS SCREEN
+───────────────────────────────────────── */
+#screen-results{
+  position:fixed;inset:0;
+  background:var(--parchment);
+  background-image:
+    radial-gradient(ellipse 80% 55% at 15% 20%,rgba(180,140,60,.08) 0%,transparent 58%),
+    radial-gradient(ellipse 60% 40% at 82% 78%,rgba(140,100,40,.06) 0%,transparent 52%);
+  overflow-y:auto;
+  opacity:0;pointer-events:none;
+  transition:opacity .8s ease;
+}
+#screen-results.in{opacity:1;pointer-events:all}
+
+.r-header{
+  background:var(--ink);
+  padding:22px 32px;text-align:center;
+  position:sticky;top:0;z-index:10;
+}
+.r-header-title{
+  font-family:'IM Fell English SC',serif;
+  font-size:22px;letter-spacing:.16em;color:var(--gold);
+}
+.r-header-sub{font-size:12px;font-style:italic;color:rgba(212,192,144,.5);margin-top:3px}
+
+.r-body{max-width:860px;margin:0 auto;padding:40px 24px 70px}
+
+/* Verdict */
+.verdict-box{
+  text-align:center;margin-bottom:40px;
+  padding:28px 32px;
+  border:1px solid rgba(100,70,30,.2);
+  background:rgba(180,140,60,.06);
+}
+.verdict-label{font-size:10px;letter-spacing:.4em;color:var(--ink-faded);text-transform:uppercase;margin-bottom:10px}
+.verdict-role{font-family:'IM Fell English SC',serif;font-size:26px;color:var(--ink);margin-bottom:10px}
+.verdict-quote{font-size:16px;font-style:italic;color:var(--ink-mid);line-height:1.5;margin-bottom:12px}
+.verdict-body{font-size:14px;color:var(--ink-faded);line-height:1.65}
+
+/* Section title */
+.r-section-title{
+  font-family:'IM Fell English SC',serif;
+  font-size:15px;letter-spacing:.1em;color:var(--ink);
+  margin-bottom:18px;padding-bottom:8px;
+  border-bottom:1px solid rgba(100,70,30,.18);
+}
+
+/* Passage comparison */
+.r-passage{margin-bottom:28px}
+.r-passage-name{
+  font-size:10px;letter-spacing:.32em;color:var(--ink-faded);
+  text-transform:uppercase;margin-bottom:8px;
+}
+.r-compare-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:8px}
+.r-cell{
+  padding:11px 13px;font-size:13px;font-style:italic;
+  line-height:1.5;border:1px solid rgba(100,70,30,.14);
+}
+.r-cell.match{background:rgba(61,122,61,.08)}
+.r-cell.differ{background:rgba(120,40,40,.06)}
+.r-cell strong{font-style:normal;font-size:11px;letter-spacing:.08em;opacity:.7}
+.r-note{font-size:12px;font-style:italic;color:var(--ink-faded);line-height:1.5;padding:0 2px}
+
+/* Colony final */
+.colony-final-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(210px,1fr));
+  gap:10px;margin-bottom:40px;
+}
+.colony-final-item{
+  display:grid;
+  grid-template-columns:12px 1fr auto;
+  align-items:center;
+  gap:9px;
+  padding:10px 14px;
+  border:1px solid rgba(100,70,30,.15);
+  font-size:14px;
+}
+.colony-final-name{color:var(--ink)}
+.colony-final-status{
+  font-size:11px;letter-spacing:.08em;font-style:normal;
+  padding:2px 6px;border-radius:2px;white-space:nowrap;
+}
+.colony-final-dot{
+  width:10px;height:10px;border-radius:50%;flex-shrink:0;
+}
+
+/* Actions */
+.r-actions{text-align:center;margin-top:40px}
+.r-franklin-quote{font-size:14px;font-style:italic;color:var(--ink-faded);line-height:1.6;margin-bottom:22px}
+.r-franklin-attr{font-size:11px;opacity:.7;font-style:normal}
+
+/* ─────────────────────────────────────────
+   RESPONSIVE
+───────────────────────────────────────── */
+@media(max-width:660px){
+  #g-body{grid-template-columns:1fr}
+  #cmt-panel{max-height:180px;border-top:1px solid rgba(200,160,80,.12)}
+  #doc-panel{padding:16px 18px 14px}
+  .doc-text{font-size:15px}
+  .r-compare-row{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+
+<!-- ════════════════════════════════════════════
+     LOADING
+════════════════════════════════════════════ -->
+<div id="screen-loading">
+  <div class="candle-wrap">🕯️</div>
+  <div class="load-title">DRAFTED</div>
+  <div class="load-sub">Philadelphia · Summer 1776</div>
+  <div class="load-bar-wrap"><div class="load-bar" id="load-bar"></div></div>
+</div>
+
+<!-- ════════════════════════════════════════════
+     INTRO
+════════════════════════════════════════════ -->
+<div id="screen-intro">
+  <div class="intro-eyebrow">Summer Into AI · Week II · Red, White & Boom</div>
+  <div class="intro-title">DRAFTED</div>
+  <div class="intro-sub">Committee of Five · Philadelphia, 1776</div>
+  <div class="intro-rule"></div>
+  <div class="intro-body">
+    <p>Jefferson has finished his draft. Five men must now decide what it will actually say.</p>
+    <p>You hold the deciding vote on five contested passages — each one a moment where principle met politics, and history turned on a single choice.</p>
+    <p class="intro-note">Based on the documented editorial history of the Declaration of Independence, June–July 1776.</p>
+  </div>
+  <button class="btn-begin" onclick="startGame()">Begin Deliberations</button>
+</div>
+
+<!-- ════════════════════════════════════════════
+     GAME
+════════════════════════════════════════════ -->
+<div id="screen-game">
+
+  <div id="g-header">
+    <div class="g-title">Committee of Five</div>
+    <div class="g-dots" id="g-dots"></div>
+    <div class="g-date" id="g-date">Philadelphia, 1776</div>
+  </div>
+
+  <!-- Full-width colony scoreboard -->
+  <div id="g-colonies">
+    <div class="gc-label">13 Colonies</div>
+    <div id="gc-strip"></div>
+  </div>
+
+  <div id="g-body">
+    <!-- Document panel -->
+    <div id="doc-panel">
+      <div class="p-num" id="p-num">Passage I of V</div>
+      <div class="p-title" id="p-title"></div>
+      <div class="p-context" id="p-context"></div>
+      <div class="doc-text" id="doc-text"></div>
+      <div class="choices-wrap">
+        <div class="choices-label">Your decision</div>
+        <div class="choices-row" id="choices-row"></div>
+        <button class="btn-next" id="btn-next" onclick="nextPassage()">Continue →</button>
+      </div>
+    </div>
+
+    <!-- Committee panel -->
+    <div id="cmt-panel">
+      <div class="cmt-section">
+        <div class="cmt-section-title">The Committee</div>
+        <div id="cmt-text">Awaiting the committee's deliberation…</div>
+      </div>
+      <div id="cmt-divider"></div>
+      <div id="cmt-reaction">
+        <div id="cmt-reaction-label">The Choice</div>
+        <div id="cmt-choice-display"></div>
+        <!-- Colony shifts after choice -->
+        <div id="colony-effects-panel">
+          <div class="ce-label">Colony Reactions</div>
+          <div id="colony-effects-list"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Footer: speaking indicator only -->
+  <div id="g-footer">
+    <div id="speak-indicator">
+      <div class="speak-bars">
+        <div class="speak-bar"></div>
+        <div class="speak-bar"></div>
+        <div class="speak-bar"></div>
+        <div class="speak-bar"></div>
+      </div>
+      <span>Speaking</span>
+    </div>
+  </div>
+
+</div>
+
+<!-- ════════════════════════════════════════════
+     RESULTS
+════════════════════════════════════════════ -->
+<div id="screen-results">
+  <div class="r-header">
+    <div class="r-header-title">The Final Document</div>
+    <div class="r-header-sub">Philadelphia · July 4, 1776</div>
+  </div>
+  <div class="r-body" id="r-body"></div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════════════
+// DRAFTED — The Declaration of Independence, Edited
+// ═══════════════════════════════════════════════════════════════
+
+const PASSAGES = [
+  {
+    id: 'truth',
+    number: 1,
+    title: 'The Nature of Truth',
+    date: 'June 11, 1776',
+    context: 'Jefferson has written the philosophical foundation of the Declaration. Benjamin Franklin — 70 years old and the most seasoned diplomat in the room — has proposed a single but weighty change to the preamble\'s opening clause.',
+    textBefore: 'We hold these truths to be ',
+    phrase: 'sacred & undeniable',
+    textAfter: '; that all men are created equal & independent, that from that equal creation they derive rights inherent & inalienable, among which are the preservation of life, & liberty, & the pursuit of happiness.',
+    options: [
+      {
+        id: 'keep',
+        label: 'Keep Jefferson\'s language',
+        short: 'SACRED & UNDENIABLE',
+        desc: 'These truths rest on divine authority — beyond question or debate.',
+        phraseClass: 'kept',
+        phraseText: null
+      },
+      {
+        id: 'change',
+        label: 'Accept Franklin\'s revision',
+        short: 'SELF-EVIDENT',
+        desc: 'The truths need no religious sanction. They stand on reason alone.',
+        phraseClass: 'revised',
+        phraseText: 'self-evident'
+      }
+    ],
+    historical: 'change',
+    historicalNote: 'Franklin changed "sacred & undeniable" to "self-evident" — grounding the truths in reason rather than divine authority, making them universal. Jefferson accepted it.',
+    colonyEffects: {
+      keep:   {'Virginia':1,'Maryland':1,'Georgia':1,'Massachusetts':-1},
+      change: {'Massachusetts':1,'Pennsylvania':1,'New York':1,'Virginia':-1}
+    },
+    promptCtx: 'Franklin has proposed changing Jefferson\'s phrase "sacred & undeniable" to "self-evident." Jefferson\'s phrasing grounds the truths in divine authority; Franklin\'s in reason alone. Franklin sits quietly, waiting. Jefferson holds his quill but does not move.'
+  },
+  {
+    id: 'parliament',
+    number: 2,
+    title: 'The Source of Tyranny',
+    date: 'June 17, 1776',
+    context: 'Jefferson has spread the charges broadly — naming Parliament alongside the King as sources of tyranny. Adams argues this dilutes the indictment. A king who betrays his oath to protect his people is a sharper, older, and more universal crime.',
+    textBefore: 'The history of the present ',
+    phrase: 'king of Great Britain',
+    textAfter: ' is a history of repeated injuries and usurpations, all having in direct object the establishment of an absolute tyranny over these states. To prove this, let facts be submitted to a candid world.',
+    options: [
+      {
+        id: 'keep',
+        label: 'Charge the King and Parliament both',
+        short: 'KING & PARLIAMENT',
+        desc: 'Every institution that oppressed us must answer. The grievance is total.',
+        phraseClass: 'kept',
+        phraseText: null
+      },
+      {
+        id: 'change',
+        label: 'Focus the charge on the King alone',
+        short: 'THE KING ALONE',
+        desc: 'He swore to protect us. He did not. That is the case — and it is enough.',
+        phraseClass: 'kept',
+        phraseText: null
+      }
+    ],
+    historical: 'change',
+    historicalNote: 'Adams insisted the King was the cleaner target. Parliament\'s authority over the colonies was already in dispute — a monarch who breaks his oath to his subjects is a crime every European court understands.',
+    colonyEffects: {
+      keep:   {'Virginia':1,'North Carolina':1,'New York':-1,'Pennsylvania':-1},
+      change: {'Massachusetts':1,'New York':1,'Pennsylvania':1,'South Carolina':1}
+    },
+    promptCtx: 'Adams is pressing hard to focus all charges on King George III personally, rather than sharing the blame with Parliament. Jefferson\'s draft names Parliament as co-conspirator. Adams argues that blaming an institution diffuses the indictment; a king who betrays his people is a cleaner, more powerful charge.'
+  },
+  {
+    id: 'mercenaries',
+    number: 3,
+    title: 'Foreign Soldiers',
+    date: 'June 24, 1776',
+    context: 'Hessian soldiers — hired by the Crown from German principalities — have already landed on American shores. Jefferson has written one of the sharpest lines in the document about what this means. The committee must decide whether to keep the full charge.',
+    textBefore: 'He is at this time transporting large armies of foreign mercenaries to complete the works of death, desolation and tyranny, already begun with circumstances of cruelty & perfidy ',
+    phrase: 'scarcely paralleled in the most barbarous ages',
+    textAfter: ', and totally unworthy the head of a civilized nation.',
+    options: [
+      {
+        id: 'keep',
+        label: 'Keep the full charge',
+        short: 'KEEP AS WRITTEN',
+        desc: 'The world must know the nature of this war. France and Spain are watching.',
+        phraseClass: 'kept',
+        phraseText: null
+      },
+      {
+        id: 'change',
+        label: 'Soften the accusation',
+        short: 'SOFTEN THE LANGUAGE',
+        desc: 'The charge stands without the rhetoric. Moderation reads as confidence.',
+        phraseClass: 'cut',
+        phraseText: null
+      }
+    ],
+    historical: 'keep',
+    historicalNote: 'The committee kept this language intact. The use of hired Hessian soldiers was deeply unpopular across Europe, and the strong language served to shame Britain before France — whose support the colonies would desperately need.',
+    colonyEffects: {
+      keep:   {'Massachusetts':1,'New Hampshire':1,'New Jersey':1,'Connecticut':1},
+      change: {'New York':1,'Pennsylvania':1,'Maryland':1}
+    },
+    promptCtx: 'The committee is reviewing Jefferson\'s charge about the Hessian mercenaries — particularly the phrase "scarcely paralleled in the most barbarous ages." Franklin notes it is deliberately harsh language, aimed as much at European audiences as American ones. The question is whether bold accusation serves the cause better than measured restraint.'
+  },
+  {
+    id: 'brethren',
+    number: 4,
+    title: 'Our British Brethren',
+    date: 'July 1, 1776',
+    context: 'Jefferson has written a long, emotional appeal to the British people — expressing grief at being abandoned and contempt for those who stood aside. It is generous, painful, and perhaps longer than a declaration should be.',
+    textBefore: 'Nor have we been wanting in attentions to our ',
+    phrase: 'British brethren',
+    textAfter: '. We have warned them from time to time of attempts by their legislature to extend an unwarrantable jurisdiction over us. We have reminded them of the circumstances of our emigration and settlement here. We must therefore acquiesce in the necessity which denounces our separation, and hold them as we hold the rest of mankind — enemies in war, in peace friends.',
+    options: [
+      {
+        id: 'keep',
+        label: 'Keep the appeal',
+        short: 'KEEP THE APPEAL',
+        desc: 'Show we tried everything. History will judge us as reluctant revolutionaries.',
+        phraseClass: 'kept',
+        phraseText: null
+      },
+      {
+        id: 'change',
+        label: 'Cut most of this passage',
+        short: 'CUT IT',
+        desc: 'We are not writing a farewell letter. We are declaring independence.',
+        phraseClass: 'cut',
+        phraseText: null
+      }
+    ],
+    historical: 'keep',
+    historicalNote: 'A shortened version was kept. It served a vital purpose: proving to the world that the colonies had exhausted every peaceful option. Independence was not a rash act — it was a last resort.',
+    colonyEffects: {
+      keep:   {'Pennsylvania':1,'New York':1,'Delaware':1,'Connecticut':-1},
+      change: {'Massachusetts':1,'Virginia':1,'North Carolina':1,'Pennsylvania':-1}
+    },
+    promptCtx: 'Jefferson\'s long address to the British people is before the committee. Some see it as proof of patience — evidence that independence was forced upon the colonies after every other path failed. Others find it reads as pleading, inconsistent with the boldness the moment demands. Sherman has said nothing. Adams is tapping the table.'
+  },
+  {
+    id: 'slavery',
+    number: 5,
+    title: 'The Slavery Clause',
+    date: 'July 2, 1776',
+    context: 'The room has gone quiet. Jefferson — himself a slaveholder — has written a fierce condemnation of the Atlantic slave trade as one of the King\'s crimes against humanity. Two delegations have made their position clear: if this stays, they go home.',
+    textBefore: 'He has waged ',
+    phrase: 'cruel war against human nature itself',
+    textAfter: ', violating its most sacred rights of life & liberty in the persons of a distant people who never offended him, captivating & carrying them into slavery in another hemisphere, or to incur miserable death in their transportation thither. This piratical warfare, the opprobrium of infidel powers, is the warfare of the Christian king of Great Britain.',
+    options: [
+      {
+        id: 'keep',
+        label: 'Keep the clause',
+        short: 'KEEP THE CLAUSE',
+        desc: 'Georgia and South Carolina will walk. But the document must stand on this.',
+        phraseClass: 'kept',
+        phraseText: null
+      },
+      {
+        id: 'change',
+        label: 'Strike the clause',
+        short: 'STRIKE IT',
+        desc: 'Thirteen colonies signing an imperfect document beats eleven signing a pure one.',
+        phraseClass: 'cut',
+        phraseText: null
+      }
+    ],
+    historical: 'change',
+    historicalNote: 'The clause was struck entirely. Jefferson recorded it was removed "in complaisance to South Carolina and Georgia." John Adams called it "the most unfortunate" concession ever made. Jefferson watched the paragraph disappear in silence.',
+    colonyEffects: {
+      keep:   {'Massachusetts':1,'Pennsylvania':1,'New Jersey':1,'Georgia':-2,'South Carolina':-2,'North Carolina':-1},
+      change: {'Georgia':2,'South Carolina':2,'North Carolina':1,'Massachusetts':-1,'Pennsylvania':-1}
+    },
+    promptCtx: 'Jefferson\'s condemnation of the Atlantic slave trade — his most morally urgent passage — is before the committee. The delegations from Georgia and South Carolina have made clear they will not sign if it remains. Without them, there is no unanimous declaration. Jefferson sits very still. Franklin has not looked up from the table.'
+  }
+];
+
+const COLONIES = [
+  {name:'Massachusetts', abbr:'MA', s:2},
+  {name:'New Hampshire', abbr:'NH', s:2},
+  {name:'Connecticut',   abbr:'CT', s:2},
+  {name:'Rhode Island',  abbr:'RI', s:2},
+  {name:'New York',      abbr:'NY', s:0},
+  {name:'New Jersey',    abbr:'NJ', s:1},
+  {name:'Pennsylvania',  abbr:'PA', s:0},
+  {name:'Delaware',      abbr:'DE', s:1},
+  {name:'Maryland',      abbr:'MD', s:1},
+  {name:'Virginia',      abbr:'VA', s:2},
+  {name:'North Carolina',abbr:'NC', s:1},
+  {name:'South Carolina',abbr:'SC', s:-1},
+  {name:'Georgia',       abbr:'GA', s:-1},
+];
+
+const FALLBACK = {
+  truth:{
+    keep:'Jefferson leans back, satisfied. Franklin says nothing, though his expression carries the weight of a man who expected this. The phrase stays — divine, unquestioned, and somewhat defiant.',
+    change:'Franklin sets down his quill without fanfare. "Reason needs no pulpit," he says quietly. Jefferson closes his eyes for a moment, then nods. The word "sacred" is crossed out without ceremony.'
+  },
+  parliament:{
+    keep:'Adams exhales sharply but does not press further. The charges against Parliament remain in the document, sprawling across three paragraphs. Sherman glances at his copy and says nothing.',
+    change:'Adams strikes the table once — softly, but with finality. "The King. Only the King." Livingston\'s quill moves. Parliament disappears from the indictment, and the document sharpens into something personal.'
+  },
+  mercenaries:{
+    keep:'Franklin turns toward the window. "Let them read it in Paris," he says. "Let them read it in Madrid." The language stays. No one raises an objection.',
+    change:'Livingston argues for caution. "We will need allies across the water." The charge is softened without drama, the sharpest words lifted like excess weight before a long voyage.'
+  },
+  brethren:{
+    keep:'Jefferson reads the passage aloud, slowly. When he finishes, Adams — unusually — says nothing for a long moment. "We did not want this," he says at last. "The world should know it." The passage stays.',
+    change:'Sherman speaks, which is rare: "We are not writing a letter. We are writing a nation." The appeal is struck. Jefferson watches the lines go without lifting his pen.'
+  },
+  slavery:{
+    keep:'Georgia\'s delegate has already risen from his chair. Jefferson\'s voice is barely controlled. "I wrote that passage because it is the worst thing he has done to us," he says. "Or rather — done through us." The room does not move.',
+    change:'Jefferson himself draws the line through the paragraph — one long, slow stroke. He will write later that he watched it go "with anguish." For a full minute, the only sound in the room is the scratch of the quill.'
+  }
+};
+
+const COLONY_REASONS = {
+  truth: {
+    keep:   { 'Virginia':'Anglican Virginia welcomes divine grounding', 'Maryland':'Catholic tradition honors sacred language', 'Georgia':'The conservative south trusts God\'s authority', 'Massachusetts':'Puritans distrust the echo of religious orthodoxy' },
+    change: { 'Massachusetts':'Reason alone satisfies the Congregationalists', 'Pennsylvania':'Quakers prefer universal reason over theology', 'New York':'Merchants trust reason more than revelation', 'Virginia':'Anglican planters bristle at stripping the sacred' }
+  },
+  parliament: {
+    keep:   { 'Virginia':'Virginia wants every grievance named', 'North Carolina':'The backcountry blames Parliament directly', 'New York':'Merchants fear burning bridges with Parliament', 'Pennsylvania':'Quakers want the narrowest possible indictment' },
+    change: { 'Massachusetts':'Adams\'s argument wins the radicals over', 'New York':'Focusing on the King simplifies the legal case', 'Pennsylvania':'A tighter charge reassures the moderates', 'South Carolina':'The Crown, not Parliament, is their real enemy' }
+  },
+  mercenaries: {
+    keep:   { 'Massachusetts':'The Hessians fired on their neighbors', 'New Hampshire':'Direct language, and proud of it', 'New Jersey':'Hessians have already marched through here', 'Connecticut':'Sharpness signals strength, not rage' },
+    change: { 'New York':'Moderation may keep France interested', 'Pennsylvania':'Quakers prefer measured language', 'Maryland':'Caution reads as confidence across the water' }
+  },
+  brethren: {
+    keep:   { 'Pennsylvania':'Quakers appreciate the gesture toward peace', 'New York':'Moderates relieved the door is not slammed shut', 'Delaware':'Shows patient exhaustion of every option', 'Connecticut':'This reads as pleading, not declaring' },
+    change: { 'Massachusetts':'Adams approves — we are writing a nation, not a letter', 'Virginia':'The south wants resolve, not sentiment', 'North Carolina':'Cut the farewell and make the argument', 'Pennsylvania':'Quakers had hoped the appeal would remain' }
+  },
+  slavery: {
+    keep:   { 'Massachusetts':'The abolitionists are proud of it', 'Pennsylvania':'Quaker anti-slavery sentiment honored', 'New Jersey':'The northern churches stand behind it', 'Georgia':'Georgia\'s delegation rises from the table', 'South Carolina':'South Carolina will not sign this document', 'North Carolina':'Economic ties to slavery run deep here' },
+    change: { 'Georgia':'Georgia returns to the table', 'South Carolina':'Unanimity preserved at great cost', 'North Carolina':'The planter class breathes easier', 'Massachusetts':'Adams is dismayed but holds his tongue', 'Pennsylvania':'Franklin watches the paragraph disappear in silence' }
+  }
+};
+
+// ── State ──────────────────────────────────────────────────────
+let curIdx = 0;
+let choices = {};
+let scores = {};
+let choiceLocked = false;
+let currentAudio = null;
+let _audioCtx = null;
+
+function unlockAudio() {
+  if (_audioCtx) return;
+  try {
+    _audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    const buf = _audioCtx.createBuffer(1, 1, 22050);
+    const src = _audioCtx.createBufferSource();
+    src.buffer = buf;
+    src.connect(_audioCtx.destination);
+    src.start(0);
+  } catch {}
+}
+
+// ── Boot ───────────────────────────────────────────────────────
+function init() {
+  COLONIES.forEach(c => scores[c.name] = c.s);
+  buildColonyStrip('gc-strip', 'gc');
+  buildDots();
+
+  const bar = document.getElementById('load-bar');
+  setTimeout(() => bar.style.width = '100%', 80);
+  setTimeout(() => {
+    document.getElementById('screen-loading').classList.add('out');
+    setTimeout(() => document.getElementById('screen-intro').classList.add('in'), 300);
+  }, 1700);
+}
+
+function buildColonyStrip(targetId, prefix) {
+  const strip = document.getElementById(targetId);
+  if (!strip) return;
+  strip.innerHTML = '';
+  COLONIES.forEach(c => {
+    const item = document.createElement('div');
+    item.className = 'colony-item';
+    item.id = `${prefix}-${c.name.replace(/ /g,'_')}`;
+    const s = clamp(scores[c.name]);
+    item.innerHTML = `<div class="colony-dot" data-s="${s}"></div><div class="colony-abbr">${c.abbr}</div>`;
+    strip.appendChild(item);
+  });
+}
+
+function buildDots() {
+  const wrap = document.getElementById('g-dots');
+  wrap.innerHTML = '';
+  PASSAGES.forEach((_, i) => {
+    const d = document.createElement('div');
+    d.className = 'g-dot' + (i === 0 ? ' active' : '');
+    d.id = `dot-${i}`;
+    wrap.appendChild(d);
+  });
+}
+
+function clamp(v) { return Math.max(-2, Math.min(2, v)); }
+
+function updateColony(name, delta) {
+  scores[name] = clamp((scores[name] || 0) + delta);
+  const el = document.getElementById(`gc-${name.replace(/ /g,'_')}`);
+  if (!el) return;
+  const dot = el.querySelector('.colony-dot');
+  dot.setAttribute('data-s', clamp(scores[name]));
+  dot.classList.remove('pulse');
+  void dot.offsetWidth; // force reflow so animation restarts
+  dot.classList.add('pulse');
+}
+
+function playColonySound(positive) {
+  if (!_audioCtx) return;
+  try {
+    const t = _audioCtx.currentTime;
+    const osc = _audioCtx.createOscillator();
+    const gain = _audioCtx.createGain();
+    osc.type = 'sine';
+    osc.connect(gain);
+    gain.connect(_audioCtx.destination);
+    if (positive) {
+      osc.frequency.setValueAtTime(523, t);
+      osc.frequency.setValueAtTime(659, t + 0.09);
+      gain.gain.setValueAtTime(0.10, t);
+    } else {
+      osc.frequency.setValueAtTime(415, t);
+      osc.frequency.setValueAtTime(311, t + 0.11);
+      gain.gain.setValueAtTime(0.09, t);
+    }
+    gain.gain.exponentialRampToValueAtTime(0.0001, t + 0.55);
+    osc.start(t);
+    osc.stop(t + 0.55);
+  } catch {}
+}
+
+function addCERow(list, colony, delta, why) {
+  const row = document.createElement('div');
+  row.className = `ce-row ${delta > 0 ? 'ce-gain' : 'ce-loss'}`;
+  row.innerHTML = `<span class="ce-colony">${colony}</span><span class="ce-delta">${delta > 0 ? '+' : ''}${delta}</span><span class="ce-why">${why || ''}</span>`;
+  list.appendChild(row);
+}
+
+function showColonyEffects(passageId, choiceId, effects) {
+  const reasons = COLONY_REASONS[passageId]?.[choiceId] || {};
+  const list = document.getElementById('colony-effects-list');
+  list.innerHTML = '';
+
+  const gained = Object.entries(effects).filter(([, d]) => d > 0);
+  const lost   = Object.entries(effects).filter(([, d]) => d < 0);
+
+  if (gained.length) {
+    const h = document.createElement('div');
+    h.className = 'ce-section-head ce-gain-head';
+    h.textContent = `▲ Gained (${gained.length})`;
+    list.appendChild(h);
+    gained.forEach(([col, d]) => addCERow(list, col, d, reasons[col]));
+  }
+  if (lost.length) {
+    const h = document.createElement('div');
+    h.className = 'ce-section-head ce-loss-head';
+    h.textContent = `▼ Lost (${lost.length})`;
+    list.appendChild(h);
+    lost.forEach(([col, d]) => addCERow(list, col, d, reasons[col]));
+  }
+
+  document.getElementById('colony-effects-panel').classList.add('show');
+
+  if (gained.length) playColonySound(true);
+  if (lost.length) setTimeout(() => playColonySound(false), gained.length ? 220 : 0);
+}
+
+// ── Game flow ──────────────────────────────────────────────────
+function startGame() {
+  document.getElementById('screen-intro').classList.add('out');
+  setTimeout(() => {
+    document.getElementById('screen-game').classList.add('in');
+    renderPassage(0);
+  }, 500);
+}
+
+function renderPassage(idx) {
+  choiceLocked = false;
+  const p = PASSAGES[idx];
+
+  document.getElementById('g-date').textContent = p.date;
+  document.getElementById('p-num').textContent = `Passage ${['I','II','III','IV','V'][idx]} of V`;
+  document.getElementById('p-title').textContent = p.title;
+  document.getElementById('p-context').textContent = p.context;
+
+  // Progress dots
+  document.querySelectorAll('.g-dot').forEach((d, i) => {
+    d.classList.remove('active','done');
+    if (i < idx) d.classList.add('done');
+    if (i === idx) d.classList.add('active');
+  });
+
+  // Document text
+  document.getElementById('doc-text').innerHTML =
+    `${p.textBefore}<span class="phrase" id="doc-phrase">${p.phrase}</span>${p.textAfter}`;
+
+  // Choice buttons
+  const row = document.getElementById('choices-row');
+  row.innerHTML = '';
+  p.options.forEach(opt => {
+    const btn = document.createElement('button');
+    btn.className = 'c-btn';
+    btn.id = `cb-${opt.id}`;
+    btn.innerHTML = `<span class="c-btn-lbl">${opt.short}</span><span class="c-btn-desc">${opt.desc}</span>`;
+    btn.onclick = () => choose(idx, opt.id);
+    row.appendChild(btn);
+  });
+
+  // Reset
+  document.getElementById('btn-next').classList.remove('show');
+  document.getElementById('cmt-text').textContent = "Awaiting the committee's deliberation…";
+  document.getElementById('cmt-choice-display').classList.remove('show');
+  document.getElementById('cmt-choice-display').textContent = '';
+  document.getElementById('colony-effects-panel').classList.remove('show');
+  document.getElementById('colony-effects-list').innerHTML = '';
+
+  // 1. Josh reads the context paragraph; 2. Adam reads the Declaration text
+  const fullText = p.textBefore + p.phrase + p.textAfter;
+  speakContext(p.context).then(() => {
+    if (!choiceLocked) speakText(fullText);
+  });
+}
+
+async function choose(passageIdx, choiceId) {
+  if (choiceLocked) return;
+  choiceLocked = true;
+  unlockAudio();
+  if (currentAudio) { try { currentAudio.stop(); } catch {} currentAudio = null; }
+  document.getElementById('speak-indicator').classList.remove('on');
+
+  const p = PASSAGES[passageIdx];
+  choices[p.id] = choiceId;
+  const opt = p.options.find(o => o.id === choiceId);
+
+  // Lock buttons visually
+  p.options.forEach(o => {
+    const btn = document.getElementById(`cb-${o.id}`);
+    if (btn) btn.classList.add(o.id === choiceId ? 'chosen' : 'unchosen');
+  });
+
+  // Animate phrase
+  const phraseEl = document.getElementById('doc-phrase');
+  if (phraseEl) {
+    setTimeout(() => {
+      if (opt.phraseText) phraseEl.textContent = opt.phraseText;
+      phraseEl.classList.add(opt.phraseClass);
+    }, 280);
+  }
+
+  // Colony effects (slightly delayed for drama)
+  const effects = p.colonyEffects[choiceId] || {};
+  setTimeout(() => {
+    Object.entries(effects).forEach(([col, delta]) => updateColony(col, delta));
+    showColonyEffects(p.id, choiceId, effects);
+  }, 900);
+
+  // Show choice in right panel
+  const dispEl = document.getElementById('cmt-choice-display');
+  dispEl.textContent = `"${opt.short}"`;
+  dispEl.classList.add('show');
+
+  // Stream committee reaction
+  await streamReaction(p, opt);
+
+  document.getElementById('btn-next').classList.add('show');
+}
+
+async function streamReaction(passage, opt) {
+  const textEl = document.getElementById('cmt-text');
+  textEl.textContent = '';
+
+  try {
+    const res = await fetch('/api/deliberate', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({
+        passage: passage.title,
+        choice: `${opt.short} — ${opt.desc}`,
+        context: passage.promptCtx
+      })
+    });
+    if (!res.ok || !res.body) throw new Error();
+
+    const reader = res.body.getReader();
+    const dec = new TextDecoder();
+    let text = '';
+    while (true) {
+      const {done, value} = await reader.read();
+      if (done) break;
+      text += dec.decode(value, {stream: true});
+      textEl.textContent = text;
+    }
+    if (!text.trim()) throw new Error('empty');
+    speakReaction(text);
+  } catch {
+    const fallback = FALLBACK[passage.id]?.[opt.id] ||
+      'The committee receives the decision in silence. Quills scratch against parchment.';
+    typeOut(textEl, fallback, () => speakReaction(fallback));
+  }
+}
+
+function typeOut(el, text, onDone) {
+  let i = 0;
+  el.textContent = '';
+  const iv = setInterval(() => {
+    if (i >= text.length) { clearInterval(iv); if (onDone) onDone(); return; }
+    el.textContent += text[i++];
+  }, 18);
+}
+
+function dbg(msg) {
+  let el = document.getElementById('_dbg');
+  if (!el) {
+    el = document.createElement('div');
+    el.id = '_dbg';
+    el.style.cssText = 'position:fixed;bottom:60px;right:12px;background:rgba(0,0,0,.85);color:#0f0;font:11px monospace;padding:8px 10px;z-index:9999;max-width:320px;border-radius:4px;white-space:pre-wrap';
+    document.body.appendChild(el);
+  }
+  el.textContent = msg;
+}
+
+// Returns a Promise that resolves when audio finishes (or errors)
+async function speakReaction(text, voiceId = 'committee') {
+  if (currentAudio) { try { currentAudio.stop(); } catch {} currentAudio = null; }
+  const indicator = document.getElementById('speak-indicator');
+  dbg(`speak(${voiceId}): fetching…`);
+  try {
+    const res = await fetch('/api/speak', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ text, voiceId })
+    });
+    dbg(`speak: fetch ${res.status} ok=${res.ok}`);
+    if (!res.ok) return;
+
+    const arrayBuffer = await res.arrayBuffer();
+    dbg(`speak: got ${arrayBuffer.byteLength} bytes`);
+
+    if (!_audioCtx) _audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    if (_audioCtx.state === 'suspended') await _audioCtx.resume();
+    dbg(`speak: decoding…`);
+
+    const audioBuffer = await _audioCtx.decodeAudioData(arrayBuffer);
+    dbg(`speak: decoded ${audioBuffer.duration.toFixed(1)}s`);
+
+    const source = _audioCtx.createBufferSource();
+    source.buffer = audioBuffer;
+    source.connect(_audioCtx.destination);
+    currentAudio = source;
+    indicator.classList.add('on');
+
+    await new Promise(resolve => {
+      source.onended = () => { indicator.classList.remove('on'); currentAudio = null; dbg(`${voiceId}: done`); resolve(); };
+      source.start(0);
+    });
+  } catch (err) {
+    dbg(`speak ERROR: ${err}`);
+    indicator.classList.remove('on');
+  }
+}
+
+// Three distinct narrators
+function speakContext(text) { return speakReaction(text, 'context'); }   // Josh  — scene narrator
+function speakText(text)    { return speakReaction(text, 'text'); }       // Adam  — Declaration reader
+// speakReaction(text) default — Daniel — committee room
+
+function nextPassage() {
+  if (currentAudio) { try { currentAudio.stop(); } catch {} currentAudio = null; }
+  document.getElementById('speak-indicator').classList.remove('on');
+  curIdx++;
+  if (curIdx >= PASSAGES.length) { showResults(); return; }
+
+  const doc = document.getElementById('doc-panel');
+  doc.style.opacity = '0';
+  setTimeout(() => {
+    renderPassage(curIdx);
+    doc.style.opacity = '1';
+  }, 380);
+}
+
+// ── Results ────────────────────────────────────────────────────
+function showResults() {
+  document.getElementById('screen-game').classList.remove('in');
+  document.getElementById('screen-game').classList.add('out');
+  setTimeout(() => {
+    buildResults();
+    document.getElementById('screen-results').classList.add('in');
+  }, 600);
+}
+
+function buildResults() {
+  const matches = PASSAGES.filter(p => choices[p.id] === p.historical).length;
+  const keptSlavery = choices['slavery'] === 'keep';
+  const refusingCount = COLONIES.filter(c => scores[c.name] <= -2).length;
+
+  // Verdict
+  let role, quote, body;
+  if (keptSlavery && refusingCount >= 2) {
+    role = 'The Principled Failure';
+    quote = '"If the union cannot survive the truth, then let the truth outlast the union."';
+    body = 'You kept the slavery clause. Georgia and South Carolina refused to sign. Independence was declared — but not unanimously. Your document said what Jefferson believed. The nation that might have been did not come to be.';
+  } else if (matches === 5) {
+    role = 'The Consensus Builder';
+    quote = '"You found the path the committee found — every compromise, every concession."';
+    body = 'Your choices align exactly with what the historical Committee of Five decided. You built the same consensus they did — and inherited the same burdens.';
+  } else if (matches >= 4) {
+    role = 'The Pragmatist';
+    quote = '"The best document is the one that gets signed."';
+    body = 'Your choices track closely with what the committee actually decided. You understood that a signed imperfect document outlasts an unsigned perfect one.';
+  } else if (keptSlavery) {
+    role = 'The Abolitionist';
+    quote = '"You kept what Jefferson most wanted to keep — and faced the consequences."';
+    body = 'You held the slavery clause against tremendous pressure. Whether the union survived is another question. Whether it deserved to, without that clause, is the question Jefferson never stopped asking.';
+  } else if (matches <= 2) {
+    role = 'The Revisionist';
+    quote = '"Your Declaration is a different document — and a different nation."';
+    body = 'Your choices diverge from history in significant ways. The document you produced is your own. Whether it would have held the colonies together is something history never got to test.';
+  } else {
+    role = 'The Deliberator';
+    quote = '"You found your own path through the room."';
+    body = 'Your Declaration reflects choices that are neither fully Franklin\'s nor fully Jefferson\'s. Neither fully principled nor fully political. Such is the nature of committees.';
+  }
+
+  const body_el = document.getElementById('r-body');
+  body_el.innerHTML = '';
+
+  // Verdict box
+  const vbox = el('div','verdict-box');
+  vbox.innerHTML = `
+    <div class="verdict-label">Your Role in History</div>
+    <div class="verdict-role">${role}</div>
+    <div class="verdict-quote">${quote}</div>
+    <div class="verdict-body">${body}</div>
+  `;
+  body_el.appendChild(vbox);
+
+  // Passage comparison
+  const ctitle = el('div','r-section-title');
+  ctitle.textContent = 'Your Choices vs. History';
+  body_el.appendChild(ctitle);
+
+  PASSAGES.forEach(p => {
+    const yourOpt = p.options.find(o => o.id === choices[p.id]);
+    const histOpt = p.options.find(o => o.id === p.historical);
+    const matched = choices[p.id] === p.historical;
+
+    const block = el('div','r-passage');
+    const pname = el('div','r-passage-name');
+    pname.textContent = `${['I','II','III','IV','V'][p.number-1]}. ${p.title}`;
+    block.appendChild(pname);
+
+    const row = el('div','r-compare-row');
+    const c1 = el('div', 'r-cell ' + (matched ? 'match' : 'differ'));
+    c1.innerHTML = `<strong>YOU</strong><br>${yourOpt?.short || '—'}`;
+    const c2 = el('div', 'r-cell ' + (matched ? 'match' : 'differ'));
+    c2.innerHTML = `<strong>HISTORY</strong><br>${histOpt?.short || '—'}${matched ? ' ✓' : ''}`;
+    row.appendChild(c1); row.appendChild(c2);
+    block.appendChild(row);
+
+    const note = el('div','r-note');
+    note.textContent = p.historicalNote;
+    block.appendChild(note);
+
+    body_el.appendChild(block);
+  });
+
+  // Colony final state
+  const ctitle2 = el('div','r-section-title');
+  ctitle2.style.marginTop = '32px';
+  ctitle2.textContent = 'The Colonies on Your Document';
+  body_el.appendChild(ctitle2);
+
+  const cgrid = el('div','colony-final-grid');
+  COLONIES.forEach(c => {
+    const s = scores[c.name];
+    const label = s >= 2 ? 'YES' : s === 1 ? 'LIKELY' : s === 0 ? 'UNSURE' : s === -1 ? 'OPPOSED' : 'REFUSES';
+    const bg    = s >= 2 ? '#3d7a3d' : s === 1 ? '#6a9a3a' : s === 0 ? '#9a7a20' : s === -1 ? '#9a3820' : '#7a1212';
+    const item = el('div','colony-final-item');
+    item.innerHTML = `
+      <span class="colony-final-dot" style="background:${bg}"></span>
+      <span class="colony-final-name">${c.name}</span>
+      <span class="colony-final-status" style="color:${bg}">${label}</span>`;
+    cgrid.appendChild(item);
+  });
+  body_el.appendChild(cgrid);
+
+  // Actions
+  const actions = el('div','r-actions');
+  actions.innerHTML = `
+    <p class="r-franklin-quote">
+      "We must all hang together, or, most assuredly, we shall all hang separately."
+      <span class="r-franklin-attr">— Benjamin Franklin, upon signing</span>
+    </p>
+    <button class="btn-begin" onclick="location.reload()">Deliberate Again</button>
+  `;
+  body_el.appendChild(actions);
+}
+
+function el(tag, cls) {
+  const e = document.createElement(tag);
+  if (cls) e.className = cls;
+  return e;
+}
+
+init();
+</script>
+</body>
+</html>
