@@ -1,6 +1,8 @@
 {
+  "outputDirectory": ".",
   "functions": {
     "api/generate.js": { "maxDuration": 30 },
     "api/image.js":    { "maxDuration": 60 }
-  }
+  },
+  "ignoreCommand": "[ -z \"$VERCEL_GIT_PREVIOUS_SHA\" ] && exit 1; git diff $VERCEL_GIT_PREVIOUS_SHA HEAD --quiet -- ."
 }

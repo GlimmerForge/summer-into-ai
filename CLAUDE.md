@@ -126,10 +126,15 @@ Call the **Agent tool with `isolation: "worktree"`** for each demo simultaneousl
 > - `index.html` — complete app, vanilla JS, CSS in `<style>`, JS in `<script>`, calls `/api/` endpoints, themed UI matching the week's aesthetic, fully working
 > - `api/chat.js` — Vercel serverless function (ESM, Node.js); add other api files as needed
 > - `package.json` — `{ "type": "module", "dependencies": { "@anthropic-ai/sdk": "^0.39.0" } }` — **no `scripts` block** — a `"start"` script makes Vercel treat the project as a Node.js server instead of a static site
-> - `vercel.json` — always include `outputDirectory: "."` so Vercel serves `index.html` from the demo root (not from `public/` if that folder exists):
+> - `vercel.json` — always include both `outputDirectory` and `ignoreCommand`:
 >   ```json
->   { "outputDirectory": ".", "functions": { "api/*.js": { "maxDuration": 30 } } }
+>   {
+>     "outputDirectory": ".",
+>     "functions": { "api/*.js": { "maxDuration": 30 } },
+>     "ignoreCommand": "[ -z \"$VERCEL_GIT_PREVIOUS_SHA\" ] && exit 1; git diff $VERCEL_GIT_PREVIOUS_SHA HEAD --quiet -- ."
+>   }
 >   ```
+>   `outputDirectory: "."` prevents Vercel from serving `public/` as the root (404). `ignoreCommand` skips the build when no files in this folder changed, so a push only redeploys the demos that actually changed. `VERCEL_GIT_PREVIOUS_SHA` is empty on first deploy so it always builds initially.
 > - `.gitignore` — `node_modules/`, `.env.local`, `.vercel/`
 > - `.env.local` — `ANTHROPIC_API_KEY=your_key_here` (placeholder only)
 > - `README.md` — title, one-line description, how AI powers it, local dev instructions, Vercel deploy instructions
