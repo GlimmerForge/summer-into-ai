@@ -1,0 +1,7 @@
+{
+  "functions": {
+    "api/generate.js": { "maxDuration": 30 },
+    "api/image.js":    { "maxDuration": 60 }
+  },
+  "ignoreCommand": "git diff HEAD^ HEAD --quiet -- ."
+}

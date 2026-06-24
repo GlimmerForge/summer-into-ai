@@ -2,5 +2,6 @@
   "functions": {
     "api/pitch.js": { "maxDuration": 30 },
     "api/speak.js": { "maxDuration": 30 }
-  }
+  },
+  "ignoreCommand": "git diff HEAD^ HEAD --quiet -- ."
 }
