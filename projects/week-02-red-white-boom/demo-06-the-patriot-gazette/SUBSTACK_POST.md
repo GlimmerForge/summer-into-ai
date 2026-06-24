@@ -2,11 +2,11 @@
 
 ![Fort Liberty at dusk, cannon aimed at the British fleet](assets/pg-hero.png)
 
-**[COMPETITOR DEMO]** by [Author] ([@handle](https://advisoryhour.substack.com)) [one sentence on what they built and what was smart]. [One sentence on how it made you go a different direction].
-
 **The Patriot Gazette** is a harbor defense artillery game set on July 4, 1776. You command a bronze cannon on the ramparts of Fort Liberty as the British fleet sails in from the horizon. Move your mouse anywhere on screen — the cannon auto-calculates the exact ballistic arc — then click to fire. British warships advance in three waves: sloops first, then frigates, then a man-of-war. Each class returns fire. Sink them all before they breach the harbor.
 
-The new AI element is **streaming SSE narration**: Claude Haiku delivers live play-by-play commentary token-by-token via Server-Sent Events, triggered on every hit, sink, and harbor breach. The entire audio layer is procedural Web Audio API — rolling ocean waves with an LFO swell, a five-layer cannon boom with stone-echo reflections, an underwater gurgle as ships sink, stone crumble when the fort takes a hit, and a C–E–G–C bugle fanfare on victory. No sound files.
+The AI element is a **spoken quote banner**: Josh — an ElevenLabs voice — reads a curated Revolutionary War-era quote aloud at the start of each wave, between waves, and on victory. A newspaper masthead strip at the top types the quote character-by-character while Josh speaks it, then fades. Quotes rotate through Patrick Henry, Thomas Paine, Benjamin Franklin, Nathan Hale, George Washington, Samuel Adams, and Thomas Jefferson.
+
+The entire audio layer is procedural Web Audio API — rolling ocean waves with an LFO swell, a five-layer cannon boom with stone-echo reflections, an underwater gurgle as ships sink, stone crumble when the fort takes a hit, and a C–E–G–C bugle fanfare on victory. No sound files.
 
 ![Cannonball in flight with glowing ember trail](assets/pg-firing.png)
 
@@ -14,12 +14,12 @@ The new AI element is **streaming SSE narration**: Claude Haiku delivers live pl
 
 ## How the AI works
 
-Claude Haiku streams live battlefield narration in real time, triggered by every significant game event:
+ElevenLabs Josh speaks a new quote at every major game moment — wave start, wave clear, and victory:
 
-- **Streaming SSE narration** — each hit, sink, or breach POSTs to /api/narrate, a Vercel serverless function that calls client.messages.stream() and pipes each token back as text/event-stream. The browser reads chunks with response.body.getReader() and renders the correspondent's copy word-by-word as the model types it
+- **ElevenLabs TTS** — on each trigger the game POSTs the quote text to /api/speak, a Vercel serverless function that calls the ElevenLabs API (eleven_turbo_v2_5 model, Josh voice). The browser fetches the returned audio/mpeg blob, wraps it in an Audio element, and plays it. Quotes only speak after the first click so browser autoplay restrictions never block anything
 - **Ballistic auto-range** — on every mousemove the game solves the quadratic ballistic equation to find the exact launch angle that lands the cannonball at your cursor; you aim by pointing, not by guessing the arc height
 
-If the API is unreachable the game plays identically — narration stays silent. All gameplay logic is client-side.
+If the ElevenLabs key isn't set the game plays identically — the banner still types the quote, just silently.
 
 ## How to play
 
@@ -31,9 +31,9 @@ If the API is unreachable the game plays identically — narration stays silent.
 
 ## Where to play
 
-**Demo:** [[your-vercel-url].vercel.app](https://patriot-gazette.vercel.app)
-**Code:** [github.com/GlimmerForge/summer-into-ai](https://github.com/GlimmerForge/summer-into-ai/tree/master/projects/week-02-red-white-boom/demo-06-the-patriot-gazette)
+**Demo:** [patriot-gazette.vercel.app](https://patriot-gazette.vercel.app)
+**README:** [github.com/GlimmerForge/summer-into-ai — The Patriot Gazette](https://github.com/GlimmerForge/summer-into-ai/blob/master/projects/week-02-red-white-boom/demo-06-the-patriot-gazette/README.md)
 
 ---
 
-*Summer into AI 2026 · Theme 2: Red, White & Boom · Competitor reference: [COMPETITOR DEMO] by [@handle](https://advisoryhour.substack.com)*
+*Summer into AI 2026 · Theme 2: Red, White & Boom*
