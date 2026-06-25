@@ -1,26 +1,38 @@
 {
+  "projects/week-01-8bit-america/demo-01-found-a-republic": {
+    "projectId": "prj_8UpXPqgTCxebD3cWHg3UR27O5H1j",
+    "orgId": "team_D79TvyBcfHAyncBLxxnY1foW"
+  },
+  "projects/week-01-8bit-america/demo-02-liberty-1776": {
+    "projectId": "prj_GxzjYIX4GD4zfgXuIoJejmylKjOw",
+    "orgId": "team_D79TvyBcfHAyncBLxxnY1foW"
+  },
+  "projects/week-01-8bit-america/demo-03-hall-of-the-republic": {
+    "projectId": "prj_B5Zk7f7e3LdcWLzfgA2rZegywjIM",
+    "orgId": "team_D79TvyBcfHAyncBLxxnY1foW"
+  },
   "projects/week-02-red-white-boom/demo-01-the-turncoat": {
-    "projectId": "FILL_IN",
+    "projectId": "prj_gHKDwuiTzLHq6dTBGbcTtDCT33Ed",
     "orgId": "team_D79TvyBcfHAyncBLxxnY1foW"
   },
   "projects/week-02-red-white-boom/demo-02-fireworks-foundry": {
-    "projectId": "FILL_IN",
+    "projectId": "prj_vs2O5PYOdu1WdGFY5GTbt1SDPibG",
     "orgId": "team_D79TvyBcfHAyncBLxxnY1foW"
   },
   "projects/week-02-red-white-boom/demo-02-boom-or-bust": {
-    "projectId": "FILL_IN",
+    "projectId": "prj_xJypAUl2B55dKKuBTvEfYp7IKpqW",
     "orgId": "team_D79TvyBcfHAyncBLxxnY1foW"
   },
   "projects/week-02-red-white-boom/demo-03-i-only-regret": {
-    "projectId": "FILL_IN",
+    "projectId": "prj_Y3n8RfiSgMrQ6S5aBBvpanCvywpm",
     "orgId": "team_D79TvyBcfHAyncBLxxnY1foW"
   },
-  "projects/week-02-red-white-boom/demo-04-the-broadside": {
-    "projectId": "FILL_IN",
+  "projects/week-02-red-white-boom/demo-05-minuteman": {
+    "projectId": "prj_EQfEFZKKHQb954RdbOIt82EyTlwo",
     "orgId": "team_D79TvyBcfHAyncBLxxnY1foW"
   },
   "projects/week-02-red-white-boom/demo-06-the-patriot-gazette": {
-    "projectId": "FILL_IN",
+    "projectId": "prj_EzrkuTjyAsH6AEFtpOAhYLvYKYJk",
     "orgId": "team_D79TvyBcfHAyncBLxxnY1foW"
   },
   "projects/week-02-red-white-boom/demo-07-drafted": {
