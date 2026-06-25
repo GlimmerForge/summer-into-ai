@@ -990,7 +990,7 @@ function startTownLoop() {
     if (prompt) {
       if (nearbyBuilding) {
         prompt.classList.remove('hidden');
-        prompt.textContent = '▶ ENTER: ' + nearbyBuilding.name.toUpperCase() + ' ◄';
+        prompt.textContent = '▶ ENTER: ' + (nearbyBuilding.label || nearbyBuilding.id || '').toUpperCase() + ' ◄';
       } else {
         prompt.classList.add('hidden');
       }
