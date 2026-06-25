@@ -1,0 +1,1609 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Liberty Fireworks — Summer Into AI 2026</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0a0a14;
+    --parchment: #e8dcc8;
+    --gold: #c8962a;
+    --gold-light: #ffcc00;
+    --wood-dark: #3d2b1f;
+    --wood-mid: #5c3d28;
+    --wood-light: #7a5a30;
+    --ink: #2a1a08;
+    --red: #cc2222;
+    --night-sky: linear-gradient(180deg, #040818 0%, #0d1a3a 60%, #1a1a2e 100%);
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--parchment);
+    font-family: system-ui, sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  h1, h2, h3 { font-family: Georgia, serif; }
+
+  /* =========== LOADING =========== */
+  #phase-loading {
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    min-height: 100vh; gap: 24px;
+  }
+  .spinner {
+    width: 48px; height: 48px;
+    border: 4px solid #333;
+    border-top-color: var(--gold);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* =========== BRIEF =========== */
+  #phase-brief {
+    display: flex; align-items: center; justify-content: center;
+    min-height: 100vh; padding: 24px;
+    background: var(--night-sky);
+  }
+  .parchment-card {
+    background: #f5e8c8;
+    color: var(--ink);
+    border-radius: 8px;
+    padding: 40px;
+    max-width: 600px;
+    width: 100%;
+    box-shadow: 0 8px 40px rgba(0,0,0,0.8), inset 0 0 40px rgba(180,140,60,0.15);
+    position: relative;
+    border: 2px solid #c8962a44;
+  }
+  .parchment-card::before {
+    content: '';
+    position: absolute; top: -18px; left: 50%; transform: translateX(-50%);
+    width: 36px; height: 36px;
+    background: radial-gradient(circle at 40% 35%, #cc3333 0%, #881111 60%, #550000 100%);
+    border-radius: 50%;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.5);
+  }
+  .brief-header {
+    text-align: center; margin-bottom: 24px; margin-top: 8px;
+  }
+  .brief-header h1 { font-size: 1.6rem; color: var(--ink); margin-bottom: 4px; }
+  .brief-header p { font-size: 0.85rem; color: #6b4c20; letter-spacing: 0.05em; text-transform: uppercase; }
+  .brief-section { margin-bottom: 16px; }
+  .brief-section label {
+    display: block; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.1em;
+    color: #8b6020; margin-bottom: 4px; font-family: Georgia, serif;
+  }
+  .brief-section .value {
+    font-size: 1rem; color: var(--ink); font-family: Georgia, serif;
+  }
+  .color-badges { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 6px; }
+  .color-badge {
+    padding: 4px 12px; border-radius: 20px; font-size: 0.8rem; font-weight: 600;
+    border: 2px solid rgba(0,0,0,0.2); color: #fff; text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+  }
+  .council-note {
+    background: rgba(180,140,60,0.15); border-left: 3px solid var(--gold);
+    padding: 12px 16px; border-radius: 0 4px 4px 0; font-style: italic;
+    color: var(--ink); margin-top: 8px;
+  }
+  .btn {
+    display: inline-block; padding: 12px 28px; border-radius: 4px; border: none;
+    font-family: Georgia, serif; font-size: 1rem; cursor: pointer;
+    transition: all 0.15s; text-decoration: none;
+  }
+  .btn-primary {
+    background: var(--gold); color: var(--ink); font-weight: bold;
+    box-shadow: 0 2px 8px rgba(200,150,42,0.4);
+  }
+  .btn-primary:hover { background: var(--gold-light); transform: translateY(-1px); }
+  .btn-primary:disabled { background: #666; color: #999; cursor: not-allowed; transform: none; }
+  .btn-danger {
+    background: var(--red); color: #fff; font-weight: bold;
+    box-shadow: 0 2px 8px rgba(200,30,30,0.5);
+  }
+  .btn-danger:hover { background: #ff3333; transform: translateY(-1px); }
+  .btn-ghost {
+    background: transparent; color: var(--parchment);
+    border: 1px solid rgba(200,180,150,0.3);
+  }
+  .btn-ghost:hover { background: rgba(255,255,255,0.08); }
+  .brief-actions { text-align: center; margin-top: 24px; }
+
+  /* =========== TOWN =========== */
+  #phase-town {
+    min-height: 100vh;
+    background: var(--night-sky);
+    position: relative;
+    overflow: hidden;
+  }
+  .town-hud {
+    position: absolute; top: 16px; left: 0; right: 0;
+    display: flex; justify-content: space-between; align-items: flex-start;
+    padding: 0 20px; z-index: 10;
+  }
+  .town-title { font-family: Georgia, serif; color: var(--parchment); }
+  .town-title h2 { font-size: 1.3rem; }
+  .town-title p { font-size: 0.8rem; color: rgba(232,220,200,0.6); }
+  .budget-counter {
+    background: rgba(0,0,0,0.5); border: 1px solid var(--gold);
+    border-radius: 4px; padding: 8px 16px; text-align: center;
+    color: var(--gold-light); font-family: Georgia, serif;
+  }
+  .budget-counter .amount { font-size: 1.4rem; font-weight: bold; }
+  .budget-counter .label { font-size: 0.7rem; opacity: 0.7; }
+
+  /* Stars */
+  .stars {
+    position: absolute; top: 0; left: 0; right: 0; bottom: 0; pointer-events: none;
+  }
+  .star {
+    position: absolute; background: #fff; border-radius: 50%;
+    animation: twinkle var(--dur, 3s) ease-in-out infinite;
+  }
+  @keyframes twinkle {
+    0%, 100% { opacity: var(--op, 0.6); }
+    50% { opacity: 0.1; }
+  }
+
+  /* Ground */
+  .ground {
+    position: absolute; bottom: 0; left: 0; right: 0; height: 180px;
+    background: linear-gradient(0deg, #0d2206 0%, #1a3a0a 60%, #1a3a0a 100%);
+  }
+  .cobblestone {
+    position: absolute; bottom: 110px; left: 50%; transform: translateX(-50%);
+    width: 220px; height: 110px;
+    background: repeating-linear-gradient(
+      90deg,
+      #2a2018 0px, #2a2018 28px,
+      #3a2e20 28px, #3a2e20 56px
+    );
+    border-radius: 4px 4px 0 0;
+  }
+
+  /* Buildings */
+  .buildings {
+    position: absolute; bottom: 110px; left: 0; right: 0;
+    display: flex; justify-content: center; align-items: flex-end;
+    gap: 60px;
+  }
+  .building-wrap { display: flex; flex-direction: column; align-items: center; cursor: pointer; }
+  .building-wrap:hover .building { box-shadow: 0 0 20px rgba(200,150,42,0.3); }
+  .building-wrap:hover .sign { background: var(--wood-light); }
+  .sign {
+    background: var(--wood-mid); color: var(--parchment);
+    font-family: Georgia, serif; font-size: 10px; padding: 3px 8px;
+    border: 1px solid rgba(200,150,42,0.3); text-align: center;
+    margin-bottom: 2px; border-radius: 2px; white-space: nowrap;
+    transition: background 0.2s;
+  }
+  .building {
+    width: 130px;
+    background: var(--wood-dark); border: 2px solid var(--wood-mid);
+    border-radius: 4px 4px 0 0;
+    position: relative; transition: box-shadow 0.2s;
+  }
+  .roof {
+    background: #5c2d00; height: 40px;
+    clip-path: polygon(0% 100%, 50% 0%, 100% 100%);
+    margin-bottom: -2px; width: 100%;
+  }
+  .building-body {
+    padding: 8px; display: flex; flex-direction: column; align-items: center; gap: 8px;
+  }
+  .building-windows {
+    display: flex; gap: 8px;
+  }
+  .window {
+    width: 28px; height: 32px;
+    background: rgba(255,200,80,0.2); border: 2px solid var(--wood-mid);
+    box-shadow: 0 0 10px rgba(200,150,42,0.5);
+    animation: flicker var(--f, 4s) ease-in-out infinite;
+  }
+  @keyframes flicker {
+    0%, 100% { box-shadow: 0 0 10px rgba(200,150,42,0.5); }
+    50% { box-shadow: 0 0 16px rgba(200,150,42,0.8); }
+  }
+  .door {
+    width: 22px; height: 28px;
+    background: var(--wood-mid); border: 1px solid var(--wood-light);
+    border-radius: 4px 4px 0 0;
+  }
+  .shop-label {
+    font-family: Georgia, serif; font-size: 11px; color: var(--parchment);
+    text-align: center; margin-top: 4px; opacity: 0.8;
+  }
+
+  .town-actions {
+    position: absolute; bottom: 20px; left: 0; right: 0;
+    display: flex; justify-content: center; gap: 12px;
+  }
+
+  /* Brief reminder bar */
+  .brief-bar {
+    position: absolute; top: 80px; left: 50%; transform: translateX(-50%);
+    background: rgba(0,0,0,0.6); border: 1px solid rgba(200,150,42,0.3);
+    border-radius: 4px; padding: 8px 16px; font-size: 0.8rem;
+    color: var(--parchment); white-space: nowrap; z-index: 5;
+    text-align: center;
+  }
+  .brief-bar span { color: var(--gold-light); }
+
+  /* =========== SHOP =========== */
+  #phase-shop {
+    min-height: 100vh;
+    background: #1a0e06;
+    padding: 20px;
+  }
+  .shop-header {
+    display: flex; align-items: center; gap: 16px; margin-bottom: 20px;
+    border-bottom: 1px solid rgba(200,150,42,0.3); padding-bottom: 16px;
+  }
+  .shop-header h2 { font-family: Georgia, serif; color: var(--gold); font-size: 1.5rem; }
+  .shop-header p { color: rgba(232,220,200,0.6); font-size: 0.85rem; margin-top: 2px; }
+  .shop-layout { display: grid; grid-template-columns: 1fr 300px; gap: 20px; }
+  @media (max-width: 700px) { .shop-layout { grid-template-columns: 1fr; } }
+  .item-grid {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 12px;
+  }
+  .item-card {
+    background: rgba(60,40,20,0.5); border: 1px solid rgba(200,150,42,0.2);
+    border-radius: 6px; padding: 12px;
+    display: flex; flex-direction: column; gap: 6px;
+  }
+  .item-card:hover { border-color: var(--gold); background: rgba(80,55,25,0.6); }
+  .item-name { font-family: Georgia, serif; font-size: 0.9rem; color: var(--parchment); }
+  .item-price { font-size: 0.8rem; color: var(--gold-light); }
+  .item-color-dot {
+    width: 16px; height: 16px; border-radius: 50%;
+    border: 2px solid rgba(255,255,255,0.3); display: inline-block;
+    vertical-align: middle; margin-right: 4px;
+  }
+  .item-effect { font-size: 0.75rem; color: rgba(232,220,200,0.5); }
+  .item-btn {
+    margin-top: auto; padding: 6px 12px; border-radius: 3px; border: none;
+    background: var(--gold); color: var(--ink); font-size: 0.8rem;
+    cursor: pointer; font-family: Georgia, serif; font-weight: bold;
+  }
+  .item-btn:hover { background: var(--gold-light); }
+  .item-btn:disabled { background: #444; color: #888; cursor: not-allowed; }
+
+  .shop-sidebar { display: flex; flex-direction: column; gap: 16px; }
+  .shopkeeper-panel {
+    background: rgba(40,25,10,0.8); border: 1px solid rgba(200,150,42,0.3);
+    border-radius: 6px; padding: 16px;
+  }
+  .shopkeeper-panel h3 { font-family: Georgia, serif; color: var(--gold); margin-bottom: 8px; font-size: 0.9rem; }
+  .shopkeeper-text {
+    font-style: italic; color: var(--parchment); font-size: 0.85rem; line-height: 1.5;
+    min-height: 60px; opacity: 0.9;
+  }
+  .inventory-mini {
+    background: rgba(40,25,10,0.8); border: 1px solid rgba(200,150,42,0.3);
+    border-radius: 6px; padding: 16px;
+  }
+  .inventory-mini h3 { font-family: Georgia, serif; color: var(--gold); margin-bottom: 8px; font-size: 0.9rem; }
+  .inv-list { display: flex; flex-direction: column; gap: 4px; max-height: 200px; overflow-y: auto; }
+  .inv-item { font-size: 0.8rem; color: rgba(232,220,200,0.7); display: flex; align-items: center; gap: 6px; }
+
+  /* =========== LAUNCH FIELD =========== */
+  #phase-launch {
+    min-height: 100vh; background: #050510; padding: 20px;
+  }
+  .launch-header { margin-bottom: 16px; }
+  .launch-header h2 { font-family: Georgia, serif; color: var(--gold); font-size: 1.4rem; }
+  .launch-brief-reminder {
+    display: flex; gap: 16px; align-items: center; flex-wrap: wrap;
+    background: rgba(40,25,10,0.6); border: 1px solid rgba(200,150,42,0.2);
+    border-radius: 4px; padding: 8px 14px; margin-top: 8px; font-size: 0.8rem;
+  }
+  .launch-brief-reminder span { color: var(--gold-light); }
+  .launch-layout { display: grid; grid-template-columns: 240px 1fr; gap: 20px; }
+  @media (max-width: 700px) { .launch-layout { grid-template-columns: 1fr; } }
+
+  .inv-panel {
+    background: rgba(20,12,4,0.8); border: 1px solid rgba(200,150,42,0.2);
+    border-radius: 6px; padding: 14px;
+  }
+  .inv-panel h3 { font-family: Georgia, serif; color: var(--gold); margin-bottom: 10px; font-size: 0.9rem; }
+  .inv-section { margin-bottom: 14px; }
+  .inv-section h4 { font-size: 0.75rem; color: rgba(200,150,42,0.6); text-transform: uppercase;
+    letter-spacing: 0.08em; margin-bottom: 6px; }
+  .shell-pill {
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 4px 10px; border-radius: 20px; font-size: 0.78rem;
+    background: rgba(60,40,20,0.7); border: 1px solid rgba(200,150,42,0.3);
+    color: var(--parchment); cursor: pointer; margin: 2px; transition: all 0.15s;
+    white-space: nowrap;
+  }
+  .shell-pill:hover { border-color: var(--gold); background: rgba(80,55,25,0.8); }
+  .shell-pill.selected { border-color: var(--gold-light); box-shadow: 0 0 8px rgba(255,204,0,0.4); }
+  .dye-swatch {
+    width: 20px; height: 20px; border-radius: 50%;
+    border: 2px solid rgba(255,255,255,0.3); cursor: pointer; display: inline-block;
+    transition: all 0.15s; position: relative;
+  }
+  .dye-swatch:hover { transform: scale(1.2); border-color: var(--gold); }
+  .dye-swatch.selected { border-color: var(--gold-light); box-shadow: 0 0 8px rgba(255,204,0,0.5); transform: scale(1.15); }
+  .dye-swatch-wrap {
+    display: inline-flex; flex-direction: column; align-items: center;
+    gap: 2px; margin: 3px; cursor: pointer;
+  }
+  .dye-swatch-wrap span { font-size: 0.6rem; color: rgba(232,220,200,0.5); }
+  .extra-item {
+    font-size: 0.78rem; color: var(--parchment); background: rgba(40,25,10,0.6);
+    border: 1px solid rgba(200,150,42,0.2); border-radius: 3px;
+    padding: 3px 8px; margin: 2px; display: inline-flex; align-items: center; gap: 5px;
+    cursor: pointer;
+  }
+  .extra-item:hover { border-color: var(--gold); }
+  .extra-item.selected { border-color: var(--gold-light); }
+
+  .mortar-field {
+    background: rgba(10,8,20,0.9); border: 1px solid rgba(200,150,42,0.15);
+    border-radius: 8px; padding: 20px;
+    display: flex; flex-direction: column; justify-content: space-between;
+    min-height: 400px;
+  }
+  .mortar-instructions {
+    font-size: 0.8rem; color: rgba(232,220,200,0.5); margin-bottom: 16px; line-height: 1.6;
+  }
+  .mortar-row {
+    display: flex; gap: 8px; flex-wrap: wrap; justify-content: center;
+    margin: auto 0; padding: 20px 0;
+  }
+  .mortar-wrap { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+  .mortar-num { font-size: 0.65rem; color: rgba(232,220,200,0.3); }
+  .mortar {
+    width: 44px; height: 60px;
+    background: linear-gradient(90deg, #4a3520 0%, #7a5a30 40%, #4a3520 100%);
+    border-radius: 4px 4px 0 0;
+    border: 2px solid var(--wood-mid);
+    cursor: pointer; display: flex; flex-direction: column;
+    align-items: center; justify-content: flex-start;
+    padding-top: 6px; transition: border-color 0.15s;
+    position: relative;
+  }
+  .mortar:hover { border-color: rgba(200,150,42,0.6); }
+  .mortar.loaded { border-color: var(--gold); }
+  .mortar.active-target { border-color: var(--gold-light); box-shadow: 0 0 10px rgba(255,204,0,0.5); }
+  .shell-badge {
+    width: 28px; height: 28px; border-radius: 50%;
+    border: 2px solid rgba(255,255,255,0.3);
+  }
+  .mortar-type-label {
+    font-size: 0.55rem; color: rgba(255,255,255,0.6); text-align: center;
+    line-height: 1.1; max-width: 42px; word-break: break-all; margin-top: 2px;
+  }
+  .mortar-ground {
+    height: 16px; background: linear-gradient(0deg, #3d2b1f, #5c3d28);
+    width: 100%; margin-top: -2px;
+  }
+  .timing-badge {
+    font-size: 0.65rem; padding: 2px 5px; border-radius: 3px;
+    background: rgba(40,25,10,0.8); border: 1px solid rgba(200,150,42,0.2);
+    color: var(--gold-light); cursor: pointer;
+  }
+  .timing-badge:hover { border-color: var(--gold); }
+
+  .launch-actions { margin-top: 20px; display: flex; justify-content: center; gap: 16px; }
+  .mode-indicator {
+    padding: 6px 12px; background: rgba(200,150,42,0.1); border: 1px solid var(--gold);
+    border-radius: 4px; font-size: 0.8rem; color: var(--gold-light); text-align: center;
+    margin-bottom: 10px;
+  }
+
+  /* =========== SHOW =========== */
+  #phase-show {
+    position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+    background: #000;
+  }
+  #fireworks-canvas {
+    display: block; width: 100%; height: 100%;
+  }
+  .eval-panel {
+    position: absolute; top: 20px; right: 20px;
+    width: 280px; max-height: calc(100vh - 40px);
+    background: rgba(0,0,0,0.7); border: 1px solid rgba(200,150,42,0.3);
+    border-radius: 6px; padding: 16px; overflow-y: auto;
+  }
+  .eval-panel h3 { font-family: Georgia, serif; color: var(--gold); margin-bottom: 8px; font-size: 0.9rem; }
+  .eval-text { font-size: 0.85rem; line-height: 1.6; color: var(--parchment); }
+  .show-status {
+    position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%);
+    background: rgba(0,0,0,0.7); border: 1px solid rgba(200,150,42,0.3);
+    border-radius: 4px; padding: 8px 20px; font-family: Georgia, serif;
+    color: var(--gold-light); font-size: 0.9rem;
+  }
+
+  /* =========== RESULTS =========== */
+  #phase-results {
+    display: flex; align-items: center; justify-content: center;
+    min-height: 100vh; padding: 24px;
+    background: var(--night-sky);
+  }
+  .results-card {
+    background: #f5e8c8; color: var(--ink);
+    border-radius: 8px; padding: 40px; max-width: 600px; width: 100%;
+    box-shadow: 0 8px 40px rgba(0,0,0,0.8);
+  }
+  .verdict-badge {
+    text-align: center; margin: 20px 0;
+    font-family: Georgia, serif; font-size: 2rem; font-weight: bold;
+  }
+  .verdict-SPLENDID { color: #c8962a; }
+  .verdict-ADEQUATE { color: #888888; }
+  .verdict-DISAPPOINTING { color: #cc6600; }
+  .verdict-DISGRACE { color: #cc2222; }
+  .verdict-icon { font-size: 2.5rem; display: block; margin-bottom: 8px; }
+  .criteria-list { margin: 20px 0; display: flex; flex-direction: column; gap: 8px; }
+  .criteria-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 8px 12px; border-radius: 4px;
+    background: rgba(0,0,0,0.05); font-size: 0.9rem;
+  }
+  .criteria-item.pass { border-left: 3px solid #22aa44; }
+  .criteria-item.fail { border-left: 3px solid #cc2222; }
+  .check-mark { font-size: 1.1rem; }
+  .results-text {
+    font-style: italic; line-height: 1.7; margin: 16px 0; font-size: 0.9rem;
+    color: var(--ink); padding: 12px; background: rgba(200,150,42,0.1);
+    border-radius: 4px; border-left: 3px solid var(--gold);
+  }
+  .results-actions { text-align: center; margin-top: 24px; }
+
+  /* hidden util */
+  .hidden { display: none !important; }
+</style>
+</head>
+<body>
+
+<!-- LOADING -->
+<div id="phase-loading">
+  <div style="font-family:Georgia,serif;font-size:2rem;color:var(--gold);">&#127881; Liberty Fireworks</div>
+  <p style="color:rgba(232,220,200,0.6);font-size:0.9rem;">The Town Council is preparing your brief...</p>
+  <div class="spinner"></div>
+</div>
+
+<!-- BRIEF -->
+<div id="phase-brief" class="hidden">
+  <div class="parchment-card">
+    <div class="brief-header">
+      <div style="font-size:0.7rem;text-transform:uppercase;letter-spacing:0.1em;color:#8b6020;margin-bottom:6px;">Town Council Proclamation</div>
+      <h1>Fireworks Show Brief</h1>
+    </div>
+    <div class="brief-section">
+      <label>Occasion</label>
+      <div class="value" id="brief-occasion"></div>
+    </div>
+    <div class="brief-section">
+      <label>Required Colors</label>
+      <div class="color-badges" id="brief-colors"></div>
+    </div>
+    <div class="brief-section">
+      <label>Minimum Shells</label>
+      <div class="value" id="brief-shells"></div>
+    </div>
+    <div class="brief-section">
+      <label>Required Finale</label>
+      <div class="value" id="brief-finale"></div>
+    </div>
+    <div class="brief-section">
+      <label>Expected Crowd</label>
+      <div class="value" id="brief-crowd"></div>
+    </div>
+    <div class="brief-section">
+      <label>Council Note</label>
+      <div class="council-note" id="brief-note"></div>
+    </div>
+    <div class="brief-actions">
+      <button class="btn btn-primary" onclick="goToTown()">Begin Shopping &#8594;</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOWN -->
+<div id="phase-town" class="hidden">
+  <div class="stars" id="stars-container"></div>
+  <div class="town-hud">
+    <div class="town-title">
+      <h2>&#127748; Colonial Town Square</h2>
+      <p>Visit the shops to prepare your show</p>
+    </div>
+    <div class="budget-counter">
+      <div class="label">Liberty Dollars</div>
+      <div class="amount" id="town-budget">60 LD</div>
+    </div>
+  </div>
+  <div class="brief-bar" id="town-brief-bar"></div>
+  <div class="buildings" id="buildings-row">
+    <div class="building-wrap" onclick="openShop('powder')">
+      <div class="sign">THE POWDER HOUSE</div>
+      <div class="building" style="height:110px;">
+        <div class="roof"></div>
+        <div class="building-body">
+          <div class="building-windows">
+            <div class="window" style="--f:3.5s"></div>
+            <div class="window" style="--f:2.8s"></div>
+          </div>
+          <div class="door"></div>
+        </div>
+      </div>
+      <div class="shop-label">Shells &amp; Pyrotechnics</div>
+    </div>
+    <div class="building-wrap" onclick="openShop('ironmonger')">
+      <div class="sign">THE IRONMONGER</div>
+      <div class="building" style="height:130px;">
+        <div class="roof"></div>
+        <div class="building-body">
+          <div class="building-windows">
+            <div class="window" style="--f:4.2s"></div>
+            <div class="window" style="--f:3.1s"></div>
+          </div>
+          <div class="door"></div>
+        </div>
+      </div>
+      <div class="shop-label">Dyes &amp; Colorants</div>
+    </div>
+    <div class="building-wrap" onclick="openShop('general')">
+      <div class="sign">THE GENERAL STORE</div>
+      <div class="building" style="height:100px;">
+        <div class="roof"></div>
+        <div class="building-body">
+          <div class="building-windows">
+            <div class="window" style="--f:5s"></div>
+            <div class="window" style="--f:3.7s"></div>
+          </div>
+          <div class="door"></div>
+        </div>
+      </div>
+      <div class="shop-label">Fuses &amp; Supplies</div>
+    </div>
+  </div>
+  <div class="ground"></div>
+  <div class="cobblestone"></div>
+  <div class="town-actions">
+    <button class="btn btn-ghost" onclick="goToTown()">&#8592; Back to Brief</button>
+    <button class="btn btn-primary" onclick="goToLaunch()">Set Up Your Show &#8594;</button>
+  </div>
+</div>
+
+<!-- SHOP -->
+<div id="phase-shop" class="hidden">
+  <div class="shop-header">
+    <button class="btn btn-ghost" onclick="returnToTown()" style="padding:8px 16px;">&#8592; Town</button>
+    <div>
+      <h2 id="shop-title"></h2>
+      <p id="shop-desc"></p>
+    </div>
+    <div style="margin-left:auto;">
+      <div class="budget-counter">
+        <div class="label">Liberty Dollars</div>
+        <div class="amount" id="shop-budget">60 LD</div>
+      </div>
+    </div>
+  </div>
+  <div class="shop-layout">
+    <div class="item-grid" id="shop-items"></div>
+    <div class="shop-sidebar">
+      <div class="shopkeeper-panel">
+        <h3 id="shopkeeper-name">Ask the Shopkeeper</h3>
+        <div class="shopkeeper-text" id="shopkeeper-text">Click below to get advice...</div>
+        <button class="btn btn-ghost" onclick="askShopkeeper()" id="shopkeeper-btn"
+          style="margin-top:10px;width:100%;font-size:0.8rem;padding:8px;">
+          &#128172; Ask for Advice
+        </button>
+      </div>
+      <div class="inventory-mini">
+        <h3>Your Inventory</h3>
+        <div class="inv-list" id="shop-inv-list"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- LAUNCH FIELD -->
+<div id="phase-launch" class="hidden">
+  <div class="launch-header">
+    <h2>&#127747; Load Your Mortars</h2>
+    <div class="launch-brief-reminder" id="launch-brief-reminder"></div>
+  </div>
+  <div id="launch-mode-indicator" class="mode-indicator hidden"></div>
+  <div class="launch-layout">
+    <div class="inv-panel">
+      <h3>Inventory</h3>
+      <div class="inv-section">
+        <h4>Shells <span id="inv-shell-count" style="color:var(--gold-light)"></span></h4>
+        <div id="inv-shells"></div>
+      </div>
+      <div class="inv-section">
+        <h4>Dyes</h4>
+        <div id="inv-dyes"></div>
+      </div>
+      <div class="inv-section">
+        <h4>Extras</h4>
+        <div id="inv-extras"></div>
+      </div>
+    </div>
+    <div class="mortar-field">
+      <div class="mortar-instructions">
+        Click a <strong style="color:var(--gold)">shell</strong> from your inventory, then click a mortar to load it.<br>
+        Click a <strong style="color:var(--gold)">dye</strong> to activate it, then click a loaded mortar to recolor.<br>
+        Click <strong style="color:var(--gold)">Quick/Slow Fuse</strong>, then click a mortar to change timing.
+      </div>
+      <div class="mortar-row" id="mortar-row"></div>
+      <div style="display:flex;gap:8px;justify-content:center;margin-top:8px;">
+        <div class="mortar-ground" style="width:44px;border-radius:0 0 3px 3px;"></div>
+      </div>
+      <div class="launch-actions">
+        <button class="btn btn-ghost" onclick="returnToTown()" style="padding:10px 20px;">&#8592; Back to Town</button>
+        <button class="btn btn-danger" id="launch-btn" onclick="startShow()" disabled>
+          &#128293; LIGHT THE FUSE
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SHOW -->
+<div id="phase-show" class="hidden">
+  <canvas id="fireworks-canvas"></canvas>
+  <div class="eval-panel">
+    <h3>&#128080; The Crowd Reacts...</h3>
+    <div class="eval-text" id="eval-text"></div>
+  </div>
+  <div class="show-status" id="show-status">Lighting fuses...</div>
+</div>
+
+<!-- RESULTS -->
+<div id="phase-results" class="hidden">
+  <div class="results-card">
+    <div style="text-align:center;font-family:Georgia,serif;margin-bottom:8px;font-size:0.8rem;text-transform:uppercase;letter-spacing:0.1em;color:#8b6020;">
+      Town Council Verdict
+    </div>
+    <div class="verdict-badge" id="verdict-badge"></div>
+    <div class="results-text" id="results-text"></div>
+    <div class="criteria-list" id="criteria-list"></div>
+    <div class="results-actions">
+      <button class="btn btn-primary" onclick="playAgain()">&#9654; Play Again — New Brief</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ============================================================
+// STATE
+// ============================================================
+const COLORS = {
+  Red: '#ff2222', White: '#ffffff', Blue: '#2244ff',
+  Gold: '#ffcc00', Green: '#22cc44', Silver: '#ccccee', Purple: '#aa44cc'
+};
+
+const state = {
+  phase: 'loading',
+  brief: null,
+  inventory: { shells: [], dyes: [], extras: [] },
+  budget: 60,
+  mortars: [],
+  activeShop: null,
+  shopkeeperText: '',
+  evaluationText: '',
+  activeSelection: null, // { type: 'shell'|'dye'|'fuse', index, item }
+  canvas: null,
+  ctx: null,
+  particles: [],
+  animFrame: null,
+  firingTimeout: null,
+};
+
+// ============================================================
+// SHOP DATA
+// ============================================================
+const SHOPS = {
+  powder: {
+    name: 'The Powder House',
+    keeper: 'Old Jacob',
+    desc: 'The smell of black powder hangs heavy in the air. Barrels line every wall.',
+    items: [
+      { name: 'Standard Shell', price: 3, color: 'White', type: 'shell', effect: 'Round burst', shellType: 'Standard' },
+      { name: 'Star Shell', price: 5, color: 'Silver', type: 'shell', effect: 'Trailing stars', shellType: 'Star Shell' },
+      { name: 'Chrysanthemum Shell', price: 8, color: 'Gold', type: 'shell', effect: 'Dense burst, long trails', shellType: 'Chrysanthemum' },
+      { name: 'Peony Shell', price: 7, color: 'Red', type: 'shell', effect: 'Round burst, fades softly', shellType: 'Peony' },
+      { name: 'Comet Shell', price: 4, color: 'Blue', type: 'shell', effect: 'Single streak + small pop', shellType: 'Comet' },
+      { name: 'Willow Shell', price: 9, color: 'White', type: 'shell', effect: 'Long drooping trails', shellType: 'Willow' },
+      { name: 'Roman Candle', price: 3, color: 'Red', type: 'shell', effect: 'Three sequential stars', shellType: 'Roman Candle' },
+    ]
+  },
+  ironmonger: {
+    name: 'The Ironmonger',
+    keeper: 'Mistress Hawthorne',
+    desc: 'Rows of glass bottles filled with vivid pigments catch the lantern light.',
+    items: [
+      { name: 'Red Dye', price: 2, color: 'Red', type: 'dye' },
+      { name: 'White Dye', price: 2, color: 'White', type: 'dye' },
+      { name: 'Blue Dye', price: 2, color: 'Blue', type: 'dye' },
+      { name: 'Gold Dye', price: 3, color: 'Gold', type: 'dye' },
+      { name: 'Green Dye', price: 2, color: 'Green', type: 'dye' },
+      { name: 'Silver Dye', price: 2, color: 'Silver', type: 'dye' },
+      { name: 'Purple Dye', price: 2, color: 'Purple', type: 'dye' },
+    ]
+  },
+  general: {
+    name: 'The General Store',
+    keeper: 'Young Thomas',
+    desc: 'Everything a pyrotechnist could need, and twice as much that they don\'t.',
+    items: [
+      { name: 'Extra Fuse Wire', price: 1, color: null, type: 'extra', effect: 'Allows delays between shots', fuseType: 'extra' },
+      { name: 'Quick Fuse', price: 2, color: null, type: 'extra', effect: 'Next shell fires in 0.3s', fuseType: 'quick' },
+      { name: 'Slow Fuse', price: 1, color: null, type: 'extra', effect: 'Next shell fires in 2.0s', fuseType: 'slow' },
+      { name: 'Mortar Rack (2 extra)', price: 5, color: null, type: 'extra', effect: 'Adds 2 mortar slots', fuseType: 'rack' },
+    ]
+  }
+};
+
+// ============================================================
+// PHASE MANAGEMENT
+// ============================================================
+function showPhase(name) {
+  document.querySelectorAll('[id^="phase-"]').forEach(el => el.classList.add('hidden'));
+  const el = document.getElementById('phase-' + name);
+  if (el) el.classList.remove('hidden');
+  state.phase = name;
+}
+
+// ============================================================
+// LOADING → BRIEF
+// ============================================================
+async function loadBrief() {
+  showPhase('loading');
+  try {
+    const r = await fetch('/api/brief', { method: 'POST' });
+    state.brief = await r.json();
+    renderBrief();
+    showPhase('brief');
+  } catch(e) {
+    document.getElementById('phase-loading').innerHTML =
+      '<p style="color:#ff4444;">Error loading brief: ' + e.message + '</p>' +
+      '<button class="btn btn-ghost" onclick="loadBrief()" style="margin-top:16px;">Retry</button>';
+  }
+}
+
+function renderBrief() {
+  const b = state.brief;
+  document.getElementById('brief-occasion').textContent = b.occasion;
+  document.getElementById('brief-shells').textContent = b.min_shells + ' shells minimum';
+  document.getElementById('brief-finale').textContent = b.finale_type;
+  document.getElementById('brief-crowd').textContent =
+    b.crowd_size.charAt(0).toUpperCase() + b.crowd_size.slice(1) + ' crowd';
+  document.getElementById('brief-note').textContent = b.council_note;
+  const colorContainer = document.getElementById('brief-colors');
+  colorContainer.innerHTML = '';
+  (b.required_colors || []).forEach(c => {
+    const badge = document.createElement('span');
+    badge.className = 'color-badge';
+    badge.textContent = c;
+    const hex = COLORS[c] || '#888';
+    badge.style.background = hex;
+    if (c === 'White' || c === 'Silver') { badge.style.color = '#333'; badge.style.textShadow = 'none'; }
+    colorContainer.appendChild(badge);
+  });
+}
+
+// ============================================================
+// TOWN
+// ============================================================
+function goToTown() {
+  generateStars();
+  updateTownBudget();
+  const b = state.brief;
+  document.getElementById('town-brief-bar').innerHTML =
+    `Need: <span>${(b.required_colors||[]).join(', ')}</span> &nbsp;|&nbsp; ` +
+    `Min shells: <span>${b.min_shells}</span> &nbsp;|&nbsp; ` +
+    `Finale: <span>${b.finale_type}</span>`;
+  showPhase('town');
+}
+
+function generateStars() {
+  const container = document.getElementById('stars-container');
+  container.innerHTML = '';
+  for (let i = 0; i < 60; i++) {
+    const s = document.createElement('div');
+    s.className = 'star';
+    const size = Math.random() * 2 + 1;
+    s.style.cssText = `
+      width:${size}px;height:${size}px;
+      top:${Math.random() * 70}%;left:${Math.random() * 100}%;
+      --op:${0.3 + Math.random() * 0.7};
+      --dur:${2 + Math.random() * 4}s;
+      animation-delay:${Math.random() * 4}s;
+    `;
+    container.appendChild(s);
+  }
+}
+
+function updateTownBudget() {
+  document.getElementById('town-budget').textContent = state.budget + ' LD';
+}
+
+// ============================================================
+// SHOP
+// ============================================================
+function openShop(shopId) {
+  state.activeShop = shopId;
+  state.activeSelection = null;
+  const shop = SHOPS[shopId];
+  document.getElementById('shop-title').textContent = shop.name;
+  document.getElementById('shop-desc').textContent = shop.desc;
+  document.getElementById('shopkeeper-name').textContent = shop.keeper + ' says:';
+  document.getElementById('shopkeeper-text').textContent = 'Click below to ask ' + shop.keeper + ' for advice...';
+  renderShopItems(shop);
+  updateShopBudget();
+  renderShopInventory();
+  showPhase('shop');
+}
+
+function renderShopItems(shop) {
+  const grid = document.getElementById('shop-items');
+  grid.innerHTML = '';
+  shop.items.forEach((item, idx) => {
+    const card = document.createElement('div');
+    card.className = 'item-card';
+    const colorDot = item.color
+      ? `<span class="item-color-dot" style="background:${COLORS[item.color]||'#888'};"></span>`
+      : '';
+    card.innerHTML = `
+      <div class="item-name">${item.name}</div>
+      <div class="item-price">${colorDot}${item.color ? item.color + ' — ' : ''}$${item.price} LD</div>
+      ${item.effect ? `<div class="item-effect">${item.effect}</div>` : ''}
+      <button class="item-btn" onclick="buyItem('${state.activeShop}', ${idx})" id="buy-${state.activeShop}-${idx}">
+        Buy — $${item.price}
+      </button>
+    `;
+    grid.appendChild(card);
+  });
+  updateBuyButtons();
+}
+
+function updateBuyButtons() {
+  if (!state.activeShop) return;
+  const shop = SHOPS[state.activeShop];
+  shop.items.forEach((item, idx) => {
+    const btn = document.getElementById(`buy-${state.activeShop}-${idx}`);
+    if (btn) btn.disabled = state.budget < item.price;
+  });
+}
+
+function buyItem(shopId, itemIdx) {
+  const shop = SHOPS[shopId];
+  const item = shop.items[itemIdx];
+  if (state.budget < item.price) return;
+  state.budget -= item.price;
+
+  if (item.type === 'shell') {
+    state.inventory.shells.push({ name: item.name, shellType: item.shellType, color: item.color, baseColor: item.color });
+  } else if (item.type === 'dye') {
+    state.inventory.dyes.push({ name: item.name, color: item.color });
+  } else if (item.type === 'extra') {
+    if (item.fuseType === 'rack') {
+      // Add 2 mortar slots immediately if in launch phase, or track count
+      state.inventory.extras.push({ name: item.name, fuseType: item.fuseType });
+    } else {
+      state.inventory.extras.push({ name: item.name, fuseType: item.fuseType });
+    }
+  }
+
+  updateShopBudget();
+  updateTownBudget();
+  updateBuyButtons();
+  renderShopInventory();
+}
+
+function updateShopBudget() {
+  document.getElementById('shop-budget').textContent = state.budget + ' LD';
+}
+
+function renderShopInventory() {
+  const list = document.getElementById('shop-inv-list');
+  list.innerHTML = '';
+  const allItems = [
+    ...state.inventory.shells.map(s => `${s.name} (${s.color})`),
+    ...state.inventory.dyes.map(d => d.name),
+    ...state.inventory.extras.map(e => e.name),
+  ];
+  if (allItems.length === 0) {
+    list.innerHTML = '<div class="inv-item" style="opacity:0.4;">Nothing yet...</div>';
+    return;
+  }
+  allItems.forEach(label => {
+    const row = document.createElement('div');
+    row.className = 'inv-item';
+    row.innerHTML = `<span style="color:var(--gold);">•</span> ${label}`;
+    list.appendChild(row);
+  });
+}
+
+async function askShopkeeper() {
+  const btn = document.getElementById('shopkeeper-btn');
+  btn.disabled = true;
+  btn.textContent = '...';
+  document.getElementById('shopkeeper-text').textContent = '';
+
+  try {
+    const r = await fetch('/api/shopkeeper', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        shop_type: state.activeShop,
+        brief: state.brief,
+        inventory: state.inventory
+      })
+    });
+    const textEl = document.getElementById('shopkeeper-text');
+    const reader = r.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = '';
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split('\n');
+      buffer = lines.pop();
+      for (const line of lines) {
+        if (line.startsWith('data: ')) {
+          const data = line.slice(6).trim();
+          if (data === '[DONE]') break;
+          try { textEl.textContent += JSON.parse(data).text; } catch(e) {}
+        }
+      }
+    }
+  } catch(e) {
+    document.getElementById('shopkeeper-text').textContent = 'The shopkeeper is busy. Try again.';
+  }
+  btn.disabled = false;
+  btn.textContent = '↩ Ask Again';
+}
+
+function returnToTown() {
+  showPhase('town');
+  updateTownBudget();
+}
+
+// ============================================================
+// LAUNCH FIELD
+// ============================================================
+function goToLaunch() {
+  // Init mortars: base 8, +2 per rack bought
+  const rackCount = state.inventory.extras.filter(e => e.fuseType === 'rack').length;
+  const mortar_count = Math.min(12, 8 + rackCount * 2);
+  state.mortars = Array(mortar_count).fill(null).map(() => ({ shell: null, delay: 1.0 }));
+  state.activeSelection = null;
+
+  // Brief reminder
+  const b = state.brief;
+  document.getElementById('launch-brief-reminder').innerHTML =
+    `Colors needed: <span>${(b.required_colors||[]).join(', ')}</span> &nbsp;|&nbsp; ` +
+    `Min shells: <span>${b.min_shells}</span> &nbsp;|&nbsp; ` +
+    `Finale: <span>${b.finale_type}</span>`;
+
+  renderLaunchInventory();
+  renderMortarRow();
+  showPhase('launch');
+}
+
+function renderLaunchInventory() {
+  // Shells
+  const shellsEl = document.getElementById('inv-shells');
+  shellsEl.innerHTML = '';
+  document.getElementById('inv-shell-count').textContent =
+    state.inventory.shells.length > 0 ? `(${state.inventory.shells.length})` : '';
+  if (state.inventory.shells.length === 0) {
+    shellsEl.innerHTML = '<div style="font-size:0.75rem;opacity:0.4;color:var(--parchment);">No shells — go buy some!</div>';
+  } else {
+    state.inventory.shells.forEach((s, idx) => {
+      const pill = document.createElement('span');
+      pill.className = 'shell-pill';
+      pill.dataset.index = idx;
+      const hex = COLORS[s.color] || '#888';
+      const dot = `<span style="width:10px;height:10px;border-radius:50%;background:${hex};display:inline-block;border:1px solid rgba(255,255,255,0.3);"></span>`;
+      pill.innerHTML = `${dot} ${s.shellType}`;
+      pill.onclick = () => selectShell(idx);
+      shellsEl.appendChild(pill);
+    });
+  }
+
+  // Dyes
+  const dyesEl = document.getElementById('inv-dyes');
+  dyesEl.innerHTML = '';
+  if (state.inventory.dyes.length === 0) {
+    dyesEl.innerHTML = '<div style="font-size:0.75rem;opacity:0.4;color:var(--parchment);">No dyes</div>';
+  } else {
+    state.inventory.dyes.forEach((d, idx) => {
+      const wrap = document.createElement('span');
+      wrap.className = 'dye-swatch-wrap';
+      wrap.dataset.index = idx;
+      const swatch = document.createElement('span');
+      swatch.className = 'dye-swatch';
+      swatch.style.background = COLORS[d.color] || '#888';
+      swatch.title = d.name;
+      const label = document.createElement('span');
+      label.textContent = d.color;
+      wrap.appendChild(swatch);
+      wrap.appendChild(label);
+      wrap.onclick = () => selectDye(idx);
+      dyesEl.appendChild(wrap);
+    });
+  }
+
+  // Extras (fuses)
+  const extrasEl = document.getElementById('inv-extras');
+  extrasEl.innerHTML = '';
+  const fuses = state.inventory.extras.filter(e => e.fuseType === 'quick' || e.fuseType === 'slow');
+  if (fuses.length === 0) {
+    extrasEl.innerHTML = '<div style="font-size:0.75rem;opacity:0.4;color:var(--parchment);">No fuses</div>';
+  } else {
+    fuses.forEach((e, idx) => {
+      const realIdx = state.inventory.extras.indexOf(e);
+      const el = document.createElement('span');
+      el.className = 'extra-item';
+      el.textContent = e.name;
+      el.onclick = () => selectFuse(realIdx);
+      extrasEl.appendChild(el);
+    });
+  }
+  updateLaunchButton();
+}
+
+function selectShell(idx) {
+  clearSelections();
+  state.activeSelection = { type: 'shell', index: idx };
+  const pills = document.querySelectorAll('.shell-pill');
+  pills.forEach(p => {
+    if (parseInt(p.dataset.index) === idx) p.classList.add('selected');
+  });
+  showModeIndicator('Click a mortar slot to load this shell');
+}
+
+function selectDye(idx) {
+  clearSelections();
+  state.activeSelection = { type: 'dye', index: idx };
+  const wraps = document.querySelectorAll('.dye-swatch-wrap');
+  wraps.forEach(w => {
+    if (parseInt(w.dataset.index) === idx) w.querySelector('.dye-swatch').classList.add('selected');
+  });
+  showModeIndicator('Click a loaded mortar to apply this dye');
+}
+
+function selectFuse(idx) {
+  clearSelections();
+  state.activeSelection = { type: 'fuse', index: idx };
+  const items = document.querySelectorAll('.extra-item');
+  items.forEach((el, i) => {
+    const fuses = state.inventory.extras.filter(e => e.fuseType === 'quick' || e.fuseType === 'slow');
+    // find the item at this extra index
+  });
+  // simpler: just highlight based on extra index
+  const allExtras = state.inventory.extras;
+  document.querySelectorAll('.extra-item').forEach((el, i) => {
+    // match by position among fuse-type extras
+    const fuseExtras = allExtras.filter(e => e.fuseType === 'quick' || e.fuseType === 'slow');
+    const fuse = fuseExtras[i];
+    if (allExtras.indexOf(fuse) === idx) el.classList.add('selected');
+  });
+  showModeIndicator('Click a mortar slot to apply this fuse');
+}
+
+function clearSelections() {
+  state.activeSelection = null;
+  document.querySelectorAll('.shell-pill').forEach(p => p.classList.remove('selected'));
+  document.querySelectorAll('.dye-swatch').forEach(s => s.classList.remove('selected'));
+  document.querySelectorAll('.extra-item').forEach(e => e.classList.remove('selected'));
+  document.querySelectorAll('.mortar').forEach(m => m.classList.remove('active-target'));
+  hideModeIndicator();
+}
+
+function showModeIndicator(text) {
+  const el = document.getElementById('launch-mode-indicator');
+  el.textContent = '✦ ' + text + ' — click elsewhere to cancel';
+  el.classList.remove('hidden');
+}
+
+function hideModeIndicator() {
+  document.getElementById('launch-mode-indicator').classList.add('hidden');
+}
+
+function clickMortar(mortarIdx) {
+  if (!state.activeSelection) {
+    // Clicking empty mortar with no selection — try to unload
+    if (state.mortars[mortarIdx] && state.mortars[mortarIdx].shell) {
+      // Return shell to inventory
+      state.inventory.shells.unshift(state.mortars[mortarIdx].shell);
+      state.mortars[mortarIdx] = { shell: null, delay: 1.0 };
+      renderMortarRow();
+      renderLaunchInventory();
+    }
+    return;
+  }
+
+  const sel = state.activeSelection;
+  if (sel.type === 'shell') {
+    if (state.mortars[mortarIdx].shell) {
+      // Mortar already loaded — return old shell to inventory
+      state.inventory.shells.unshift(state.mortars[mortarIdx].shell);
+    }
+    const shell = state.inventory.shells[sel.index];
+    state.mortars[mortarIdx] = { shell: { ...shell }, delay: state.mortars[mortarIdx].delay || 1.0 };
+    state.inventory.shells.splice(sel.index, 1);
+    clearSelections();
+    renderMortarRow();
+    renderLaunchInventory();
+  } else if (sel.type === 'dye') {
+    if (!state.mortars[mortarIdx].shell) {
+      showModeIndicator('That mortar is empty! Load a shell first.');
+      return;
+    }
+    const dye = state.inventory.dyes[sel.index];
+    state.mortars[mortarIdx].shell.color = dye.color;
+    state.inventory.dyes.splice(sel.index, 1);
+    clearSelections();
+    renderMortarRow();
+    renderLaunchInventory();
+  } else if (sel.type === 'fuse') {
+    const fuse = state.inventory.extras[sel.index];
+    if (fuse.fuseType === 'quick') {
+      state.mortars[mortarIdx].delay = 0.3;
+    } else if (fuse.fuseType === 'slow') {
+      state.mortars[mortarIdx].delay = 2.0;
+    }
+    state.inventory.extras.splice(sel.index, 1);
+    clearSelections();
+    renderMortarRow();
+    renderLaunchInventory();
+  }
+}
+
+function renderMortarRow() {
+  const row = document.getElementById('mortar-row');
+  row.innerHTML = '';
+  state.mortars.forEach((m, idx) => {
+    const wrap = document.createElement('div');
+    wrap.className = 'mortar-wrap';
+
+    const numLabel = document.createElement('div');
+    numLabel.className = 'mortar-num';
+    numLabel.textContent = idx + 1;
+
+    const tube = document.createElement('div');
+    tube.className = 'mortar' + (m.shell ? ' loaded' : '');
+    tube.onclick = () => clickMortar(idx);
+    tube.title = m.shell
+      ? `${m.shellType} — ${m.color} (click to unload)`
+      : 'Empty mortar (click to load)';
+
+    if (m.shell) {
+      const badge = document.createElement('div');
+      badge.className = 'shell-badge';
+      badge.style.background = COLORS[m.shell.color] || '#888';
+      tube.appendChild(badge);
+      const typeLabel = document.createElement('div');
+      typeLabel.className = 'mortar-type-label';
+      // Abbreviate type
+      const abbr = {
+        'Standard': 'Std', 'Star Shell': 'Star', 'Chrysanthemum': 'Chrys',
+        'Peony': 'Peon', 'Comet': 'Com', 'Willow': 'Wil', 'Roman Candle': 'RC'
+      };
+      typeLabel.textContent = abbr[m.shell.shellType] || m.shell.shellType.slice(0,4);
+      tube.appendChild(typeLabel);
+    }
+
+    const groundBar = document.createElement('div');
+    groundBar.className = 'mortar-ground';
+
+    const timing = document.createElement('div');
+    timing.className = 'timing-badge';
+    timing.textContent = m.delay.toFixed(1) + 's';
+    timing.onclick = (e) => { e.stopPropagation(); /* timing badge click handled by fuse selection */ };
+
+    wrap.appendChild(numLabel);
+    wrap.appendChild(tube);
+    wrap.appendChild(groundBar);
+    wrap.appendChild(timing);
+    row.appendChild(wrap);
+  });
+  updateLaunchButton();
+}
+
+function updateLaunchButton() {
+  const loaded = state.mortars.filter(m => m.shell).length;
+  document.getElementById('launch-btn').disabled = loaded === 0;
+}
+
+// ============================================================
+// THE SHOW
+// ============================================================
+function startShow() {
+  showPhase('show');
+
+  const canvas = document.getElementById('fireworks-canvas');
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+  state.canvas = canvas;
+  state.ctx = canvas.getContext('2d');
+  state.particles = [];
+  state.evaluationText = '';
+
+  // Get loaded mortars in order
+  const loadedMortars = state.mortars
+    .map((m, idx) => ({ ...m, index: idx }))
+    .filter(m => m.shell);
+
+  // Prepare eval data immediately
+  const colorsUsed = [...new Set(loadedMortars.map(m => m.shell.color))];
+  const finaleType = loadedMortars.length > 0 ? loadedMortars[loadedMortars.length - 1].shell.shellType : null;
+  const shellCount = loadedMortars.length;
+
+  // Start streaming evaluation right away
+  streamEvaluation({ brief: state.brief, colors_used: colorsUsed, finale_type: finaleType, shell_count: shellCount });
+
+  // Start animation loop
+  requestAnimationFrame(animLoop);
+
+  // Schedule shell firings
+  let elapsed = 0;
+  const n = loadedMortars.length;
+  loadedMortars.forEach((m, seq) => {
+    // Stagger shells across canvas x
+    const xPos = (canvas.width * 0.1) + (canvas.width * 0.8) * (n === 1 ? 0.5 : seq / (n - 1));
+    setTimeout(() => {
+      fireShell(m.shell, xPos);
+      document.getElementById('show-status').textContent =
+        `Firing shell ${seq + 1} of ${n}...`;
+      if (seq === n - 1) {
+        setTimeout(() => {
+          document.getElementById('show-status').textContent = 'Show complete! Awaiting verdict...';
+        }, 3000);
+      }
+    }, elapsed * 1000);
+    elapsed += m.delay;
+  });
+}
+
+async function streamEvaluation(data) {
+  try {
+    const r = await fetch('/api/evaluate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data)
+    });
+    const textEl = document.getElementById('eval-text');
+    const reader = r.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = '';
+    let fullText = '';
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split('\n');
+      buffer = lines.pop();
+      for (const line of lines) {
+        if (line.startsWith('data: ')) {
+          const raw = line.slice(6).trim();
+          if (raw === '[DONE]') {
+            state.evaluationText = fullText;
+            // Show results after a small delay
+            setTimeout(() => showResults(data, fullText), 2500);
+            return;
+          }
+          try {
+            const parsed = JSON.parse(raw);
+            fullText += parsed.text;
+            textEl.textContent = fullText;
+          } catch(e) {}
+        }
+      }
+    }
+    state.evaluationText = fullText;
+    setTimeout(() => showResults(data, fullText), 2500);
+  } catch(e) {
+    console.error('Eval error:', e);
+  }
+}
+
+// ============================================================
+// FIREWORKS ANIMATION
+// ============================================================
+function animLoop() {
+  const canvas = state.canvas;
+  const ctx = state.ctx;
+
+  // Fade background
+  ctx.fillStyle = 'rgba(2,3,15,0.18)';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  // Draw silhouette skyline
+  drawSkyline(ctx, canvas.width, canvas.height);
+
+  // Update + draw particles
+  state.particles = state.particles.filter(p => p.life > 0);
+  for (const p of state.particles) {
+    updateParticle(p);
+    drawParticle(ctx, p);
+  }
+
+  state.animFrame = requestAnimationFrame(animLoop);
+}
+
+function drawSkyline(ctx, w, h) {
+  ctx.fillStyle = '#050510';
+  const buildings = [
+    { x: 0, w: 80, h: 80 }, { x: 70, w: 50, h: 120 }, { x: 110, w: 90, h: 60 },
+    { x: 180, w: 60, h: 100 }, { x: 220, w: 70, h: 140 }, { x: 270, w: 40, h: 90 },
+    { x: 290, w: 80, h: 70 }, { x: 350, w: 55, h: 110 }, { x: 380, w: 90, h: 80 },
+    { x: w - 300, w: 70, h: 100 }, { x: w - 240, w: 55, h: 130 }, { x: w - 200, w: 80, h: 70 },
+    { x: w - 150, w: 60, h: 110 }, { x: w - 110, w: 50, h: 90 }, { x: w - 80, w: 80, h: 80 },
+  ];
+  buildings.forEach(b => {
+    ctx.fillRect(b.x, h - b.h, b.w, b.h);
+  });
+  // Ground
+  ctx.fillStyle = '#040408';
+  ctx.fillRect(0, h - 30, w, 30);
+}
+
+function updateParticle(p) {
+  p.x += p.vx;
+  p.y += p.vy;
+  p.vy += p.gravity || 0;
+  p.life -= 1;
+  if (p.trail) {
+    p.trail.push({ x: p.x, y: p.y });
+    if (p.trail.length > 6) p.trail.shift();
+  }
+}
+
+function drawParticle(ctx, p) {
+  const alpha = Math.max(0, p.life / p.maxLife);
+  ctx.globalAlpha = alpha;
+  ctx.fillStyle = p.color;
+
+  if (p.trail && p.trail.length > 1) {
+    ctx.strokeStyle = p.color;
+    ctx.lineWidth = p.size * alpha;
+    ctx.beginPath();
+    ctx.moveTo(p.trail[0].x, p.trail[0].y);
+    for (let i = 1; i < p.trail.length; i++) ctx.lineTo(p.trail[i].x, p.trail[i].y);
+    ctx.stroke();
+  } else {
+    const r = p.size * Math.max(0.1, alpha);
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, r, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  ctx.globalAlpha = 1;
+}
+
+function makeParticle(x, y, vx, vy, color, life, size, gravity, useTrail) {
+  return { x, y, vx, vy, color, life, maxLife: life, size, gravity: gravity || 0,
+    trail: useTrail ? [{ x, y }] : null };
+}
+
+function fireShell(shell, mortar_x) {
+  const canvas = state.canvas;
+  const isFinale = shell.shellType === 'Chrysanthemum' &&
+    state.mortars.filter(m => m.shell).length > 0 &&
+    state.mortars[state.mortars.length - 1]?.shell?.shellType === 'Chrysanthemum';
+
+  const targetX = mortar_x + (Math.random() - 0.5) * 80;
+  const targetY = canvas.height * (0.12 + Math.random() * 0.30);
+
+  // Launch streak upward
+  const streakCount = 3;
+  for (let i = 0; i < streakCount; i++) {
+    const steps = 20;
+    for (let s = 0; s < steps; s++) {
+      setTimeout(() => {
+        state.particles.push(makeParticle(
+          mortar_x + (Math.random()-0.5)*4,
+          canvas.height - 60 - s * ((canvas.height - 60 - targetY) / steps) + (Math.random()-0.5)*4,
+          (Math.random()-0.5)*0.5, 0, '#ffdd88', 15, 1.5, 0, false
+        ));
+      }, s * 18);
+    }
+  }
+
+  // Burst at apex
+  const burstDelay = 380;
+  setTimeout(() => {
+    const color = COLORS[shell.color] || '#ffffff';
+    const shellType = shell.shellType;
+
+    if (shellType === 'Standard' || shellType === 'Peony') {
+      createRoundBurst(targetX, targetY, color, 45, 1.3, shell.shellType === 'Peony');
+    } else if (shellType === 'Chrysanthemum') {
+      const scale = isFinale ? 2.0 : 1.5;
+      createRoundBurst(targetX, targetY, COLORS['Gold'] || color, 80 * scale, scale * 0.8, false, true);
+    } else if (shellType === 'Star Shell') {
+      createStarBurst(targetX, targetY, color, 14);
+    } else if (shellType === 'Comet') {
+      createComet(targetX, targetY, color);
+    } else if (shellType === 'Willow') {
+      createWillow(targetX, targetY, color);
+    } else if (shellType === 'Roman Candle') {
+      createRomanCandle(mortar_x, canvas.height - 60, color);
+    }
+  }, burstDelay);
+}
+
+function createRoundBurst(x, y, color, count, speed, softFade, longTrail) {
+  for (let i = 0; i < count; i++) {
+    const angle = (i / count) * Math.PI * 2;
+    const spd = speed * (0.7 + Math.random() * 0.6);
+    const life = longTrail ? 80 + Math.random() * 40 : 50 + Math.random() * 30;
+    state.particles.push(makeParticle(
+      x, y, Math.cos(angle) * spd, Math.sin(angle) * spd,
+      color, life, longTrail ? 2 : 2.5, softFade ? 0.04 : 0.02, longTrail
+    ));
+  }
+  // Flash
+  state.particles.push(makeParticle(x, y, 0, 0, '#ffffff', 8, 8, 0, false));
+}
+
+function createStarBurst(x, y, color, count) {
+  for (let i = 0; i < count; i++) {
+    const angle = (i / count) * Math.PI * 2;
+    const spd = 2 + Math.random() * 1.5;
+    state.particles.push(makeParticle(
+      x, y, Math.cos(angle) * spd, Math.sin(angle) * spd,
+      color, 70 + Math.random() * 30, 3, 0.015, true
+    ));
+    // Secondary sparkle
+    if (Math.random() > 0.5) {
+      state.particles.push(makeParticle(
+        x + (Math.random()-0.5)*10, y + (Math.random()-0.5)*10,
+        Math.cos(angle) * spd * 0.5, Math.sin(angle) * spd * 0.5,
+        '#ffffff', 20, 1.5, 0.02, false
+      ));
+    }
+  }
+}
+
+function createComet(x, y, color) {
+  // Rising comet is done in fireShell streak — just do apex pop
+  for (let i = 0; i < 20; i++) {
+    const angle = Math.random() * Math.PI * 2;
+    const spd = 1 + Math.random() * 2;
+    state.particles.push(makeParticle(
+      x, y, Math.cos(angle)*spd, Math.sin(angle)*spd,
+      color, 40 + Math.random()*20, 2, 0.03, false
+    ));
+  }
+  state.particles.push(makeParticle(x, y, 0, 0, '#ffffff', 6, 6, 0, false));
+}
+
+function createWillow(x, y, color) {
+  for (let i = 0; i < 50; i++) {
+    const angle = (i / 50) * Math.PI * 2;
+    const spd = 1.5 + Math.random() * 1.5;
+    state.particles.push(makeParticle(
+      x, y, Math.cos(angle) * spd, Math.sin(angle) * spd - 1,
+      color, 90 + Math.random() * 40, 2, 0.06, true // stronger gravity = droop
+    ));
+  }
+  state.particles.push(makeParticle(x, y, 0, 0, '#ffffff', 8, 6, 0, false));
+}
+
+function createRomanCandle(x, y, color) {
+  // 3 sequential small bursts
+  for (let seq = 0; seq < 3; seq++) {
+    setTimeout(() => {
+      const burstY = y - 80 - seq * 40;
+      const burstX = x + (Math.random()-0.5)*30;
+      // Rising star
+      for (let s = 0; s < 12; s++) {
+        state.particles.push(makeParticle(
+          x + (Math.random()-0.5)*4,
+          y - s * 8,
+          (Math.random()-0.5)*0.8, 0,
+          color, 12, 2, 0, false
+        ));
+      }
+      // Small pop
+      setTimeout(() => {
+        for (let i = 0; i < 18; i++) {
+          const a = (i/18)*Math.PI*2;
+          state.particles.push(makeParticle(
+            burstX, burstY, Math.cos(a)*1.5, Math.sin(a)*1.5,
+            color, 30, 2, 0.02, false
+          ));
+        }
+      }, 100);
+    }, seq * 420);
+  }
+}
+
+// ============================================================
+// RESULTS
+// ============================================================
+function showResults(evalData, fullText) {
+  if (state.animFrame) {
+    cancelAnimationFrame(state.animFrame);
+    state.animFrame = null;
+  }
+
+  const b = state.brief;
+  const colorsMet = (b.required_colors || []).every(c => (evalData.colors_used || []).includes(c));
+  const countMet = evalData.shell_count >= b.min_shells;
+  const finaleMet = evalData.finale_type === b.finale_type;
+
+  const metCount = [colorsMet, countMet, finaleMet].filter(Boolean).length;
+  let verdict, icon;
+  if (metCount === 3) { verdict = 'SPLENDID'; icon = '👑'; }
+  else if (metCount === 2) { verdict = 'ADEQUATE'; icon = '🥈'; }
+  else if (metCount === 1) { verdict = 'DISAPPOINTING'; icon = '↘'; }
+  else { verdict = 'A DISGRACE'; icon = '💀'; }
+
+  // Extract verdict from text if present
+  const textUpper = fullText.toUpperCase();
+  if (textUpper.includes('SPLENDID')) verdict = 'SPLENDID', icon = '👑';
+  else if (textUpper.includes('A DISGRACE')) verdict = 'A DISGRACE', icon = '💀';
+  else if (textUpper.includes('DISAPPOINTING')) verdict = 'DISAPPOINTING', icon = '↘';
+  else if (textUpper.includes('ADEQUATE')) verdict = 'ADEQUATE', icon = '🥈';
+
+  const verdictKey = verdict.replace(/ /g, '-').replace('A-', '');
+  document.getElementById('verdict-badge').innerHTML =
+    `<span class="verdict-icon">${icon}</span>
+     <span class="verdict-${verdictKey === 'DISGRACE' ? 'DISGRACE' : verdict}">${verdict}</span>`;
+
+  document.getElementById('results-text').textContent = fullText;
+
+  const criteria = document.getElementById('criteria-list');
+  criteria.innerHTML = '';
+  const checks = [
+    { label: 'Required Colors', met: colorsMet, detail: colorsMet
+      ? `(${(b.required_colors||[]).join(', ')}) ✓`
+      : `Needed: ${(b.required_colors||[]).join(', ')} — Had: ${(evalData.colors_used||[]).join(', ')}` },
+    { label: 'Shell Count', met: countMet, detail: countMet
+      ? `${evalData.shell_count} shells (min ${b.min_shells}) ✓`
+      : `Fired ${evalData.shell_count}, needed ${b.min_shells}` },
+    { label: 'Required Finale', met: finaleMet, detail: finaleMet
+      ? `${b.finale_type} ✓`
+      : `Needed ${b.finale_type}, fired ${evalData.finale_type || 'nothing'}` },
+  ];
+  checks.forEach(c => {
+    const item = document.createElement('div');
+    item.className = 'criteria-item ' + (c.met ? 'pass' : 'fail');
+    item.innerHTML = `<span class="check-mark">${c.met ? '✓' : '✗'}</span>
+      <strong>${c.label}:</strong> <span style="opacity:0.8;">${c.detail}</span>`;
+    criteria.appendChild(item);
+  });
+
+  showPhase('results');
+}
+
+// ============================================================
+// PLAY AGAIN
+// ============================================================
+function playAgain() {
+  state.inventory = { shells: [], dyes: [], extras: [] };
+  state.budget = 60;
+  state.mortars = [];
+  state.activeSelection = null;
+  state.evaluationText = '';
+  state.particles = [];
+  if (state.animFrame) { cancelAnimationFrame(state.animFrame); state.animFrame = null; }
+  loadBrief();
+}
+
+// ============================================================
+// INIT
+// ============================================================
+loadBrief();
+</script>
+</body>
+</html>
