@@ -254,6 +254,8 @@
   .mortar:hover { border-color: var(--amber); }
   .mortar.loaded { border-color: var(--amber); }
   .mortar.active-target { border-color: var(--amber-bright); box-shadow: 0 0 8px var(--amber-bright); }
+  @keyframes mortar-fire { 0%{background:#fff5aa;transform:scale(1.15) translateY(-4px);} 100%{background:var(--wood-dark);transform:none;} }
+  .mortar.firing { animation: mortar-fire 0.25s ease-out forwards; border-color: var(--amber-bright) !important; }
   .shell-badge { width: 24px; height: 24px; border: 2px solid rgba(255,255,255,0.3); image-rendering: pixelated; }
   .mortar-type-label { font-size: 5px; color: var(--parchment); text-align: center; line-height: 1.4; max-width: 40px; margin-top: 2px; }
   .mortar-ground { height: 10px; background: var(--wood-dark); width: 100%; }
@@ -470,6 +472,12 @@
     <div class="eval-text" id="eval-text"></div>
   </div>
   <div class="show-status" id="show-status">LIGHTING FUSES...</div>
+  <div id="show-countdown" style="
+    position:absolute;bottom:16px;left:16px;
+    font-family:'Press Start 2P',monospace;font-size:8px;
+    color:var(--parchment);background:rgba(30,15,4,0.85);
+    border:2px solid var(--wood-mid);padding:6px 12px;
+  "></div>
 </div>
 
 <!-- RESULTS -->
@@ -482,8 +490,9 @@
     </div>
     <div class="results-text" id="results-text"></div>
     <div class="criteria-list" id="criteria-list"></div>
-    <div class="results-actions">
-      <button class="ot-btn" onclick="playAgain()">&#9654; PLAY AGAIN - NEW BRIEF</button>
+    <div class="results-actions" style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;">
+      <button class="ot-btn" onclick="playAgainSameBrief()">&#9654; TRY AGAIN - SAME OCCASION</button>
+      <button class="ot-btn" onclick="playAgain()">&#9654; NEW BRIEF</button>
     </div>
   </div>
 </div>
@@ -514,6 +523,7 @@ const state = {
   animFrame: null,
   firingTimeout: null,
   showEndTime: 0,
+  countdownInterval: null,
   playerX: 0,
   playerDir: 1,
 };
@@ -563,6 +573,27 @@ function playWhistle() {
     g.gain.exponentialRampToValueAtTime(0.001, now + 0.38);
     osc.connect(g); g.connect(ctx.destination);
     osc.start(now); osc.stop(now + 0.38);
+  } catch(e) {}
+}
+
+let lastStepFrame = 0;
+function playFootstep() {
+  try {
+    const ctx = getAudioCtx();
+    const now = ctx.currentTime;
+    const len = Math.floor(ctx.sampleRate * 0.06);
+    const buf = ctx.createBuffer(1, len, ctx.sampleRate);
+    const d = buf.getChannelData(0);
+    for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 2) * 0.4;
+    const src = ctx.createBufferSource();
+    src.buffer = buf;
+    const bq = ctx.createBiquadFilter();
+    bq.type = 'lowpass'; bq.frequency.value = 400;
+    const g = ctx.createGain();
+    g.gain.setValueAtTime(0.18, now);
+    g.gain.exponentialRampToValueAtTime(0.001, now + 0.06);
+    src.connect(bq); bq.connect(g); g.connect(ctx.destination);
+    src.start(now); src.stop(now + 0.06);
   } catch(e) {}
 }
 
@@ -937,11 +968,18 @@ function startTownLoop() {
   function loop() {
     if (state.phase !== 'town') return;
     const speed = 3;
+    const moving = townKeys['ArrowLeft'] || townKeys['a'] || townKeys['A'] ||
+                   townKeys['ArrowRight'] || townKeys['d'] || townKeys['D'];
     if (townKeys['ArrowLeft'] || townKeys['a'] || townKeys['A']) { state.playerX -= speed; state.playerDir = -1; }
     if (townKeys['ArrowRight'] || townKeys['d'] || townKeys['D']) { state.playerX += speed; state.playerDir = 1; }
     const canvas = document.getElementById('town-canvas');
     if (canvas) state.playerX = Math.max(16, Math.min(canvas.width - 16, state.playerX));
     playerFrame++;
+    // Footstep every 14 frames while moving
+    if (moving && (playerFrame - lastStepFrame) >= 14) {
+      lastStepFrame = playerFrame;
+      playFootstep();
+    }
     nearbyBuilding = null;
     if (canvas) {
       TOWN_BUILDINGS.forEach(b => {
@@ -949,7 +987,14 @@ function startTownLoop() {
       });
     }
     const prompt = document.getElementById('enter-prompt');
-    if (prompt) prompt.classList.toggle('hidden', !nearbyBuilding);
+    if (prompt) {
+      if (nearbyBuilding) {
+        prompt.classList.remove('hidden');
+        prompt.textContent = '▶ ENTER: ' + nearbyBuilding.name.toUpperCase() + ' ◄';
+      } else {
+        prompt.classList.add('hidden');
+      }
+    }
     drawTownCanvas();
     townAnimFrame = requestAnimationFrame(loop);
   }
@@ -1395,7 +1440,7 @@ function renderMortarRow() {
       tube.appendChild(typeLabel);
     } else {
       const emptyEl = document.createElement('div');
-      emptyEl.style.cssText = 'font-size:16px;color:#1a7a1a;margin-top:6px;line-height:1;';
+      emptyEl.style.cssText = 'font-size:16px;color:#5a3e14;margin-top:6px;line-height:1;';
       emptyEl.textContent = '▓';
       tube.appendChild(emptyEl);
     }
@@ -1451,6 +1496,12 @@ function startShow() {
     const xPos = (canvas.width * 0.1) + (canvas.width * 0.8) * (n === 1 ? 0.5 : seq / (n - 1));
     setTimeout(() => {
       fireShell(m.shell, xPos);
+      // Flash the mortar element in launch panel (hidden but still in DOM)
+      const mortarEls = document.querySelectorAll('.mortar');
+      if (mortarEls[seq]) {
+        mortarEls[seq].classList.add('firing');
+        setTimeout(() => mortarEls[seq].classList.remove('firing'), 300);
+      }
       document.getElementById('show-status').textContent = 'FIRING SHELL ' + (seq + 1) + ' OF ' + n + '...';
       if (seq === n - 1) {
         setTimeout(() => { document.getElementById('show-status').textContent = 'SHOW COMPLETE! AWAITING VERDICT...'; }, 2500);
@@ -1459,7 +1510,16 @@ function startShow() {
     elapsed += m.delay;
   });
 
-  state.showEndTime = Date.now() + elapsed * 1000 + 2500;
+  const showDurationMs = elapsed * 1000 + 2500;
+  state.showEndTime = Date.now() + showDurationMs;
+
+  // Countdown ticker
+  const cdEl = document.getElementById('show-countdown');
+  state.countdownInterval = setInterval(() => {
+    const remaining = Math.max(0, Math.ceil((state.showEndTime - Date.now()) / 1000));
+    if (cdEl) cdEl.textContent = remaining > 0 ? 'SHOW ENDS IN ' + remaining + 's' : 'AWAITING VERDICT...';
+    if (remaining <= 0) { clearInterval(state.countdownInterval); state.countdownInterval = null; }
+  }, 250);
   streamEvaluation({ brief: state.brief, colors_used: colorsUsed, finale_type: finaleType, shell_count: shellCount });
 }
 
@@ -1705,6 +1765,7 @@ function createRomanCandle(x, y, color) {
 // ============================================================
 function showResults(evalData, fullText) {
   if (state.animFrame) { cancelAnimationFrame(state.animFrame); state.animFrame = null; }
+  if (state.countdownInterval) { clearInterval(state.countdownInterval); state.countdownInterval = null; }
 
   const b = state.brief;
   const colorsMet = (b.required_colors || []).every(c => (evalData.colors_used || []).includes(c));
@@ -1780,16 +1841,31 @@ function showResults(evalData, fullText) {
 // ============================================================
 // PLAY AGAIN
 // ============================================================
-function playAgain() {
+function resetRound() {
+  if (state.animFrame) { cancelAnimationFrame(state.animFrame); state.animFrame = null; }
+  if (state.countdownInterval) { clearInterval(state.countdownInterval); state.countdownInterval = null; }
   state.inventory = { shells: [], dyes: [], extras: [] };
   state.budget = 60;
   state.mortars = [];
   state.activeSelection = null;
+  state.activeShop = null;
   state.evaluationText = '';
   state.particles = [];
+  state.projectiles = [];
   state.playerX = 0;
-  if (state.animFrame) { cancelAnimationFrame(state.animFrame); state.animFrame = null; }
+}
+
+function playAgain() {
+  resetRound();
   loadBrief();
+}
+
+function playAgainSameBrief() {
+  const savedBrief = state.brief;
+  resetRound();
+  state.brief = savedBrief;
+  renderBrief();
+  goToTown();
 }
 
 // ============================================================
