@@ -1,6 +1,6 @@
 # Drafted
 
-> You hold the deciding vote on the Committee of Five. Edit the actual Declaration of Independence. Hear it read aloud.
+> You hold the deciding vote on the Committee of Five. Edit the actual Declaration of Independence — and hear it read aloud.
 
 **Live demo:** [drafted-delta.vercel.app](https://drafted-delta.vercel.app) *(update after deploy)*
 **Part of:** [Summer into AI 2026](https://advisoryhour.substack.com) · Week 2 · Theme: Red, White & Boom
