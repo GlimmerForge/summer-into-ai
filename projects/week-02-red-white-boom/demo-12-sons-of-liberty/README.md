@@ -1,54 +1,55 @@
 # Sons of Liberty
 
-**Boston, 1775. You are Samuel Adams. Run the revolutionary underground.**
+> Boston, 1775. You are Samuel Adams. Run the revolutionary underground.
 
-Governor Gage's troops fill the streets. The port is closed. The Sons of Liberty meet in secret at the Green Dragon Tavern. You have six rounds to build enough influence to trigger the shot heard round the world.
+**Part of:** [Summer into AI 2026](https://advisoryhour.substack.com) · Week 2 · Theme: Red, White & Boom
 
-## The Game
+## What it is
 
-Assign agents to missions across colonial Boston. Each round Claude generates 3 mission cards — one safe, one risky, one desperate. Commit your agents and watch the outcomes unfold with AI-generated cinematic imagery and dynamic sound effects.
+A resource-management strategy game where you direct the Sons of Liberty through six rounds of covert missions in colonial Boston. Claude generates the missions and narrates every outcome with period-accurate detail. ElevenLabs scores each scene with contextual sound effects. This is the first demo in the series to add a full visual layer — scene imagery pulled from the Metropolitan Museum of Art's open-access collection of 18th-century paintings.
 
-- **Win:** Reach 100 influence in 6 rounds
-- **Lose:** Run out of members (captured or fallen)
-- **Partial:** End round 6 short of 100 — the revolution is delayed
+## How to run locally
 
-## Four AI Integrations
+1. Clone the repo and `cd` into this folder
+2. Copy `.env.local.example` to `.env.local` and fill in your API keys
+3. `npm install`
+4. `npx vercel dev`
+5. Open http://localhost:3000
 
-### 1. Claude — Mission Generation (`/api/missions.js`)
-Uses Claude's tool use to generate 3 structured mission cards each round. Each mission references real people (Paul Revere, Joseph Warren, William Dawes), specific Boston locations (Green Dragon Tavern, Faneuil Hall, Province House), and the escalating tension of 1775. Tool use ensures perfectly structured JSON every time.
+## Environment variables
 
-### 2. Claude — Mission Outcomes (`/api/outcome.js`)
-Each assigned mission fires a parallel Claude call that narrates the outcome with period language and atmospheric detail. Claude also generates a `scene_prompt` — a vivid 18th-century oil painting description used for image generation.
+| Variable | Where to get it |
+|---|---|
+| `ANTHROPIC_API_KEY` | https://console.anthropic.com |
+| `ELEVENLABS_API_KEY` | https://elevenlabs.io → Profile → API Keys |
 
-### 3. fal.ai — Cinematic Scene Images (`/api/scene.js`)
-Uses `fal-ai/flux/schnell` to generate historically-styled oil painting images for each moment: the opening tavern scene, every mission outcome, the victory at Lexington, or the defeat in a dark Boston alley. Images display with a slow Ken Burns zoom animation.
-
-### 4. ElevenLabs — Dynamic Sound Effects (`/api/sfx.js`)
-Generates contextual audio using ElevenLabs' sound generation API: colonial tavern ambience on load, triumphant fife-and-drum on success, tense strings on failure, musket volley on victory. Falls back gracefully if the key is not set.
-
-## Local Development
-
-```bash
-npx vercel dev
-```
-
-Requires a `.env.local` file with:
-
-```
-ANTHROPIC_API_KEY=your_key_here
-ELEVENLABS_API_KEY=your_key_here
-FAL_KEY=your_key_here
-```
-
-The game works without `FAL_KEY` (CSS gradients replace images) and without `ELEVENLABS_API_KEY` (silent but fully playable).
+Images come from the Met Museum Open Access API — no key required.
 
 ## Deploy to Vercel
 
-```bash
-vercel deploy --prod
-```
+1. Import the repo into Vercel, set **Root Directory** to `projects/week-02-red-white-boom/demo-12-sons-of-liberty`
+2. Add environment variables in Project Settings → Environment Variables
+3. Deploy — no build step required
 
-Set environment variables in the Vercel dashboard:
-- `ANTHROPIC_API_KEY` — required for mission and outcome generation
-- `FAL_KEY` — optional, enables cinematic scene images
-- `ELEVENLABS_API_KEY` — optional, enables dynamic sound effects
+## How to play
+
+- The opening cinematic sets the scene at the Green Dragon Tavern
+- Each round Claude generates 3 mission cards — low risk, medium, and high stakes
+- Click mission cards to assign your agents (each mission costs members, intel, and money)
+- Hit **Commit Missions** to send them out
+- Watch outcome cards reveal with narrative, resource gains/losses, and a period painting
+- Reach 100 influence in 6 rounds to trigger the shot heard round the world
+
+## How the AI works
+
+- **Mission generation** — Claude uses tool use (`/api/missions.js`) to produce 3 structured mission cards referencing real people (Paul Revere, Joseph Warren, William Dawes), real locations (Green Dragon Tavern, Faneuil Hall, Province House), and period-accurate stakes
+- **Mission outcomes** — each committed mission fires a parallel Claude call (`/api/outcome.js`) that narrates success or failure in 18th-century prose, and generates a `scene_prompt` — a vivid oil-painting description used to search the Met Museum collection
+- **Scene imagery** — `/api/scene.js` uses the `scene_prompt` to query the Met Museum Open Access API, returning a matching period painting or engraving from their 400,000+ public-domain collection. We tested HF (FLUX.1-schnell) and Pollinations.ai first — this is the first demo to integrate image sourcing; the Met gave us reliable, rate-limit-free historical art
+- **Sound effects** — ElevenLabs sound generation (`/api/sfx.js`) produces contextual audio: colonial tavern ambience on load, triumphant fife-and-drum on mission success, tense strings on failure. Falls back silently if the key is absent
+
+## Tech
+
+- Claude (`claude-sonnet-4-6`) via Anthropic SDK — mission generation + outcome narration with tool use
+- ElevenLabs (`/v1/sound-generation`) — dynamic contextual SFX
+- Metropolitan Museum of Art Open Access API — period-accurate imagery, no auth required
+- Vanilla JS + HTML canvas — no framework, no build step

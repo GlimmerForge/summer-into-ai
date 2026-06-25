@@ -1,15 +1,13 @@
-export const config = { api: { bodyParser: false } };
+export const config = { api: { bodyParser: true } };
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).end();
 
-  // Parse body manually since bodyParser is false (we're streaming binary back)
-  const chunks = [];
-  for await (const chunk of req) chunks.push(chunk);
-  const body = JSON.parse(Buffer.concat(chunks).toString());
+  const body = typeof req.body === 'string' ? JSON.parse(req.body) : req.body;
   const { text, duration_seconds = 3.0 } = body || {};
 
-  if (!process.env.ELEVENLABS_API_KEY) {
+  const elevenKey = (process.env.ELEVENLABS_API_KEY || '').replace(/^﻿/, '').trim();
+  if (!elevenKey) {
     return res.status(404).json({ error: 'No key' });
   }
 
@@ -17,7 +15,7 @@ export default async function handler(req, res) {
     const response = await fetch('https://api.elevenlabs.io/v1/sound-generation', {
       method: 'POST',
       headers: {
-        'xi-api-key': process.env.ELEVENLABS_API_KEY,
+        'xi-api-key': elevenKey,
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({

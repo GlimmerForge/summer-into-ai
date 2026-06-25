@@ -870,6 +870,8 @@ const state = {
   assigned: new Set(),
   phase: 'loading', // loading | cinematic | planning | committing | outcomes | end
   ambientAudio: null,
+  pendingAmbientUrl: null,
+  audioUnlocked: false,
 };
 
 // ===== FALLBACK MISSIONS =====
@@ -1062,15 +1064,22 @@ async function init() {
     hide('loading-screen');
     show('cinematic-screen');
 
-    // Start ambient
-    if (audioUrl) {
-      const a = new Audio(audioUrl);
-      startAmbient(a);
-    }
+    // Store ambient url — play it on begin-btn click (requires user gesture)
+    state.pendingAmbientUrl = audioUrl || null;
   }, 800);
 }
 
 $('begin-btn').addEventListener('click', () => {
+  // Unlock browser audio on first user gesture
+  if (!state.audioUnlocked) {
+    state.audioUnlocked = true;
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    ctx.resume();
+    if (state.pendingAmbientUrl) {
+      const a = new Audio(state.pendingAmbientUrl);
+      startAmbient(a);
+    }
+  }
   const cs = $('cinematic-screen');
   cs.classList.add('fade-out');
   setTimeout(() => {
@@ -1240,46 +1249,20 @@ async function commitMissions() {
   });
   updateResourceDisplay();
 
-  // Fire all outcomes + scene images in parallel
+  // Fetch all outcomes in parallel (Claude calls), but scenes are fetched
+  // one-at-a-time per card reveal to avoid Pollinations rate limits
   const outcomePromises = assignedMissions.map(async m => {
-    const [outcomeResp, sceneUrl] = await Promise.allSettled([
-      (async () => {
-        try {
-          const r = await fetch('/api/outcome', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ mission: m, round: state.round })
-          });
-          if (!r.ok) throw new Error('API');
-          return await r.json();
-        } catch {
-          return FALLBACK_OUTCOMES[m.type] || FALLBACK_OUTCOMES.intel;
-        }
-      })(),
-      (async () => {
-        try {
-          const r = await fetch('/api/scene', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ prompt: `${m.type} mission in Boston 1775, colonial underground, dramatic moment, oil painting` })
-          });
-          if (!r.ok) return null;
-          const d = await r.json();
-          return d.url || null;
-        } catch { return null; }
-      })()
-    ]);
-
-    const outcome = outcomeResp.status === 'fulfilled' ? outcomeResp.value : FALLBACK_OUTCOMES[m.type] || FALLBACK_OUTCOMES.intel;
-    const imgUrl = sceneUrl.status === 'fulfilled' ? sceneUrl.value : null;
-
-    // Use scene_prompt from outcome for the image if we don't have one yet
-    let finalImgUrl = imgUrl;
-    if (!finalImgUrl && outcome.scene_prompt) {
-      finalImgUrl = await fetchScene(outcome.scene_prompt).catch(() => null);
+    try {
+      const r = await fetch('/api/outcome', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ mission: m, round: state.round })
+      });
+      if (!r.ok) throw new Error('API');
+      return { mission: m, outcome: await r.json() };
+    } catch {
+      return { mission: m, outcome: FALLBACK_OUTCOMES[m.type] || FALLBACK_OUTCOMES.intel };
     }
-
-    return { mission: m, outcome, imgUrl: finalImgUrl };
   });
 
   const results = await Promise.all(outcomePromises);
@@ -1301,9 +1284,34 @@ async function commitMissions() {
   show('outcomes-section');
   $('outcomes-section').innerHTML = `<div class="section-title">Mission Reports</div>`;
 
+  const fallbackPrompts = {
+    intel: 'Colonial spy in tricorn hat reading stolen British military orders by candlelight in a Boston cellar, 1775, oil painting, chiaroscuro',
+    recruit: 'Colonial Sons of Liberty agent in a dark tavern convincing a group of armed colonial militiamen to join the cause, torchlight, Boston 1775, oil painting',
+    sabotage: 'Colonial patriot sabotaging a British cannon at night near Boston Harbor, dramatic shadows, musket and torch, 1775, oil painting',
+    propaganda: 'Colonial printer setting revolutionary pamphlet type by lantern light in a cramped Boston print shop, 1775, oil painting',
+  };
+
   for (let i = 0; i < results.length; i++) {
     await new Promise(r => setTimeout(r, i === 0 ? 300 : 700));
-    await revealOutcome(results[i]);
+    const { mission, outcome } = results[i];
+    // Show card immediately with gradient — image loads in background
+    const card = await revealOutcome({ mission, outcome, imgUrl: null });
+    const scenePrompt = outcome.scene_prompt || fallbackPrompts[mission.type] || fallbackPrompts.intel;
+    // Delay second request slightly so we don't hit Pollinations concurrently
+    const delay = i * 1500;
+    setTimeout(() => {
+      fetchScene(scenePrompt).then(imgUrl => {
+        if (!imgUrl || !card) return;
+        const fallbackEl = card.querySelector('.outcome-scene-fallback');
+        if (fallbackEl) {
+          const img = document.createElement('img');
+          img.className = 'outcome-scene';
+          img.alt = 'Mission scene';
+          img.src = imgUrl;
+          fallbackEl.replaceWith(img);
+        }
+      });
+    }, delay);
   }
 
   updateResourceDisplay();
@@ -1375,6 +1383,8 @@ async function revealOutcome({ mission, outcome, imgUrl }) {
     ? 'Colonial drums and fife, triumphant march rhythm, distant cheering crowd'
     : 'Tense low strings, door slamming, urgent footsteps on cobblestones, danger';
   playSfx(sfxText, 2.5);
+
+  return card;
 }
 
 // ===== NEXT ROUND =====
