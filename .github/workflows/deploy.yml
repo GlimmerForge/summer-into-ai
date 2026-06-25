@@ -5,9 +5,46 @@ on:
     branches: [master]
   workflow_dispatch:
     inputs:
-      demo:
-        description: 'Demo path to force-deploy (e.g. projects/week-02-red-white-boom/demo-07-drafted)'
-        required: false
+      w01-found-a-republic:
+        description: 'week-01 / found-a-republic'
+        type: boolean
+        default: false
+      w01-liberty-1776:
+        description: 'week-01 / liberty-1776'
+        type: boolean
+        default: false
+      w01-hall-of-the-republic:
+        description: 'week-01 / hall-of-the-republic'
+        type: boolean
+        default: false
+      w02-the-turncoat:
+        description: 'week-02 / the-turncoat'
+        type: boolean
+        default: false
+      w02-boom-or-bust:
+        description: 'week-02 / boom-or-bust'
+        type: boolean
+        default: false
+      w02-fireworks-foundry:
+        description: 'week-02 / fireworks-foundry'
+        type: boolean
+        default: false
+      w02-i-only-regret:
+        description: 'week-02 / i-only-regret'
+        type: boolean
+        default: false
+      w02-minuteman:
+        description: 'week-02 / minuteman'
+        type: boolean
+        default: false
+      w02-patriot-gazette:
+        description: 'week-02 / patriot-gazette'
+        type: boolean
+        default: false
+      w02-drafted:
+        description: 'week-02 / drafted'
+        type: boolean
+        default: false
 
 jobs:
   deploy:
@@ -24,15 +61,23 @@ jobs:
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
         run: |
-          # Manual trigger with specific demo
-          if [ -n "${{ github.event.inputs.demo }}" ]; then
-            CHANGED="${{ github.event.inputs.demo }}"
+          # Map checkbox inputs to demo folder paths
+          CHANGED=""
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            [ "${{ github.event.inputs.w01-found-a-republic }}"   = "true" ] && CHANGED="$CHANGED\nprojects/week-01-8bit-america/demo-01-found-a-republic"
+            [ "${{ github.event.inputs.w01-liberty-1776 }}"       = "true" ] && CHANGED="$CHANGED\nprojects/week-01-8bit-america/demo-02-liberty-1776"
+            [ "${{ github.event.inputs.w01-hall-of-the-republic }}" = "true" ] && CHANGED="$CHANGED\nprojects/week-01-8bit-america/demo-03-hall-of-the-republic"
+            [ "${{ github.event.inputs.w02-the-turncoat }}"       = "true" ] && CHANGED="$CHANGED\nprojects/week-02-red-white-boom/demo-01-the-turncoat"
+            [ "${{ github.event.inputs.w02-boom-or-bust }}"       = "true" ] && CHANGED="$CHANGED\nprojects/week-02-red-white-boom/demo-02-boom-or-bust"
+            [ "${{ github.event.inputs.w02-fireworks-foundry }}"  = "true" ] && CHANGED="$CHANGED\nprojects/week-02-red-white-boom/demo-02-fireworks-foundry"
+            [ "${{ github.event.inputs.w02-i-only-regret }}"      = "true" ] && CHANGED="$CHANGED\nprojects/week-02-red-white-boom/demo-03-i-only-regret"
+            [ "${{ github.event.inputs.w02-minuteman }}"          = "true" ] && CHANGED="$CHANGED\nprojects/week-02-red-white-boom/demo-05-minuteman"
+            [ "${{ github.event.inputs.w02-patriot-gazette }}"    = "true" ] && CHANGED="$CHANGED\nprojects/week-02-red-white-boom/demo-06-the-patriot-gazette"
+            [ "${{ github.event.inputs.w02-drafted }}"            = "true" ] && CHANGED="$CHANGED\nprojects/week-02-red-white-boom/demo-07-drafted"
 
-          # First push to branch — deploy everything
           elif [ "${{ github.event.before }}" = "0000000000000000000000000000000000000000" ]; then
             CHANGED=$(find projects -mindepth 2 -maxdepth 2 -type d -name 'demo-*' | sort)
 
-          # Normal push — deploy only changed demos
           else
             CHANGED=$(git diff --name-only "${{ github.event.before }}" "${{ github.sha }}" \
               | grep -oE 'projects/[^/]+/demo-[^/]+' \
@@ -44,10 +89,9 @@ jobs:
             exit 0
           fi
 
-          echo "Changed demos:"
-          echo "$CHANGED"
+          echo -e "Deploying:\n$CHANGED"
 
-          while IFS= read -r DEMO; do
+          echo -e "$CHANGED" | while IFS= read -r DEMO; do
             [ -z "$DEMO" ] && continue
             [ ! -d "$DEMO" ] && continue
 
@@ -62,4 +106,4 @@ jobs:
             echo "🚀 Deploying $DEMO..."
             (cd "$DEMO" && VERCEL_PROJECT_ID="$PROJECT_ID" VERCEL_ORG_ID="$ORG_ID" \
               vercel deploy --prod --token="$VERCEL_TOKEN" --yes)
-          done <<< "$CHANGED"
+          done
