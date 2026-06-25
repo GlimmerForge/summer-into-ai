@@ -580,19 +580,15 @@ function playCrowdOoh(isFinale = false) {
     const ctx = getAudioCtx();
     const now = ctx.currentTime;
     const dur = isFinale ? 1.5 : 0.85;
-    const vol = isFinale ? 0.06 : 0.035;
-    // Sine oscillators only — smooth, no sawtooth harmonics
-    // Spread across human voice range 200–900Hz
-    const freqs = [210, 255, 310, 370, 440, 520, 620, 740, 880];
-    freqs.forEach((f, i) => {
+    // Each oscillator gets a flat 0.12 gain — loud enough to hear clearly
+    [220, 330, 440, 550, 660].forEach(f => {
       const osc = ctx.createOscillator();
       osc.type = 'sine';
-      osc.frequency.value = f * (1 + (Math.random() - 0.5) * 0.04);
+      osc.frequency.value = f + (Math.random() - 0.5) * 12;
       const g = ctx.createGain();
-      const v = vol / (1 + i * 0.18);
       g.gain.setValueAtTime(0, now);
-      g.gain.linearRampToValueAtTime(v, now + 0.08);
-      g.gain.setValueAtTime(v, now + dur * 0.6);
+      g.gain.linearRampToValueAtTime(0.12, now + 0.08);
+      g.gain.setValueAtTime(0.12, now + dur * 0.6);
       g.gain.linearRampToValueAtTime(0, now + dur);
       osc.connect(g); g.connect(ctx.destination);
       osc.start(now); osc.stop(now + dur + 0.05);
@@ -605,19 +601,16 @@ function playCrowdBoo() {
     const ctx = getAudioCtx();
     const now = ctx.currentTime;
     const dur = 2.0;
-    const vol = 0.055;
-    // Descending sine cluster — voiced crowd groan, no harsh waves
-    const freqs = [150, 185, 220, 260, 310, 370, 440, 520];
-    freqs.forEach((f, i) => {
+    // Descending sines — loud flat gain
+    [180, 240, 300, 360, 420].forEach(f => {
       const osc = ctx.createOscillator();
       osc.type = 'sine';
-      osc.frequency.setValueAtTime(f * (1 + (Math.random() - 0.5) * 0.04), now);
-      osc.frequency.linearRampToValueAtTime(f * 0.7 * (1 + (Math.random() - 0.5) * 0.04), now + dur);
+      osc.frequency.setValueAtTime(f + (Math.random() - 0.5) * 10, now);
+      osc.frequency.linearRampToValueAtTime(f * 0.72, now + dur);
       const g = ctx.createGain();
-      const v = vol / (1 + i * 0.15);
       g.gain.setValueAtTime(0, now);
-      g.gain.linearRampToValueAtTime(v, now + 0.12);
-      g.gain.setValueAtTime(v * 0.85, now + dur * 0.55);
+      g.gain.linearRampToValueAtTime(0.12, now + 0.12);
+      g.gain.setValueAtTime(0.12, now + dur * 0.5);
       g.gain.linearRampToValueAtTime(0, now + dur);
       osc.connect(g); g.connect(ctx.destination);
       osc.start(now); osc.stop(now + dur + 0.05);
