@@ -61,25 +61,26 @@ After Vercel deploy, images are at `https://[slug].vercel.app/assets/[image].png
 **Never use PowerShell Invoke-RestMethod** — it drops the connection on large bodies.  
 **Never send HTML** — `draft_body` must be stringified Tiptap JSON (see format below).
 
-Use curl from Git Bash (already installed):
+Use curl from Git Bash (already installed). Write the body Tiptap JSON to a file first, then:
 
 ```bash
 SID="s%3A..."  # SUBSTACK_SESSION_TOKEN from C:\Users\jake2\.claude\.mcp.json
 
-BODY=$(cat projects/week-XX/demo-XX/substack_body.json)
-
-PAYLOAD=$(jq -n \
+# Build payload using --slurpfile + --ascii-output to avoid UTF-8 shell variable corruption.
+# NEVER do BODY=$(cat body.json) — em dashes and other non-ASCII corrupt in shell vars.
+jq -n --ascii-output \
+  --slurpfile body projects/week-XX/demo-XX/substack_body.json \
   --arg title "Summer into AI 2026: Demo Name" \
   --arg subtitle "One sentence hook." \
-  --arg body "$BODY" \
   '{type:"newsletter",draft_title:$title,draft_subtitle:$subtitle,
     draft_bylines:[{"id":451591601,"is_guest":false}],
-    audience:"everyone",section_chosen:false,draft_body:$body}')
+    audience:"everyone",section_chosen:false,
+    draft_body:($body[0]|tostring)}' > /tmp/substack_payload.json
 
 curl -s -X POST "https://jakestrait5.substack.com/api/v1/drafts" \
   -H "Content-Type: application/json" \
   -H "Cookie: substack.sid=$SID" \
-  -d "$PAYLOAD" | jq '{id:.id, body_len:(.draft_body|length)}'
+  --data @/tmp/substack_payload.json | jq '{id:.id, body_len:(.draft_body|length)}'
 ```
 
 Draft opens at: `https://jakestrait5.substack.com/publish/post/{id}`
