@@ -243,7 +243,7 @@ When the user says "create the Substack draft", "get images", "push", or similar
 7. **Tell the user the Vercel env vars** needed for their project settings and the draft URL to review.
 
 **Full details, Tiptap format reference, credential locations, and troubleshooting:** `SUBSTACK_WORKFLOW.md`  
-**Post structure and format:** `SUBSTACK_TEMPLATE.md`
+**README template for each demo:** `SUBSTACK_TEMPLATE.md`
 
 **NEVER use the MCP `create_draft_post` tool** — it renders HTML as raw text in the editor.  
 **NEVER use PowerShell Invoke-RestMethod** for image uploads — drops connection on large bodies.  
