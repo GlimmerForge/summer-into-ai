@@ -3,6 +3,11 @@ name: Deploy Changed Demos
 on:
   push:
     branches: [master]
+  workflow_dispatch:
+    inputs:
+      demo:
+        description: 'Demo path to force-deploy (e.g. projects/week-02-red-white-boom/demo-07-drafted)'
+        required: false
 
 jobs:
   deploy:
@@ -19,13 +24,17 @@ jobs:
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
         run: |
-          BEFORE="${{ github.event.before }}"
+          # Manual trigger with specific demo
+          if [ -n "${{ github.event.inputs.demo }}" ]; then
+            CHANGED="${{ github.event.inputs.demo }}"
 
           # First push to branch — deploy everything
-          if [ "$BEFORE" = "0000000000000000000000000000000000000000" ]; then
+          elif [ "${{ github.event.before }}" = "0000000000000000000000000000000000000000" ]; then
             CHANGED=$(find projects -mindepth 2 -maxdepth 2 -type d -name 'demo-*' | sort)
+
+          # Normal push — deploy only changed demos
           else
-            CHANGED=$(git diff --name-only "$BEFORE" "${{ github.sha }}" \
+            CHANGED=$(git diff --name-only "${{ github.event.before }}" "${{ github.sha }}" \
               | grep -oE 'projects/[^/]+/demo-[^/]+' \
               | sort -u)
           fi
