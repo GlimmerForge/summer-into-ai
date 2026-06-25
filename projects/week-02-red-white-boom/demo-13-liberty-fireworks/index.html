@@ -1271,7 +1271,7 @@ function goToLaunch() {
   stopTownLoop();
   const rackCount = state.inventory.extras.filter(e => e.fuseType === 'rack').length;
   const mortar_count = Math.min(12, 8 + rackCount * 2);
-  state.mortars = Array(mortar_count).fill(null).map(() => ({ shell: null, delay: 1.0 }));
+  state.mortars = Array(mortar_count).fill(null).map(() => ({ shell: null, dye: null, fuse: null, delay: 1.0 }));
   state.activeSelection = null;
   const b = state.brief;
   document.getElementById('launch-brief-reminder').innerHTML =
@@ -1393,101 +1393,101 @@ function hideModeIndicator() {
 }
 
 function clickMortar(mortarIdx) {
+  const m = state.mortars[mortarIdx];
   if (!state.activeSelection) {
-    if (state.mortars[mortarIdx] && state.mortars[mortarIdx].shell) {
-      state.inventory.shells.unshift(state.mortars[mortarIdx].shell);
-      state.mortars[mortarIdx] = { shell: null, delay: 1.0 };
-      renderMortarRow();
-      renderLaunchInventory();
-    }
+    // Nothing selected — unload everything back to inventory
+    if (m.shell) state.inventory.shells.unshift(m.shell);
+    if (m.dye)   state.inventory.dyes.unshift(m.dye);
+    if (m.fuse)  state.inventory.extras.unshift(m.fuse);
+    state.mortars[mortarIdx] = { shell: null, dye: null, fuse: null, delay: 1.0 };
+    renderMortarRow();
+    renderLaunchInventory();
     return;
   }
   const sel = state.activeSelection;
   if (sel.type === 'shell') {
-    if (state.mortars[mortarIdx].shell) {
-      state.inventory.shells.unshift(state.mortars[mortarIdx].shell);
-    }
-    const shell = state.inventory.shells[sel.index];
-    state.mortars[mortarIdx] = { shell: { ...shell }, delay: state.mortars[mortarIdx].delay || 1.0 };
+    if (m.shell) state.inventory.shells.unshift(m.shell);
+    state.mortars[mortarIdx].shell = { ...state.inventory.shells[sel.index] };
     state.inventory.shells.splice(sel.index, 1);
-    clearSelections();
-    renderMortarRow();
-    renderLaunchInventory();
   } else if (sel.type === 'dye') {
-    if (!state.mortars[mortarIdx].shell) {
-      showModeIndicator('THAT MORTAR IS EMPTY! LOAD A SHELL FIRST.');
-      return;
-    }
-    const dye = state.inventory.dyes[sel.index];
-    state.mortars[mortarIdx].shell.color = dye.color;
+    if (!m.shell) { showModeIndicator('LOAD A SHELL FIRST.'); return; }
+    if (m.dye) state.inventory.dyes.unshift(m.dye);
+    state.mortars[mortarIdx].dye = { ...state.inventory.dyes[sel.index] };
     state.inventory.dyes.splice(sel.index, 1);
-    clearSelections();
-    renderMortarRow();
-    renderLaunchInventory();
   } else if (sel.type === 'fuse') {
+    if (m.fuse) state.inventory.extras.unshift(m.fuse);
     const fuse = state.inventory.extras[sel.index];
-    if (fuse.fuseType === 'quick') {
-      state.mortars[mortarIdx].delay = 0.3;
-    } else if (fuse.fuseType === 'slow') {
-      state.mortars[mortarIdx].delay = 2.0;
-    }
+    state.mortars[mortarIdx].fuse = { ...fuse };
+    state.mortars[mortarIdx].delay = fuse.fuseType === 'quick' ? 0.3 : fuse.fuseType === 'slow' ? 2.0 : 1.0;
     state.inventory.extras.splice(sel.index, 1);
-    clearSelections();
-    renderMortarRow();
-    renderLaunchInventory();
   }
+  clearSelections();
+  renderMortarRow();
+  renderLaunchInventory();
 }
 
 function renderMortarRow() {
+  const abbr = {
+    'Standard': 'STD', 'Star Shell': 'STAR', 'Chrysanthemum': 'CHRY',
+    'Peony': 'PEON', 'Comet': 'COM', 'Willow': 'WIL', 'Roman Candle': 'RC'
+  };
   const row = document.getElementById('mortar-row');
   row.innerHTML = '';
   state.mortars.forEach((m, idx) => {
     const wrap = document.createElement('div');
     wrap.className = 'mortar-wrap';
+    wrap.onclick = () => clickMortar(idx);
 
     const numLabel = document.createElement('div');
     numLabel.className = 'mortar-num';
-    numLabel.textContent = idx + 1;
+    numLabel.textContent = '#' + (idx + 1);
 
+    // Three-slot tube
     const tube = document.createElement('div');
     tube.className = 'mortar' + (m.shell ? ' loaded' : '');
-    tube.onclick = () => clickMortar(idx);
-    tube.title = m.shell
-      ? m.shell.shellType + ' -- ' + m.shell.color + ' (click to unload)'
-      : 'Empty mortar (click to load)';
+    tube.style.cssText = 'width:54px;height:78px;padding:4px;gap:3px;display:flex;flex-direction:column;';
 
-    if (m.shell) {
-      const badge = document.createElement('div');
-      badge.className = 'shell-badge';
-      badge.style.background = COLORS[m.shell.color] || '#888';
-      tube.appendChild(badge);
-      const typeLabel = document.createElement('div');
-      typeLabel.className = 'mortar-type-label';
-      const abbr = {
-        'Standard': 'STD', 'Star Shell': 'STAR', 'Chrysanthemum': 'CHRY',
-        'Peony': 'PEON', 'Comet': 'COM', 'Willow': 'WIL', 'Roman Candle': 'RC'
-      };
-      typeLabel.textContent = abbr[m.shell.shellType] || m.shell.shellType.slice(0,4).toUpperCase();
-      tube.appendChild(typeLabel);
-    } else {
-      const emptyEl = document.createElement('div');
-      emptyEl.style.cssText = 'font-size:16px;color:#5a3e14;margin-top:6px;line-height:1;';
-      emptyEl.textContent = '▓';
-      tube.appendChild(emptyEl);
+    // Slot builder
+    function makeSlot(filled, label, color) {
+      const slot = document.createElement('div');
+      slot.style.cssText = `
+        flex:1;display:flex;align-items:center;justify-content:center;gap:3px;
+        border:2px solid ${filled ? '#9a6030' : '#3d1f08'};
+        background:${filled ? '#2a1508' : '#1a0a02'};
+        font-family:'Press Start 2P',monospace;font-size:5px;
+        color:${filled ? '#e8d5a0' : '#3d1f08'};border-radius:1px;
+      `;
+      if (filled && color) {
+        const dot = document.createElement('div');
+        dot.style.cssText = `width:8px;height:8px;background:${color};flex-shrink:0;border:1px solid rgba(255,255,255,0.3);`;
+        slot.appendChild(dot);
+      }
+      const lbl = document.createElement('span');
+      lbl.textContent = label;
+      slot.appendChild(lbl);
+      return slot;
     }
+
+    // Shell slot
+    const shellLabel = m.shell ? (abbr[m.shell.shellType] || m.shell.shellType.slice(0,4)) : 'SHELL';
+    const shellColor = m.shell ? (COLORS[m.shell.color] || '#888') : null;
+    tube.appendChild(makeSlot(!!m.shell, shellLabel, shellColor));
+
+    // Dye slot — show dye color if applied, else show shell's base color dimly
+    const dyeLabel = m.dye ? m.dye.color.toUpperCase() : 'DYE';
+    const dyeColor = m.dye ? (COLORS[m.dye.color] || '#888') : null;
+    tube.appendChild(makeSlot(!!m.dye, dyeLabel, dyeColor));
+
+    // Fuse slot
+    const fuseLabel = m.fuse ? (m.fuse.fuseType === 'quick' ? 'QUICK' : m.fuse.fuseType === 'slow' ? 'SLOW' : 'RACK') : 'FUSE';
+    tube.appendChild(makeSlot(!!m.fuse, fuseLabel, null));
 
     const groundBar = document.createElement('div');
     groundBar.className = 'mortar-ground';
 
-    const timing = document.createElement('div');
-    timing.className = 'timing-badge';
-    timing.textContent = '[' + m.delay.toFixed(1) + 's]';
-    timing.onclick = e => { e.stopPropagation(); };
-
     wrap.appendChild(numLabel);
     wrap.appendChild(tube);
     wrap.appendChild(groundBar);
-    wrap.appendChild(timing);
     row.appendChild(wrap);
   });
   updateLaunchButton();
@@ -1515,7 +1515,7 @@ function startShow() {
     .map((m, idx) => ({ ...m, index: idx }))
     .filter(m => m.shell);
 
-  const colorsUsed = [...new Set(loadedMortars.map(m => m.shell.color))];
+  const colorsUsed = [...new Set(loadedMortars.map(m => m.dye ? m.dye.color : m.shell.color))];
   const finaleType = loadedMortars.length > 0 ? loadedMortars[loadedMortars.length - 1].shell.shellType : null;
   const shellCount = loadedMortars.length;
 
@@ -1526,7 +1526,8 @@ function startShow() {
   loadedMortars.forEach((m, seq) => {
     const xPos = (canvas.width * 0.1) + (canvas.width * 0.8) * (n === 1 ? 0.5 : seq / (n - 1));
     setTimeout(() => {
-      fireShell(m.shell, xPos);
+      const effectiveShell = m.dye ? { ...m.shell, color: m.dye.color } : m.shell;
+      fireShell(effectiveShell, xPos);
       // Flash the mortar element in launch panel (hidden but still in DOM)
       const mortarEls = document.querySelectorAll('.mortar');
       if (mortarEls[seq]) {
