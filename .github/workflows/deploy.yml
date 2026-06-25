@@ -91,7 +91,7 @@ jobs:
 
           echo -e "Deploying:\n$CHANGED"
 
-          echo -e "$CHANGED" | while IFS= read -r DEMO; do
+          while IFS= read -r DEMO; do
             [ -z "$DEMO" ] && continue
             [ ! -d "$DEMO" ] && continue
 
@@ -106,4 +106,4 @@ jobs:
             echo "🚀 Deploying $DEMO..."
             (cd "$DEMO" && VERCEL_PROJECT_ID="$PROJECT_ID" VERCEL_ORG_ID="$ORG_ID" \
               vercel deploy --prod --token="$VERCEL_TOKEN" --yes)
-          done
+          done <<< "$(echo -e "$CHANGED")"
