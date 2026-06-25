@@ -55,49 +55,81 @@ After Vercel deploy, images are at `https://[slug].vercel.app/assets/[image].png
 
 ---
 
-## 2. Create Substack draft (via direct API)
+## 2. Create Substack draft (via curl + jq)
 
-**Never use the MCP tool** — it stores body as raw HTML text that shows as code in the editor.
+**Never use the MCP tool** — it stores body as raw HTML text.  
+**Never use PowerShell Invoke-RestMethod** — it drops the connection on large bodies.  
+**Never send HTML** — `draft_body` must be stringified Tiptap JSON (see format below).
 
-Use this PowerShell script with the session cookie from `.mcp.json`:
+Use curl from Git Bash (already installed):
 
-```powershell
-$sid = "s%3A..." # SUBSTACK_SESSION_TOKEN from C:\Users\jake2\.claude\.mcp.json (URL-encoded)
-$pubUrl = "https://jakestrait5.substack.com"
+```bash
+SID="s%3A..."  # SUBSTACK_SESSION_TOKEN from C:\Users\jake2\.claude\.mcp.json
 
-$session = New-Object Microsoft.PowerShell.Commands.WebRequestSession
-$cookie = New-Object System.Net.Cookie
-$cookie.Name = "substack.sid"; $cookie.Value = $sid; $cookie.Domain = "substack.com"
-$session.Cookies.Add($cookie)
+BODY=$(cat projects/week-XX/demo-XX/substack_body.json)
 
-$html = @"
-<p><strong>Demo Name</strong> is [description].</p>
-<h2>How the AI works</h2>
-<ul>
-  <li><strong>Feature</strong> — what it does</li>
-</ul>
-<h2>How to play</h2>
-<ul><li>step</li></ul>
-<h2>Where to play</h2>
-<p><strong>Demo:</strong> <a href="https://slug.vercel.app">slug.vercel.app</a><br>
-<strong>README:</strong> <a href="https://github.com/GlimmerForge/summer-into-ai/blob/master/projects/week-XX/demo-XX/README.md">github link</a></p>
-<hr>
-<p><em>Summer into AI 2026 · Theme N: Theme Name</em></p>
-"@
+PAYLOAD=$(jq -n \
+  --arg title "Summer into AI 2026: Demo Name" \
+  --arg subtitle "One sentence hook." \
+  --arg body "$BODY" \
+  '{type:"newsletter",draft_title:$title,draft_subtitle:$subtitle,
+    draft_bylines:[{"id":451591601,"is_guest":false}],
+    audience:"everyone",section_chosen:false,draft_body:$body}')
 
-$payload = [ordered]@{
-  type = "newsletter"
-  draft_title = "Summer into AI 2026: Demo Name"
-  draft_subtitle = "One sentence hook."
-  draft_bylines = @(@{ id = 451591601; is_guest = $false })
-  audience = "everyone"
-  section_chosen = $false
-  draft_body = $html
-} | ConvertTo-Json -Depth 5
-
-$r = Invoke-RestMethod -Uri "$pubUrl/api/v1/drafts" -Method POST -WebSession $session -ContentType "application/json" -Body $payload
-Write-Host "Draft: $pubUrl/publish/post/$($r.id)"
+curl -s -X POST "https://jakestrait5.substack.com/api/v1/drafts" \
+  -H "Content-Type: application/json" \
+  -H "Cookie: substack.sid=$SID" \
+  -d "$PAYLOAD" | jq '{id:.id, body_len:(.draft_body|length)}'
 ```
+
+Draft opens at: `https://jakestrait5.substack.com/publish/post/{id}`
+
+### Tiptap JSON format (CRITICAL — must match exactly)
+
+Substack uses a customised Tiptap editor. Node type names use **underscores** (not camelCase). Write the body JSON to a file, then pass it as `$BODY` above.
+
+```json
+{"type":"doc","content":[
+  {"type":"paragraph","attrs":{"textAlign":null},"content":[
+    {"type":"text","marks":[{"type":"strong"}],"text":"Bold text"},
+    {"type":"text","text":" normal text"}
+  ]},
+  {"type":"heading","attrs":{"textAlign":null,"level":2},"content":[
+    {"type":"text","text":"Section heading"}
+  ]},
+  {"type":"bullet_list","content":[
+    {"type":"list_item","content":[
+      {"type":"paragraph","attrs":{"textAlign":null},"content":[
+        {"type":"text","marks":[{"type":"strong"}],"text":"Bold label"},
+        {"type":"text","text":" — description"}
+      ]}
+    ]}
+  ]},
+  {"type":"paragraph","attrs":{"textAlign":null},"content":[
+    {"type":"text","marks":[{"type":"strong"}],"text":"Link label: "},
+    {"type":"text","marks":[{"type":"link","attrs":{
+      "href":"https://example.com","target":"_blank",
+      "rel":"noopener noreferrer nofollow","class":null
+    }}],"text":"link text"}
+  ]},
+  {"type":"horizontal_rule"},
+  {"type":"paragraph","attrs":{"textAlign":null},"content":[
+    {"type":"text","marks":[{"type":"em"}],"text":"Italic footer text"}
+  ]}
+]}
+```
+
+**Node type reference:**
+| Element | Type name | Mark name |
+|---------|-----------|-----------|
+| Paragraph | `paragraph` | — |
+| Heading | `heading` | — |
+| Bullet list | `bullet_list` | — |
+| List item | `list_item` | — |
+| Horizontal rule | `horizontal_rule` | — |
+| Bold | text node | `strong` |
+| Italic | text node | `em` |
+| Link | text node | `link` |
 
 **Credentials:**
 - Session token: `C:\Users\jake2\.claude\.mcp.json` → `SUBSTACK_SESSION_TOKEN` (valid until Sep 2026)
