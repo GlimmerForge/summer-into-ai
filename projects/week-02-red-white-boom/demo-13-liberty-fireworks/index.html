@@ -510,7 +510,7 @@ const state = {
   phase: 'loading',
   brief: null,
   inventory: { shells: [], dyes: [], extras: [] },
-  budget: 60,
+  budget: 120,
   mortars: [],
   activeShop: null,
   shopkeeperText: '',
@@ -582,28 +582,39 @@ function playCrowdOoh(isFinale = false) {
   try {
     const ctx = getAudioCtx();
     const now = ctx.currentTime;
-    const dur = isFinale ? 1.6 : 0.7;
-    // Layer 3 voice bands — low murmur, mid ooh, bright cheer
-    [[280, 0.9], [520, 0.7], [1100, 0.4]].forEach(([freq, qVal], i) => {
-      const len = Math.floor(ctx.sampleRate * dur);
-      const buf = ctx.createBuffer(1, len, ctx.sampleRate);
-      const d = buf.getChannelData(0);
-      for (let j = 0; j < len; j++) {
-        const t = j / len;
-        // Envelope: quick rise, sustained, tail off
-        const env = Math.min(t * 8, 1) * Math.pow(1 - t * 0.6, 0.8);
-        d[j] = (Math.random() * 2 - 1) * env;
-      }
-      const src = ctx.createBufferSource();
-      src.buffer = buf;
-      const bp = ctx.createBiquadFilter();
-      bp.type = 'bandpass'; bp.frequency.value = freq; bp.Q.value = qVal;
-      const g = ctx.createGain();
-      const vol = (isFinale ? 0.28 : 0.14) / (i + 1);
-      g.gain.setValueAtTime(vol, now + 0.05);
-      g.gain.exponentialRampToValueAtTime(0.001, now + dur);
-      src.connect(bp); bp.connect(g); g.connect(ctx.destination);
-      src.start(now + 0.05); src.stop(now + dur);
+    const dur = isFinale ? 1.8 : 0.9;
+    const vol = isFinale ? 0.55 : 0.32;
+    // Crowd noise: wide bandpass noise burst
+    const len = Math.floor(ctx.sampleRate * dur);
+    const buf = ctx.createBuffer(1, len, ctx.sampleRate);
+    const d = buf.getChannelData(0);
+    for (let i = 0; i < len; i++) {
+      const t = i / len;
+      d[i] = (Math.random() * 2 - 1) * Math.min(t * 12, 1) * Math.pow(1 - t, 0.5);
+    }
+    const src = ctx.createBufferSource();
+    src.buffer = buf;
+    // Wide lowpass so it sounds like distant voices, not hiss
+    const lp = ctx.createBiquadFilter();
+    lp.type = 'lowpass'; lp.frequency.value = 900;
+    const hp = ctx.createBiquadFilter();
+    hp.type = 'highpass'; hp.frequency.value = 150;
+    const g = ctx.createGain();
+    g.gain.setValueAtTime(vol, now);
+    g.gain.exponentialRampToValueAtTime(0.001, now + dur);
+    src.connect(hp); hp.connect(lp); lp.connect(g); g.connect(ctx.destination);
+    src.start(now); src.stop(now + dur);
+    // Voiced "oooh" tone underneath — sine cluster
+    [220, 330, 440].forEach((freq, i) => {
+      const osc = ctx.createOscillator();
+      osc.type = 'sine';
+      osc.frequency.value = freq * (1 + (Math.random() - 0.5) * 0.05);
+      const og = ctx.createGain();
+      og.gain.setValueAtTime(0, now);
+      og.gain.linearRampToValueAtTime(vol * 0.12 / (i + 1), now + 0.15);
+      og.gain.exponentialRampToValueAtTime(0.001, now + dur);
+      osc.connect(og); og.connect(ctx.destination);
+      osc.start(now); osc.stop(now + dur);
     });
   } catch(e) {}
 }
@@ -612,26 +623,76 @@ function playCrowdBoo() {
   try {
     const ctx = getAudioCtx();
     const now = ctx.currentTime;
-    // Low sustained "booo" — heavy on bass, slight wobble
-    [180, 260].forEach((freq, i) => {
-      const len = Math.floor(ctx.sampleRate * 2.0);
-      const buf = ctx.createBuffer(1, len, ctx.sampleRate);
-      const d = buf.getChannelData(0);
-      for (let j = 0; j < len; j++) {
-        const t = j / len;
-        const wobble = 1 + 0.04 * Math.sin(j * 0.003); // slow LFO
-        d[j] = (Math.random() * 2 - 1) * Math.min(t * 3, 1) * Math.pow(1 - t, 0.4) * wobble;
-      }
-      const src = ctx.createBufferSource();
-      src.buffer = buf;
-      const bp = ctx.createBiquadFilter();
-      bp.type = 'bandpass'; bp.frequency.value = freq; bp.Q.value = 0.6;
-      const g = ctx.createGain();
-      g.gain.setValueAtTime(i === 0 ? 0.22 : 0.12, now);
-      g.gain.exponentialRampToValueAtTime(0.001, now + 2.0);
-      src.connect(bp); bp.connect(g); g.connect(ctx.destination);
-      src.start(now); src.stop(now + 2.0);
+    const dur = 2.2;
+    // Boo: low noise + descending "boo" tone
+    const len = Math.floor(ctx.sampleRate * dur);
+    const buf = ctx.createBuffer(1, len, ctx.sampleRate);
+    const d = buf.getChannelData(0);
+    for (let i = 0; i < len; i++) {
+      const t = i / len;
+      const wobble = 1 + 0.06 * Math.sin(i * 0.002);
+      d[i] = (Math.random() * 2 - 1) * Math.min(t * 4, 1) * Math.pow(1 - t * 0.6, 0.7) * wobble;
+    }
+    const src = ctx.createBufferSource();
+    src.buffer = buf;
+    const lp = ctx.createBiquadFilter();
+    lp.type = 'lowpass'; lp.frequency.value = 600;
+    const hp = ctx.createBiquadFilter();
+    hp.type = 'highpass'; hp.frequency.value = 100;
+    const g = ctx.createGain();
+    g.gain.setValueAtTime(0.45, now);
+    g.gain.exponentialRampToValueAtTime(0.001, now + dur);
+    src.connect(hp); hp.connect(lp); lp.connect(g); g.connect(ctx.destination);
+    src.start(now); src.stop(now + dur);
+    // "Booo" descending tones
+    [280, 210].forEach((freq, i) => {
+      const osc = ctx.createOscillator();
+      osc.type = 'sawtooth';
+      osc.frequency.setValueAtTime(freq, now + 0.1);
+      osc.frequency.exponentialRampToValueAtTime(freq * 0.7, now + dur);
+      const og = ctx.createGain();
+      og.gain.setValueAtTime(0.08, now + 0.1);
+      og.gain.exponentialRampToValueAtTime(0.001, now + dur);
+      const filt = ctx.createBiquadFilter();
+      filt.type = 'lowpass'; filt.frequency.value = 800;
+      osc.connect(filt); filt.connect(og); og.connect(ctx.destination);
+      osc.start(now + 0.1); osc.stop(now + dur);
     });
+  } catch(e) {}
+}
+
+function playDoor(opening = true) {
+  try {
+    const ctx = getAudioCtx();
+    const now = ctx.currentTime;
+    // Creak: two friction sweeps + a thud at the end
+    const creakFreqs = opening ? [180, 280] : [280, 160];
+    creakFreqs.forEach((f, i) => {
+      const osc = ctx.createOscillator();
+      osc.type = 'sawtooth';
+      osc.frequency.setValueAtTime(f, now + i * 0.08);
+      osc.frequency.exponentialRampToValueAtTime(f * (opening ? 1.4 : 0.7), now + i * 0.08 + 0.18);
+      const dist = ctx.createWaveShaper();
+      const curve = new Float32Array(256);
+      for (let j = 0; j < 256; j++) curve[j] = Math.tanh((j / 128 - 1) * 4);
+      dist.curve = curve;
+      const g = ctx.createGain();
+      g.gain.setValueAtTime(0.18, now + i * 0.08);
+      g.gain.exponentialRampToValueAtTime(0.001, now + i * 0.08 + 0.22);
+      osc.connect(dist); dist.connect(g); g.connect(ctx.destination);
+      osc.start(now + i * 0.08); osc.stop(now + i * 0.08 + 0.22);
+    });
+    // Thud when door settles
+    const thudT = now + 0.32;
+    const tLen = Math.floor(ctx.sampleRate * 0.08);
+    const tBuf = ctx.createBuffer(1, tLen, ctx.sampleRate);
+    const td = tBuf.getChannelData(0);
+    for (let i = 0; i < tLen; i++) td[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / tLen, 3);
+    const ts = ctx.createBufferSource(); ts.buffer = tBuf;
+    const tFilt = ctx.createBiquadFilter(); tFilt.type = 'lowpass'; tFilt.frequency.value = 300;
+    const tg = ctx.createGain(); tg.gain.setValueAtTime(0.5, thudT); tg.gain.exponentialRampToValueAtTime(0.001, thudT + 0.08);
+    ts.connect(tFilt); tFilt.connect(tg); tg.connect(ctx.destination);
+    ts.start(thudT); ts.stop(thudT + 0.08);
   } catch(e) {}
 }
 function playCoin() {
@@ -1143,6 +1204,7 @@ window.addEventListener('resize', () => {
 // ============================================================
 function openShop(shopId) {
   stopTownLoop();
+  playDoor(true);
   state.activeShop = shopId;
   state.activeSelection = null;
   const shop = SHOPS[shopId];
@@ -1313,6 +1375,7 @@ async function askShopkeeper() {
 }
 
 function returnToTown() {
+  playDoor(false);
   showPhase('town');
   updateTownBudget();
   updateTownHudHints();
@@ -1326,6 +1389,7 @@ function returnToTown() {
 // ============================================================
 function goToLaunch() {
   stopTownLoop();
+  playDoor(true);
   const rackCount = state.inventory.extras.filter(e => e.fuseType === 'rack').length;
   const mortar_count = Math.min(12, 8 + rackCount * 2);
   state.mortars = Array(mortar_count).fill(null).map(() => ({ shell: null, dye: null, fuse: null, delay: 1.0 }));
@@ -1963,7 +2027,7 @@ function resetRound() {
   if (state.animFrame) { cancelAnimationFrame(state.animFrame); state.animFrame = null; }
   if (state.countdownInterval) { clearInterval(state.countdownInterval); state.countdownInterval = null; }
   state.inventory = { shells: [], dyes: [], extras: [] };
-  state.budget = 60;
+  state.budget = 120;
   state.mortars = [];
   state.activeSelection = null;
   state.activeShop = null;
