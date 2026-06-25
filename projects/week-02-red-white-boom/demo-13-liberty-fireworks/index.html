@@ -456,6 +456,7 @@
       <div class="mortar-row" id="mortar-row"></div>
       <div class="launch-actions">
         <button class="ot-btn" onclick="returnToTown()" style="padding:10px 20px;">&#8592; BACK TO TOWN</button>
+        <button class="ot-btn" onclick="randomizeLoadout()" style="padding:10px 20px;">&#9646; RANDOMIZE</button>
         <button class="ot-btn-danger" id="launch-btn" onclick="startShow()" disabled>
           &#9889; LIGHT THE FUSE
         </button>
@@ -1349,7 +1350,7 @@ function goToLaunch() {
   stopTownLoop();
   playDoor(true);
   const rackCount = state.inventory.extras.filter(e => e.fuseType === 'rack').length;
-  const mortar_count = Math.min(12, 8 + rackCount * 2);
+  const mortar_count = Math.min(24, 16 + rackCount * 2);
   state.mortars = Array(mortar_count).fill(null).map(() => ({ shell: null, dye: null, fuse: null, delay: 1.0 }));
   state.activeSelection = null;
   const b = state.brief;
@@ -1503,6 +1504,68 @@ function clickMortar(mortarIdx) {
   clearSelections();
   renderMortarRow();
   renderLaunchInventory();
+}
+
+function randomizeLoadout() {
+  // Return everything to inventory
+  state.mortars.forEach((m, i) => {
+    if (m.shell) state.inventory.shells.push(m.shell);
+    if (m.dye)   state.inventory.dyes.push(m.dye);
+    if (m.fuse)  state.inventory.extras.push(m.fuse);
+    state.mortars[i] = { shell: null, dye: null, fuse: null, delay: 1.0 };
+  });
+
+  // Shuffle shells, but put required finale type last if we have one
+  const finale = state.brief?.finale_type;
+  let shells = [...state.inventory.shells];
+  const finaleIdx = shells.findIndex(s => s.shellType === finale);
+  let finaleShell = null;
+  if (finaleIdx !== -1) { finaleShell = shells.splice(finaleIdx, 1)[0]; }
+  // Shuffle remaining
+  for (let i = shells.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [shells[i], shells[j]] = [shells[j], shells[i]];
+  }
+  if (finaleShell) shells.push(finaleShell);
+
+  // Load into mortars
+  const loaded = Math.min(shells.length, state.mortars.length);
+  for (let i = 0; i < loaded; i++) {
+    state.mortars[i].shell = { ...shells[i] };
+  }
+  state.inventory.shells = shells.slice(loaded);
+
+  // Assign dyes randomly to loaded mortars that don't already have one
+  let dyes = [...state.inventory.dyes];
+  for (let i = dyes.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [dyes[i], dyes[j]] = [dyes[j], dyes[i]];
+  }
+  const usedDyes = [];
+  dyes.forEach(dye => {
+    const targets = state.mortars.filter(m => m.shell && !m.dye);
+    if (targets.length === 0) return;
+    targets[Math.floor(Math.random() * targets.length)].dye = { ...dye };
+    usedDyes.push(dye);
+  });
+  state.inventory.dyes = dyes.filter(d => !usedDyes.includes(d));
+
+  // Assign fuses to loaded mortars
+  let fuses = state.inventory.extras.filter(e => e.fuseType !== 'rack');
+  const racks  = state.inventory.extras.filter(e => e.fuseType === 'rack');
+  fuses.forEach(fuse => {
+    const targets = state.mortars.filter(m => m.shell && !m.fuse);
+    if (targets.length === 0) return;
+    const target = targets[Math.floor(Math.random() * targets.length)];
+    target.fuse = { ...fuse };
+    target.delay = fuse.fuseType === 'quick' ? 0.3 : 2.0;
+  });
+  state.inventory.extras = racks; // only racks remain (fuses all used)
+
+  clearSelections();
+  renderMortarRow();
+  renderLaunchInventory();
+  playCoin();
 }
 
 function renderMortarRow() {
