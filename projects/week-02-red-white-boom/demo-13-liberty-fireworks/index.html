@@ -325,6 +325,7 @@
 </style>
 </head>
 <body>
+<audio id="crowd-audio" preload="none"></audio>
 
 <!-- LOADING -->
 <div id="phase-loading">
@@ -575,46 +576,11 @@ function playWhistle() {
 
 let lastStepFrame = 0;
 
-function playCrowdOoh(isFinale = false) {
+async function playCrowdSound(verdict) {
   try {
-    const ctx = getAudioCtx();
-    const now = ctx.currentTime;
-    const dur = isFinale ? 1.5 : 0.85;
-    // Each oscillator gets a flat 0.12 gain — loud enough to hear clearly
-    [220, 330, 440, 550, 660].forEach(f => {
-      const osc = ctx.createOscillator();
-      osc.type = 'sine';
-      osc.frequency.value = f + (Math.random() - 0.5) * 12;
-      const g = ctx.createGain();
-      g.gain.setValueAtTime(0, now);
-      g.gain.linearRampToValueAtTime(0.12, now + 0.08);
-      g.gain.setValueAtTime(0.12, now + dur * 0.6);
-      g.gain.linearRampToValueAtTime(0, now + dur);
-      osc.connect(g); g.connect(ctx.destination);
-      osc.start(now); osc.stop(now + dur + 0.05);
-    });
-  } catch(e) {}
-}
-
-function playCrowdBoo() {
-  try {
-    const ctx = getAudioCtx();
-    const now = ctx.currentTime;
-    const dur = 2.0;
-    // Descending sines — loud flat gain
-    [180, 240, 300, 360, 420].forEach(f => {
-      const osc = ctx.createOscillator();
-      osc.type = 'sine';
-      osc.frequency.setValueAtTime(f + (Math.random() - 0.5) * 10, now);
-      osc.frequency.linearRampToValueAtTime(f * 0.72, now + dur);
-      const g = ctx.createGain();
-      g.gain.setValueAtTime(0, now);
-      g.gain.linearRampToValueAtTime(0.12, now + 0.12);
-      g.gain.setValueAtTime(0.12, now + dur * 0.5);
-      g.gain.linearRampToValueAtTime(0, now + dur);
-      osc.connect(g); g.connect(ctx.destination);
-      osc.start(now); osc.stop(now + dur + 0.05);
-    });
+    const audio = document.getElementById('crowd-audio');
+    audio.src = '/api/crowd?verdict=' + encodeURIComponent(verdict);
+    await audio.play();
   } catch(e) {}
 }
 
@@ -1848,7 +1814,7 @@ function fireShell(shell, mortar_x) {
 function burstShell(shell, x, y) {
   const isFinale = shell.shellType === state.brief?.finale_type;
   playBoom(isFinale ? 1.8 : 1);
-  setTimeout(() => playCrowdOoh(isFinale), 180);
+  // crowd sound only at results — not per-shell
   const color = COLORS[shell.color] || '#ffffff';
   const t = shell.shellType;
   if (t === 'Standard' || t === 'Peony') {
@@ -1975,9 +1941,8 @@ function showResults(evalData, fullText) {
   else if (verdict === 'ADEQUATE') subEl.textContent = 'A PASSABLE DISPLAY.';
   else subEl.textContent = 'THE CROWD IS UNIMPRESSED.';
 
-  // Crowd reaction sound
-  if (isSplendid) { setTimeout(() => playCrowdOoh(true), 300); setTimeout(() => playCrowdOoh(true), 1100); }
-  else if (isDisgrace || verdict === 'DISAPPOINTING') { setTimeout(() => playCrowdBoo(), 400); }
+  // Crowd reaction via ElevenLabs sound generation
+  playCrowdSound(verdict);
 
   // Council decree — trim to the punchiest part (first 2 sentences)
   const sentences = fullText.match(/[^.!?]+[.!?]+/g) || [fullText];
