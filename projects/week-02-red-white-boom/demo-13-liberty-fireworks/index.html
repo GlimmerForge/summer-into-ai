@@ -581,18 +581,29 @@ function playCoin() {
   try {
     const ctx = getAudioCtx();
     const now = ctx.currentTime;
-    // Two quick metallic pings — a "ching" register sound
-    [0, 0.07].forEach((offset, i) => {
-      const freq = i === 0 ? 1400 : 1800;
+    // Metallic tick (noise burst) + sustained bell ring
+    const tickLen = Math.floor(ctx.sampleRate * 0.012);
+    const tickBuf = ctx.createBuffer(1, tickLen, ctx.sampleRate);
+    const td = tickBuf.getChannelData(0);
+    for (let i = 0; i < tickLen; i++) td[i] = (Math.random() * 2 - 1) * (1 - i / tickLen);
+    const tick = ctx.createBufferSource();
+    tick.buffer = tickBuf;
+    const tickFilter = ctx.createBiquadFilter();
+    tickFilter.type = 'bandpass'; tickFilter.frequency.value = 5000; tickFilter.Q.value = 1;
+    const tickGain = ctx.createGain();
+    tickGain.gain.setValueAtTime(0.3, now);
+    tick.connect(tickFilter); tickFilter.connect(tickGain); tickGain.connect(ctx.destination);
+    tick.start(now); tick.stop(now + 0.012);
+    // Bell ring — sine at fixed pitch, slow fade
+    [2100, 3150].forEach((freq, i) => {
       const osc = ctx.createOscillator();
-      osc.type = 'triangle';
-      osc.frequency.setValueAtTime(freq, now + offset);
-      osc.frequency.exponentialRampToValueAtTime(freq * 0.7, now + offset + 0.18);
+      osc.type = 'sine';
+      osc.frequency.value = freq;
       const g = ctx.createGain();
-      g.gain.setValueAtTime(0.22, now + offset);
-      g.gain.exponentialRampToValueAtTime(0.001, now + offset + 0.22);
+      g.gain.setValueAtTime(i === 0 ? 0.18 : 0.08, now + 0.005);
+      g.gain.exponentialRampToValueAtTime(0.001, now + 0.55);
       osc.connect(g); g.connect(ctx.destination);
-      osc.start(now + offset); osc.stop(now + offset + 0.22);
+      osc.start(now + 0.005); osc.stop(now + 0.55);
     });
   } catch(e) {}
 }
