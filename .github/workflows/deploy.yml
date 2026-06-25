@@ -1,0 +1,56 @@
+name: Deploy Changed Demos
+
+on:
+  push:
+    branches: [master]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install Vercel CLI
+        run: npm install -g vercel@latest
+
+      - name: Find and deploy changed demos
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+        run: |
+          BEFORE="${{ github.event.before }}"
+
+          # First push to branch — deploy everything
+          if [ "$BEFORE" = "0000000000000000000000000000000000000000" ]; then
+            CHANGED=$(find projects -mindepth 2 -maxdepth 2 -type d -name 'demo-*' | sort)
+          else
+            CHANGED=$(git diff --name-only "$BEFORE" "${{ github.sha }}" \
+              | grep -oE 'projects/[^/]+/demo-[^/]+' \
+              | sort -u)
+          fi
+
+          if [ -z "$CHANGED" ]; then
+            echo "No demo folders changed — nothing to deploy."
+            exit 0
+          fi
+
+          echo "Changed demos:"
+          echo "$CHANGED"
+
+          while IFS= read -r DEMO; do
+            [ -z "$DEMO" ] && continue
+            [ ! -d "$DEMO" ] && continue
+
+            PROJECT_ID=$(jq -r --arg d "$DEMO" '.[$d].projectId // empty' vercel-projects.json)
+            ORG_ID=$(jq -r --arg d "$DEMO" '.[$d].orgId // empty' vercel-projects.json)
+
+            if [ -z "$PROJECT_ID" ]; then
+              echo "⚠️  $DEMO — no entry in vercel-projects.json, skipping"
+              continue
+            fi
+
+            echo "🚀 Deploying $DEMO..."
+            (cd "$DEMO" && VERCEL_PROJECT_ID="$PROJECT_ID" VERCEL_ORG_ID="$ORG_ID" \
+              vercel deploy --prod --token="$VERCEL_TOKEN" --yes)
+          done <<< "$CHANGED"
