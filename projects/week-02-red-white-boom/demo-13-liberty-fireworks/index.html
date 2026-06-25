@@ -467,10 +467,6 @@
 <!-- SHOW -->
 <div id="phase-show" class="hidden">
   <canvas id="fireworks-canvas"></canvas>
-  <div class="eval-panel">
-    <h3>THE CROWD REACTS...</h3>
-    <div class="eval-text" id="eval-text"></div>
-  </div>
   <div class="show-status" id="show-status">LIGHTING FUSES...</div>
   <div id="show-countdown" style="
     position:absolute;bottom:16px;left:16px;
@@ -1639,6 +1635,14 @@ function startShow() {
   const colorsUsed = [...new Set(loadedMortars.map(m => m.dye ? m.dye.color : m.shell.color))];
   const finaleType = loadedMortars.length > 0 ? loadedMortars[loadedMortars.length - 1].shell.shellType : null;
   const shellCount = loadedMortars.length;
+  const shellDetails = loadedMortars.map((m, i) => ({
+    position: i + 1,
+    type: m.shell.shellType,
+    color: m.dye ? m.dye.color : m.shell.color,
+    dyeApplied: !!m.dye,
+    delay: m.delay,
+    isFinale: m.shell.shellType === state.brief?.finale_type,
+  }));
 
   requestAnimationFrame(animLoop);
 
@@ -1673,7 +1677,7 @@ function startShow() {
     if (cdEl) cdEl.textContent = remaining > 0 ? 'SHOW ENDS IN ' + remaining + 's' : 'AWAITING VERDICT...';
     if (remaining <= 0) { clearInterval(state.countdownInterval); state.countdownInterval = null; }
   }, 250);
-  streamEvaluation({ brief: state.brief, colors_used: colorsUsed, finale_type: finaleType, shell_count: shellCount });
+  streamEvaluation({ brief: state.brief, colors_used: colorsUsed, finale_type: finaleType, shell_count: shellCount, shell_details: shellDetails });
 }
 
 async function streamEvaluation(data) {
@@ -1683,7 +1687,6 @@ async function streamEvaluation(data) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data)
     });
-    const textEl = document.getElementById('eval-text');
     const reader = r.body.getReader();
     const decoder = new TextDecoder();
     let buffer = '';
@@ -1703,19 +1706,13 @@ async function streamEvaluation(data) {
             setTimeout(() => showResults(data, fullText), wait);
             return;
           }
-          try {
-            const parsed = JSON.parse(raw);
-            fullText += parsed.text;
-            textEl.textContent = fullText;
-          } catch(e) {}
+          try { fullText += JSON.parse(raw).text; } catch(e) {}
         }
       }
     }
     state.evaluationText = fullText;
     setTimeout(() => showResults(data, fullText), 2500);
-  } catch(e) {
-    console.error('Eval error:', e);
-  }
+  } catch(e) { console.error('Eval error:', e); }
 }
 
 // ============================================================
