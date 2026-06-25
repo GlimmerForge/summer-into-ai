@@ -131,10 +131,10 @@ Call the **Agent tool with `isolation: "worktree"`** for each demo simultaneousl
 >   {
 >     "outputDirectory": ".",
 >     "functions": { "api/*.js": { "maxDuration": 30 } },
->     "ignoreCommand": "[ -z \"$VERCEL_GIT_PREVIOUS_SHA\" ] && exit 1; git diff $VERCEL_GIT_PREVIOUS_SHA HEAD --quiet -- ."
+>     "ignoreCommand": "exit 0"
 >   }
 >   ```
->   `outputDirectory: "."` prevents Vercel from serving `public/` as the root (404). `ignoreCommand` skips the build when no files in this folder changed, so a push only redeploys the demos that actually changed. `VERCEL_GIT_PREVIOUS_SHA` is empty on first deploy so it always builds initially.
+>   `outputDirectory: "."` prevents Vercel from serving `public/` as the root (404). `ignoreCommand: "exit 0"` always cancels Vercel's auto-deploy — GitHub Actions in `.github/workflows/deploy.yml` handles all deployments selectively based on which demo folders changed. After importing a new demo to Vercel, also add it to `vercel-projects.json`.
 > - `.gitignore` — `node_modules/`, `.env.local`, `.vercel/`, `server.js` — **never commit server.js** — Vercel detects it and treats the project as a Node.js server, breaking static file serving
 > - `.env.local` — `ANTHROPIC_API_KEY=your_key_here` (placeholder only)
 > - `README.md` — title, one-line description, how AI powers it, local dev instructions, Vercel deploy instructions
