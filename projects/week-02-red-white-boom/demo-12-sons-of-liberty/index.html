@@ -981,10 +981,27 @@ async function playSfx(text, duration = 3.0) {
 
 function startAmbient(audio) {
   if (!audio) return;
-  audio.loop = true;
-  audio.volume = 0.35;
+  audio.volume = 0;
   audio.play().catch(() => {});
   state.ambientAudio = audio;
+  // Fade in
+  const fadeIn = setInterval(() => {
+    audio.volume = Math.min(0.35, audio.volume + 0.02);
+    if (audio.volume >= 0.35) clearInterval(fadeIn);
+  }, 60);
+  // Crossfade loop: 2s before end, fade out and restart
+  audio.addEventListener('timeupdate', function loop() {
+    if (!audio.duration || audio.currentTime < audio.duration - 2) return;
+    audio.removeEventListener('timeupdate', loop);
+    const fadeOut = setInterval(() => {
+      audio.volume = Math.max(0, audio.volume - 0.035);
+      if (audio.volume <= 0) {
+        clearInterval(fadeOut);
+        audio.currentTime = 0;
+        startAmbient(audio);
+      }
+    }, 60);
+  });
 }
 
 function fadeAmbient() {
@@ -1036,7 +1053,7 @@ async function init() {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             text: 'Colonial tavern ambience, fireplace crackling, hushed conspiratorial voices, wooden chairs, distant street noise from 18th century Boston',
-            duration_seconds: 8.0
+            duration_seconds: 22.0
           })
         });
         if (!resp.ok) return null;
