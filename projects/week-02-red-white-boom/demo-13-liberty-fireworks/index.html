@@ -247,7 +247,7 @@
   }
   .shop-header h2 { font-family: Georgia, serif; color: var(--gold); font-size: 1.5rem; }
   .shop-header p { color: rgba(232,220,200,0.6); font-size: 0.85rem; margin-top: 2px; }
-  .shop-layout { display: grid; grid-template-columns: 1fr 300px; gap: 20px; }
+  .shop-layout { display: grid; grid-template-columns: 1fr 300px; gap: 20px; align-items: start; }
   @media (max-width: 700px) { .shop-layout { grid-template-columns: 1fr; } }
   .item-grid {
     display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 12px;
@@ -274,7 +274,7 @@
   .item-btn:hover { background: var(--gold-light); }
   .item-btn:disabled { background: #444; color: #888; cursor: not-allowed; }
 
-  .shop-sidebar { display: flex; flex-direction: column; gap: 16px; }
+  .shop-sidebar { display: flex; flex-direction: column; gap: 16px; position: sticky; top: 20px; }
   .shopkeeper-panel {
     background: rgba(40,25,10,0.8); border: 1px solid rgba(200,150,42,0.3);
     border-radius: 6px; padding: 16px;
@@ -694,13 +694,63 @@ const state = {
   activeShop: null,
   shopkeeperText: '',
   evaluationText: '',
-  activeSelection: null, // { type: 'shell'|'dye'|'fuse', index, item }
+  activeSelection: null,
   canvas: null,
   ctx: null,
   particles: [],
+  projectiles: [],
   animFrame: null,
   firingTimeout: null,
+  showEndTime: 0,
 };
+
+// ── AUDIO ──────────────────────────────────────────────────────
+let audioCtx = null;
+function getAudioCtx() {
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  return audioCtx;
+}
+function playBoom(scale = 1) {
+  try {
+    const ctx = getAudioCtx();
+    const now = ctx.currentTime;
+    const len = ctx.sampleRate * 0.22;
+    const buf = ctx.createBuffer(1, len, ctx.sampleRate);
+    const d = buf.getChannelData(0);
+    for (let i = 0; i < len; i++) d[i] = (Math.random()*2-1) * Math.pow(1 - i/len, 3);
+    const noise = ctx.createBufferSource();
+    noise.buffer = buf;
+    const gN = ctx.createGain();
+    gN.gain.setValueAtTime(0.7 * Math.min(scale, 2), now);
+    gN.gain.exponentialRampToValueAtTime(0.001, now + 0.25);
+    noise.connect(gN); gN.connect(ctx.destination);
+    noise.start(now); noise.stop(now + 0.25);
+    const osc = ctx.createOscillator();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(90 * scale, now);
+    osc.frequency.exponentialRampToValueAtTime(22, now + 0.55);
+    const gO = ctx.createGain();
+    gO.gain.setValueAtTime(0.55 * Math.min(scale, 2), now);
+    gO.gain.exponentialRampToValueAtTime(0.001, now + 0.55);
+    osc.connect(gO); gO.connect(ctx.destination);
+    osc.start(now); osc.stop(now + 0.55);
+  } catch(e) {}
+}
+function playWhistle() {
+  try {
+    const ctx = getAudioCtx();
+    const now = ctx.currentTime;
+    const osc = ctx.createOscillator();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(300, now);
+    osc.frequency.exponentialRampToValueAtTime(1500, now + 0.38);
+    const g = ctx.createGain();
+    g.gain.setValueAtTime(0.12, now);
+    g.gain.exponentialRampToValueAtTime(0.001, now + 0.38);
+    osc.connect(g); g.connect(ctx.destination);
+    osc.start(now); osc.stop(now + 0.38);
+  } catch(e) {}
+}
 
 // ============================================================
 // SHOP DATA
@@ -799,6 +849,8 @@ function renderBrief() {
 // TOWN
 // ============================================================
 function goToTown() {
+  // Unlock AudioContext on first user gesture
+  try { getAudioCtx().resume(); } catch(e) {}
   generateStars();
   updateTownBudget();
   const b = state.brief;
@@ -851,13 +903,24 @@ function openShop(shopId) {
 function renderShopItems(shop) {
   const grid = document.getElementById('shop-items');
   grid.innerHTML = '';
+  const briefColors = state.brief?.required_colors || [];
+  const briefFinale = state.brief?.finale_type;
   shop.items.forEach((item, idx) => {
     const card = document.createElement('div');
     card.className = 'item-card';
+    const isNeededColor = item.color && briefColors.includes(item.color);
+    const isFinaleShell = item.shellType && item.shellType === briefFinale;
+    if (isNeededColor || isFinaleShell) {
+      card.style.cssText = 'border-color:#c8962a;box-shadow:0 0 10px rgba(200,150,42,0.35);';
+    }
     const colorDot = item.color
       ? `<span class="item-color-dot" style="background:${COLORS[item.color]||'#888'};"></span>`
       : '';
+    const hint = isFinaleShell ? '<div style="font-size:0.65rem;color:#c8962a;font-weight:bold;margin-bottom:4px;">★ FINALE REQUIRED</div>'
+      : isNeededColor ? '<div style="font-size:0.65rem;color:#c8962a;font-weight:bold;margin-bottom:4px;">✓ COLOR NEEDED</div>'
+      : '';
     card.innerHTML = `
+      ${hint}
       <div class="item-name">${item.name}</div>
       <div class="item-price">${colorDot}${item.color ? item.color + ' — ' : ''}$${item.price} LD</div>
       ${item.effect ? `<div class="item-effect">${item.effect}</div>` : ''}
@@ -1247,9 +1310,6 @@ function startShow() {
   const finaleType = loadedMortars.length > 0 ? loadedMortars[loadedMortars.length - 1].shell.shellType : null;
   const shellCount = loadedMortars.length;
 
-  // Start streaming evaluation right away
-  streamEvaluation({ brief: state.brief, colors_used: colorsUsed, finale_type: finaleType, shell_count: shellCount });
-
   // Start animation loop
   requestAnimationFrame(animLoop);
 
@@ -1257,7 +1317,6 @@ function startShow() {
   let elapsed = 0;
   const n = loadedMortars.length;
   loadedMortars.forEach((m, seq) => {
-    // Stagger shells across canvas x
     const xPos = (canvas.width * 0.1) + (canvas.width * 0.8) * (n === 1 ? 0.5 : seq / (n - 1));
     setTimeout(() => {
       fireShell(m.shell, xPos);
@@ -1266,11 +1325,17 @@ function startShow() {
       if (seq === n - 1) {
         setTimeout(() => {
           document.getElementById('show-status').textContent = 'Show complete! Awaiting verdict...';
-        }, 3000);
+        }, 2500);
       }
     }, elapsed * 1000);
     elapsed += m.delay;
   });
+
+  // Record when the last burst will settle (last shell + ~2.5s for particles to fade)
+  state.showEndTime = Date.now() + elapsed * 1000 + 2500;
+
+  // Start evaluation — begins streaming immediately but results wait for show to end
+  streamEvaluation({ brief: state.brief, colors_used: colorsUsed, finale_type: finaleType, shell_count: shellCount });
 }
 
 async function streamEvaluation(data) {
@@ -1296,8 +1361,8 @@ async function streamEvaluation(data) {
           const raw = line.slice(6).trim();
           if (raw === '[DONE]') {
             state.evaluationText = fullText;
-            // Show results after a small delay
-            setTimeout(() => showResults(data, fullText), 2500);
+            const wait = Math.max(1500, state.showEndTime - Date.now() + 1000);
+            setTimeout(() => showResults(data, fullText), wait);
             return;
           }
           try {
@@ -1328,6 +1393,26 @@ function animLoop() {
 
   // Draw silhouette skyline
   drawSkyline(ctx, canvas.width, canvas.height);
+
+  // Process rising projectiles
+  state.projectiles = state.projectiles.filter(p => {
+    p.x += p.vx;
+    p.y += p.vy;
+    p.vy += 0.25;
+    if (Math.random() > 0.35) {
+      state.particles.push(makeParticle(p.x, p.y, (Math.random()-0.5)*0.5, (Math.random()-0.5)*0.5+0.3, '#ffdd88', 16, 1.5, 0.04, false));
+    }
+    if (p.vy >= 0 || p.y <= p.targetY) {
+      burstShell(p.shell, p.x, p.y);
+      return false;
+    }
+    ctx.globalAlpha = 1;
+    ctx.fillStyle = '#fff5cc';
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, 3.5, 0, Math.PI * 2);
+    ctx.fill();
+    return true;
+  });
 
   // Update + draw particles
   state.particles = state.particles.filter(p => p.life > 0);
@@ -1395,49 +1480,39 @@ function makeParticle(x, y, vx, vy, color, life, size, gravity, useTrail) {
 
 function fireShell(shell, mortar_x) {
   const canvas = state.canvas;
-  const isFinale = shell.shellType === 'Chrysanthemum' &&
-    state.mortars.filter(m => m.shell).length > 0 &&
-    state.mortars[state.mortars.length - 1]?.shell?.shellType === 'Chrysanthemum';
-
-  const targetX = mortar_x + (Math.random() - 0.5) * 80;
-  const targetY = canvas.height * (0.12 + Math.random() * 0.30);
-
-  // Launch streak upward
-  const streakCount = 3;
-  for (let i = 0; i < streakCount; i++) {
-    const steps = 20;
-    for (let s = 0; s < steps; s++) {
-      setTimeout(() => {
-        state.particles.push(makeParticle(
-          mortar_x + (Math.random()-0.5)*4,
-          canvas.height - 60 - s * ((canvas.height - 60 - targetY) / steps) + (Math.random()-0.5)*4,
-          (Math.random()-0.5)*0.5, 0, '#ffdd88', 15, 1.5, 0, false
-        ));
-      }, s * 18);
-    }
+  // Roman Candle fires in-place, not as a rising projectile
+  if (shell.shellType === 'Roman Candle') {
+    playWhistle();
+    setTimeout(() => { playBoom(0.7); createRomanCandle(mortar_x, canvas.height - 60, COLORS[shell.color] || '#ff2222'); }, 200);
+    return;
   }
+  const targetX = mortar_x + (Math.random() - 0.5) * 80;
+  const targetY = canvas.height * (0.10 + Math.random() * 0.28);
+  const distUp = (canvas.height - 60) - targetY;
+  const vy0 = -Math.sqrt(2 * 0.25 * distUp);
+  const framesToApex = Math.abs(vy0) / 0.25;
+  const vx = (targetX - mortar_x) / framesToApex;
+  playWhistle();
+  state.projectiles.push({ x: mortar_x, y: canvas.height - 60, vx, vy: vy0, targetY, shell });
+}
 
-  // Burst at apex
-  const burstDelay = 380;
-  setTimeout(() => {
-    const color = COLORS[shell.color] || '#ffffff';
-    const shellType = shell.shellType;
-
-    if (shellType === 'Standard' || shellType === 'Peony') {
-      createRoundBurst(targetX, targetY, color, 45, 1.3, shell.shellType === 'Peony');
-    } else if (shellType === 'Chrysanthemum') {
-      const scale = isFinale ? 2.0 : 1.5;
-      createRoundBurst(targetX, targetY, COLORS['Gold'] || color, 80 * scale, scale * 0.8, false, true);
-    } else if (shellType === 'Star Shell') {
-      createStarBurst(targetX, targetY, color, 14);
-    } else if (shellType === 'Comet') {
-      createComet(targetX, targetY, color);
-    } else if (shellType === 'Willow') {
-      createWillow(targetX, targetY, color);
-    } else if (shellType === 'Roman Candle') {
-      createRomanCandle(mortar_x, canvas.height - 60, color);
-    }
-  }, burstDelay);
+function burstShell(shell, x, y) {
+  const isFinale = shell.shellType === state.brief?.finale_type;
+  playBoom(isFinale ? 1.8 : 1);
+  const color = COLORS[shell.color] || '#ffffff';
+  const t = shell.shellType;
+  if (t === 'Standard' || t === 'Peony') {
+    createRoundBurst(x, y, color, 45, 1.3, t === 'Peony');
+  } else if (t === 'Chrysanthemum') {
+    const scale = isFinale ? 2.2 : 1.5;
+    createRoundBurst(x, y, COLORS['Gold'] || color, Math.round(80 * scale), scale * 0.8, false, true);
+  } else if (t === 'Star Shell') {
+    createStarBurst(x, y, color, isFinale ? 20 : 14);
+  } else if (t === 'Comet') {
+    createComet(x, y, color);
+  } else if (t === 'Willow') {
+    createWillow(x, y, color, isFinale);
+  }
 }
 
 function createRoundBurst(x, y, color, count, speed, softFade, longTrail) {
@@ -1486,16 +1561,18 @@ function createComet(x, y, color) {
   state.particles.push(makeParticle(x, y, 0, 0, '#ffffff', 6, 6, 0, false));
 }
 
-function createWillow(x, y, color) {
-  for (let i = 0; i < 50; i++) {
-    const angle = (i / 50) * Math.PI * 2;
-    const spd = 1.5 + Math.random() * 1.5;
+function createWillow(x, y, color, isFinale = false) {
+  const count = isFinale ? 90 : 50;
+  const spd = isFinale ? 2.5 : 1.5;
+  for (let i = 0; i < count; i++) {
+    const angle = (i / count) * Math.PI * 2;
+    const s = spd + Math.random() * 1.5;
     state.particles.push(makeParticle(
-      x, y, Math.cos(angle) * spd, Math.sin(angle) * spd - 1,
-      color, 90 + Math.random() * 40, 2, 0.06, true // stronger gravity = droop
+      x, y, Math.cos(angle) * s, Math.sin(angle) * s - 1,
+      color, 90 + Math.random() * 40, isFinale ? 2.5 : 2, 0.06, true
     ));
   }
-  state.particles.push(makeParticle(x, y, 0, 0, '#ffffff', 8, 6, 0, false));
+  state.particles.push(makeParticle(x, y, 0, 0, '#ffffff', 8, isFinale ? 10 : 6, 0, false));
 }
 
 function createRomanCandle(x, y, color) {
