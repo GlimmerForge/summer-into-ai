@@ -1,6 +1,7 @@
 {
+  "outputDirectory": ".",
   "functions": {
     "api/*.js": { "maxDuration": 30 }
   },
-  "ignoreCommand": "[ -z \"$VERCEL_GIT_PREVIOUS_SHA\" ] && exit 1; git diff $VERCEL_GIT_PREVIOUS_SHA HEAD --quiet -- ."
+  "ignoreCommand": "exit 0"
 }
