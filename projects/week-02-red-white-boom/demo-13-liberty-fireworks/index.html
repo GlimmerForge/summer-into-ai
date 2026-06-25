@@ -4,604 +4,412 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Liberty Fireworks — Summer Into AI 2026</title>
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
   :root {
-    --bg: #0a0a14;
-    --parchment: #e8dcc8;
-    --gold: #c8962a;
-    --gold-light: #ffcc00;
-    --wood-dark: #3d2b1f;
-    --wood-mid: #5c3d28;
-    --wood-light: #7a5a30;
-    --ink: #2a1a08;
+    --bg: #000000;
+    --green: #33cc33;
+    --green-dim: #1a7a1a;
+    --green-bright: #66ff66;
+    --amber: #cc8800;
+    --amber-bright: #ffaa00;
     --red: #cc2222;
-    --night-sky: linear-gradient(180deg, #040818 0%, #0d1a3a 60%, #1a1a2e 100%);
+    --white: #cccccc;
+    --border: #33cc33;
   }
 
   body {
     background: var(--bg);
-    color: var(--parchment);
-    font-family: system-ui, sans-serif;
+    color: var(--green);
+    font-family: 'Press Start 2P', monospace;
+    font-size: 8px;
     min-height: 100vh;
     overflow-x: hidden;
+    line-height: 1.8;
   }
 
-  h1, h2, h3 { font-family: Georgia, serif; }
+  /* Scanline overlay */
+  body::after {
+    content: '';
+    position: fixed; inset: 0; pointer-events: none; z-index: 9999;
+    background: repeating-linear-gradient(0deg, transparent 0px, transparent 3px, rgba(0,0,0,0.15) 3px, rgba(0,0,0,0.15) 4px);
+  }
+
+  /* =========== PIXEL BOX =========== */
+  .pixel-box {
+    border: 4px solid var(--green);
+    box-shadow: 4px 4px 0 #000, inset 0 0 0 2px #000;
+    background: #000;
+    padding: 16px;
+  }
+
+  /* =========== OT BUTTON =========== */
+  .ot-btn {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 8px;
+    background: #000;
+    color: var(--green);
+    border: 3px solid var(--green);
+    padding: 10px 18px;
+    cursor: pointer;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    display: inline-block;
+    line-height: 1.5;
+  }
+  .ot-btn:hover { background: var(--green); color: #000; }
+  .ot-btn:disabled { color: var(--green-dim); border-color: var(--green-dim); cursor: not-allowed; background: #000; }
+
+  .ot-btn-danger {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 8px;
+    background: #000;
+    color: var(--red);
+    border: 3px solid var(--red);
+    padding: 10px 18px;
+    cursor: pointer;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    display: inline-block;
+    line-height: 1.5;
+  }
+  .ot-btn-danger:hover { background: var(--red); color: #000; }
+  .ot-btn-danger:disabled { color: #661111; border-color: #661111; cursor: not-allowed; background: #000; }
+
+  /* =========== BLINK =========== */
+  .blink { animation: blink 0.8s step-end infinite; }
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
+
+  /* =========== HIDDEN =========== */
+  .hidden { display: none !important; }
 
   /* =========== LOADING =========== */
   #phase-loading {
     display: flex; flex-direction: column; align-items: center; justify-content: center;
     min-height: 100vh; gap: 24px;
   }
-  .spinner {
-    width: 48px; height: 48px;
-    border: 4px solid #333;
-    border-top-color: var(--gold);
-    border-radius: 50%;
-    animation: spin 0.8s linear infinite;
-  }
-  @keyframes spin { to { transform: rotate(360deg); } }
 
   /* =========== BRIEF =========== */
   #phase-brief {
     display: flex; align-items: center; justify-content: center;
     min-height: 100vh; padding: 24px;
-    background: var(--night-sky);
+    background: #000;
   }
-  .parchment-card {
-    background: #f5e8c8;
-    color: var(--ink);
-    border-radius: 8px;
-    padding: 40px;
-    max-width: 600px;
-    width: 100%;
-    box-shadow: 0 8px 40px rgba(0,0,0,0.8), inset 0 0 40px rgba(180,140,60,0.15);
-    position: relative;
-    border: 2px solid #c8962a44;
-  }
-  .parchment-card::before {
-    content: '';
-    position: absolute; top: -18px; left: 50%; transform: translateX(-50%);
-    width: 36px; height: 36px;
-    background: radial-gradient(circle at 40% 35%, #cc3333 0%, #881111 60%, #550000 100%);
-    border-radius: 50%;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.5);
-  }
-  .brief-header {
-    text-align: center; margin-bottom: 24px; margin-top: 8px;
-  }
-  .brief-header h1 { font-size: 1.6rem; color: var(--ink); margin-bottom: 4px; }
-  .brief-header p { font-size: 0.85rem; color: #6b4c20; letter-spacing: 0.05em; text-transform: uppercase; }
-  .brief-section { margin-bottom: 16px; }
+  .brief-card { max-width: 560px; width: 100%; }
+  .brief-title-row { text-align: center; margin-bottom: 20px; }
+  .brief-title-row h1 { font-size: 12px; color: var(--green-bright); margin-bottom: 8px; }
+  .brief-title-row p { font-size: 7px; color: var(--green-dim); text-transform: uppercase; letter-spacing: 2px; }
+  .brief-section { margin-bottom: 12px; }
   .brief-section label {
-    display: block; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.1em;
-    color: #8b6020; margin-bottom: 4px; font-family: Georgia, serif;
+    display: block; font-size: 7px; color: var(--amber);
+    text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px;
   }
-  .brief-section .value {
-    font-size: 1rem; color: var(--ink); font-family: Georgia, serif;
+  .brief-section .value { font-size: 9px; color: var(--green); }
+  .color-dots { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 4px; align-items: center; }
+  .color-dot {
+    display: inline-block; width: 14px; height: 14px;
+    image-rendering: pixelated; border: 2px solid var(--green); vertical-align: middle;
   }
-  .color-badges { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 6px; }
-  .color-badge {
-    padding: 4px 12px; border-radius: 20px; font-size: 0.8rem; font-weight: 600;
-    border: 2px solid rgba(0,0,0,0.2); color: #fff; text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+  .color-dot-label {
+    font-size: 7px; color: var(--green);
+    margin-left: 4px; margin-right: 8px; vertical-align: middle;
   }
   .council-note {
-    background: rgba(180,140,60,0.15); border-left: 3px solid var(--gold);
-    padding: 12px 16px; border-radius: 0 4px 4px 0; font-style: italic;
-    color: var(--ink); margin-top: 8px;
+    border-left: 4px solid var(--amber); padding: 10px 14px;
+    color: var(--amber-bright); font-size: 7px; line-height: 2;
+    background: #0a0800; margin-top: 6px;
   }
-  .btn {
-    display: inline-block; padding: 12px 28px; border-radius: 4px; border: none;
-    font-family: Georgia, serif; font-size: 1rem; cursor: pointer;
-    transition: all 0.15s; text-decoration: none;
-  }
-  .btn-primary {
-    background: var(--gold); color: var(--ink); font-weight: bold;
-    box-shadow: 0 2px 8px rgba(200,150,42,0.4);
-  }
-  .btn-primary:hover { background: var(--gold-light); transform: translateY(-1px); }
-  .btn-primary:disabled { background: #666; color: #999; cursor: not-allowed; transform: none; }
-  .btn-danger {
-    background: var(--red); color: #fff; font-weight: bold;
-    box-shadow: 0 2px 8px rgba(200,30,30,0.5);
-  }
-  .btn-danger:hover { background: #ff3333; transform: translateY(-1px); }
-  .btn-ghost {
-    background: transparent; color: var(--parchment);
-    border: 1px solid rgba(200,180,150,0.3);
-  }
-  .btn-ghost:hover { background: rgba(255,255,255,0.08); }
   .brief-actions { text-align: center; margin-top: 24px; }
 
   /* =========== TOWN =========== */
   #phase-town {
-    min-height: 100vh;
-    background: var(--night-sky);
-    position: relative;
-    overflow: hidden;
+    min-height: 100vh; background: #000; position: relative;
+    overflow: hidden; display: flex; flex-direction: column;
   }
-  .town-hud {
-    position: absolute; top: 16px; left: 0; right: 0;
-    display: flex; justify-content: space-between; align-items: flex-start;
-    padding: 0 20px; z-index: 10;
+  .ot-hud {
+    border: 4px solid var(--green); border-left: none; border-right: none;
+    padding: 8px 16px; background: #000;
+    display: flex; justify-content: space-between; align-items: center;
+    flex-wrap: wrap; gap: 8px; flex-shrink: 0;
   }
-  .town-title { font-family: Georgia, serif; color: var(--parchment); }
-  .town-title h2 { font-size: 1.3rem; }
-  .town-title p { font-size: 0.8rem; color: rgba(232,220,200,0.6); }
-  .budget-counter {
-    background: rgba(0,0,0,0.5); border: 1px solid var(--gold);
-    border-radius: 4px; padding: 8px 16px; text-align: center;
-    color: var(--gold-light); font-family: Georgia, serif;
+  .ot-hud-title { font-size: 10px; color: var(--green-bright); }
+  .ot-hud-right { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; }
+  .ot-hud-budget { font-size: 9px; color: var(--amber-bright); }
+  .ot-hud-brief { font-size: 7px; color: var(--green-dim); }
+  #town-canvas { display: block; flex-shrink: 0; }
+  .ot-enter-prompt {
+    text-align: center; font-size: 8px; color: var(--green-bright); padding: 8px;
+    animation: blink 0.6s step-end infinite; background: #000;
+    border-top: 2px solid var(--green-dim);
   }
-  .budget-counter .amount { font-size: 1.4rem; font-weight: bold; }
-  .budget-counter .label { font-size: 0.7rem; opacity: 0.7; }
-
-  /* Stars */
-  .stars {
-    position: absolute; top: 0; left: 0; right: 0; bottom: 0; pointer-events: none;
+  .ot-footer {
+    text-align: center; font-size: 7px; color: var(--green-dim);
+    padding: 8px 16px; background: #000;
+    border-top: 2px solid var(--green-dim); flex-shrink: 0;
   }
-  .star {
-    position: absolute; background: #fff; border-radius: 50%;
-    animation: twinkle var(--dur, 3s) ease-in-out infinite;
-  }
-  @keyframes twinkle {
-    0%, 100% { opacity: var(--op, 0.6); }
-    50% { opacity: 0.1; }
-  }
-
-  /* Ground */
-  .ground {
-    position: absolute; bottom: 0; left: 0; right: 0; height: 180px;
-    background: linear-gradient(0deg, #0d2206 0%, #1a3a0a 60%, #1a3a0a 100%);
-  }
-  .cobblestone {
-    position: absolute; bottom: 110px; left: 50%; transform: translateX(-50%);
-    width: 220px; height: 110px;
-    background: repeating-linear-gradient(
-      90deg,
-      #2a2018 0px, #2a2018 28px,
-      #3a2e20 28px, #3a2e20 56px
-    );
-    border-radius: 4px 4px 0 0;
-  }
-
-  /* Buildings */
-  .buildings {
-    position: absolute; bottom: 110px; left: 0; right: 0;
-    display: flex; justify-content: center; align-items: flex-end;
-    gap: 60px;
-  }
-  .building-wrap { display: flex; flex-direction: column; align-items: center; cursor: pointer; }
-  .building-wrap:hover .building { box-shadow: 0 0 20px rgba(200,150,42,0.3); }
-  .building-wrap:hover .sign { background: var(--wood-light); }
-  .sign {
-    background: var(--wood-mid); color: var(--parchment);
-    font-family: Georgia, serif; font-size: 10px; padding: 3px 8px;
-    border: 1px solid rgba(200,150,42,0.3); text-align: center;
-    margin-bottom: 2px; border-radius: 2px; white-space: nowrap;
-    transition: background 0.2s;
-  }
-  .building {
-    width: 130px;
-    background: var(--wood-dark); border: 2px solid var(--wood-mid);
-    border-radius: 4px 4px 0 0;
-    position: relative; transition: box-shadow 0.2s;
-  }
-  .roof {
-    background: #5c2d00; height: 40px;
-    clip-path: polygon(0% 100%, 50% 0%, 100% 100%);
-    margin-bottom: -2px; width: 100%;
-  }
-  .building-body {
-    padding: 8px; display: flex; flex-direction: column; align-items: center; gap: 8px;
-  }
-  .building-windows {
-    display: flex; gap: 8px;
-  }
-  .window {
-    width: 28px; height: 32px;
-    background: rgba(255,200,80,0.2); border: 2px solid var(--wood-mid);
-    box-shadow: 0 0 10px rgba(200,150,42,0.5);
-    animation: flicker var(--f, 4s) ease-in-out infinite;
-  }
-  @keyframes flicker {
-    0%, 100% { box-shadow: 0 0 10px rgba(200,150,42,0.5); }
-    50% { box-shadow: 0 0 16px rgba(200,150,42,0.8); }
-  }
-  .door {
-    width: 22px; height: 28px;
-    background: var(--wood-mid); border: 1px solid var(--wood-light);
-    border-radius: 4px 4px 0 0;
-  }
-  .shop-label {
-    font-family: Georgia, serif; font-size: 11px; color: var(--parchment);
-    text-align: center; margin-top: 4px; opacity: 0.8;
-  }
-
-  .town-actions {
-    position: absolute; bottom: 20px; left: 0; right: 0;
-    display: flex; justify-content: center; gap: 12px;
-  }
-
-  /* Brief reminder bar */
-  .brief-bar {
-    position: absolute; top: 80px; left: 50%; transform: translateX(-50%);
-    background: rgba(0,0,0,0.6); border: 1px solid rgba(200,150,42,0.3);
-    border-radius: 4px; padding: 8px 16px; font-size: 0.8rem;
-    color: var(--parchment); white-space: nowrap; z-index: 5;
-    text-align: center;
-  }
-  .brief-bar span { color: var(--gold-light); }
 
   /* =========== SHOP =========== */
-  #phase-shop {
-    min-height: 100vh;
-    background: #1a0e06;
-    padding: 20px;
+  #phase-shop { min-height: 100vh; background: #000; padding: 16px; }
+  .shop-terminal-title { font-size: 10px; color: var(--green-bright); margin-bottom: 4px; }
+  .shop-terminal-sub { font-size: 7px; color: var(--green-dim); line-height: 2; }
+  .shop-top-bar {
+    display: flex; align-items: center; gap: 12px; margin-bottom: 16px; flex-wrap: wrap;
   }
-  .shop-header {
-    display: flex; align-items: center; gap: 16px; margin-bottom: 20px;
-    border-bottom: 1px solid rgba(200,150,42,0.3); padding-bottom: 16px;
-  }
-  .shop-header h2 { font-family: Georgia, serif; color: var(--gold); font-size: 1.5rem; }
-  .shop-header p { color: rgba(232,220,200,0.6); font-size: 0.85rem; margin-top: 2px; }
-  .shop-layout { display: grid; grid-template-columns: 1fr 300px; gap: 20px; }
+  .shop-budget-display { font-size: 9px; color: var(--amber-bright); margin-left: auto; }
+  .shop-layout { display: grid; grid-template-columns: 1fr 260px; gap: 16px; align-items: start; }
   @media (max-width: 700px) { .shop-layout { grid-template-columns: 1fr; } }
-  .item-grid {
-    display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 12px;
+  .menu-panel { border: 4px solid var(--green); background: #000; }
+  .menu-panel-header {
+    border-bottom: 2px solid var(--green); padding: 8px 12px;
+    font-size: 7px; color: var(--amber); text-transform: uppercase;
   }
-  .item-card {
-    background: rgba(60,40,20,0.5); border: 1px solid rgba(200,150,42,0.2);
-    border-radius: 6px; padding: 12px;
-    display: flex; flex-direction: column; gap: 6px;
+  .menu-row {
+    display: flex; align-items: center; padding: 10px 12px;
+    border-bottom: 1px solid var(--green-dim); cursor: pointer; gap: 10px; font-size: 8px;
   }
-  .item-card:hover { border-color: var(--gold); background: rgba(80,55,25,0.6); }
-  .item-name { font-family: Georgia, serif; font-size: 0.9rem; color: var(--parchment); }
-  .item-price { font-size: 0.8rem; color: var(--gold-light); }
-  .item-color-dot {
-    width: 16px; height: 16px; border-radius: 50%;
-    border: 2px solid rgba(255,255,255,0.3); display: inline-block;
-    vertical-align: middle; margin-right: 4px;
+  .menu-row:last-child { border-bottom: none; }
+  .menu-row:hover { background: var(--green); color: #000; }
+  .menu-row:hover * { color: #000 !important; }
+  .menu-row-num { color: var(--amber); font-size: 8px; min-width: 16px; }
+  .menu-row-name { flex: 1; color: var(--green); }
+  .menu-row-price { color: var(--amber-bright); font-size: 8px; white-space: nowrap; }
+  .menu-row-hint { font-size: 6px; color: var(--amber); }
+  .menu-row-effect { font-size: 6px; color: var(--green-dim); }
+  .menu-row-buy {
+    font-family: 'Press Start 2P', monospace; font-size: 7px;
+    background: #000; color: var(--green); border: 2px solid var(--green);
+    padding: 4px 8px; cursor: pointer; white-space: nowrap;
   }
-  .item-effect { font-size: 0.75rem; color: rgba(232,220,200,0.5); }
-  .item-btn {
-    margin-top: auto; padding: 6px 12px; border-radius: 3px; border: none;
-    background: var(--gold); color: var(--ink); font-size: 0.8rem;
-    cursor: pointer; font-family: Georgia, serif; font-weight: bold;
-  }
-  .item-btn:hover { background: var(--gold-light); }
-  .item-btn:disabled { background: #444; color: #888; cursor: not-allowed; }
-
-  .shop-sidebar { display: flex; flex-direction: column; gap: 16px; }
-  .shopkeeper-panel {
-    background: rgba(40,25,10,0.8); border: 1px solid rgba(200,150,42,0.3);
-    border-radius: 6px; padding: 16px;
-  }
-  .shopkeeper-panel h3 { font-family: Georgia, serif; color: var(--gold); margin-bottom: 8px; font-size: 0.9rem; }
-  .shopkeeper-text {
-    font-style: italic; color: var(--parchment); font-size: 0.85rem; line-height: 1.5;
-    min-height: 60px; opacity: 0.9;
-  }
-  .inventory-mini {
-    background: rgba(40,25,10,0.8); border: 1px solid rgba(200,150,42,0.3);
-    border-radius: 6px; padding: 16px;
-  }
-  .inventory-mini h3 { font-family: Georgia, serif; color: var(--gold); margin-bottom: 8px; font-size: 0.9rem; }
+  .menu-row-buy:hover { background: var(--green); color: #000; }
+  .menu-row-buy:disabled { color: var(--green-dim); border-color: var(--green-dim); cursor: not-allowed; }
+  .shop-sidebar { display: flex; flex-direction: column; gap: 12px; position: sticky; top: 16px; }
+  .shopkeeper-panel { border: 4px solid var(--green); background: #000; padding: 12px; }
+  .shopkeeper-panel h3 { font-size: 8px; color: var(--amber); margin-bottom: 8px; }
+  .shopkeeper-text { font-size: 7px; color: var(--green); line-height: 2; min-height: 60px; }
+  .inventory-mini { border: 4px solid var(--green); background: #000; padding: 12px; }
+  .inventory-mini h3 { font-size: 8px; color: var(--amber); margin-bottom: 8px; }
   .inv-list { display: flex; flex-direction: column; gap: 4px; max-height: 200px; overflow-y: auto; }
-  .inv-item { font-size: 0.8rem; color: rgba(232,220,200,0.7); display: flex; align-items: center; gap: 6px; }
+  .inv-item { font-size: 7px; color: var(--green); line-height: 1.8; }
 
   /* =========== LAUNCH FIELD =========== */
-  #phase-launch {
-    min-height: 100vh; background: #050510; padding: 20px;
-  }
+  #phase-launch { min-height: 100vh; background: #000; padding: 16px; }
   .launch-header { margin-bottom: 16px; }
-  .launch-header h2 { font-family: Georgia, serif; color: var(--gold); font-size: 1.4rem; }
+  .launch-header h2 { font-size: 10px; color: var(--green-bright); margin-bottom: 8px; }
   .launch-brief-reminder {
-    display: flex; gap: 16px; align-items: center; flex-wrap: wrap;
-    background: rgba(40,25,10,0.6); border: 1px solid rgba(200,150,42,0.2);
-    border-radius: 4px; padding: 8px 14px; margin-top: 8px; font-size: 0.8rem;
+    border: 2px solid var(--green-dim); padding: 8px 12px;
+    font-size: 7px; color: var(--green-dim); line-height: 2;
   }
-  .launch-brief-reminder span { color: var(--gold-light); }
-  .launch-layout { display: grid; grid-template-columns: 240px 1fr; gap: 20px; }
+  .launch-brief-reminder span { color: var(--amber-bright); }
+  .launch-layout { display: grid; grid-template-columns: 220px 1fr; gap: 16px; }
   @media (max-width: 700px) { .launch-layout { grid-template-columns: 1fr; } }
-
-  .inv-panel {
-    background: rgba(20,12,4,0.8); border: 1px solid rgba(200,150,42,0.2);
-    border-radius: 6px; padding: 14px;
+  .inv-panel { border: 4px solid var(--green); background: #000; padding: 12px; }
+  .inv-panel h3 { font-size: 8px; color: var(--amber); margin-bottom: 10px; }
+  .inv-section { margin-bottom: 12px; }
+  .inv-section h4 {
+    font-size: 7px; color: var(--green-dim); text-transform: uppercase;
+    letter-spacing: 1px; margin-bottom: 6px; border-bottom: 1px solid var(--green-dim); padding-bottom: 4px;
   }
-  .inv-panel h3 { font-family: Georgia, serif; color: var(--gold); margin-bottom: 10px; font-size: 0.9rem; }
-  .inv-section { margin-bottom: 14px; }
-  .inv-section h4 { font-size: 0.75rem; color: rgba(200,150,42,0.6); text-transform: uppercase;
-    letter-spacing: 0.08em; margin-bottom: 6px; }
   .shell-pill {
-    display: inline-flex; align-items: center; gap: 5px;
-    padding: 4px 10px; border-radius: 20px; font-size: 0.78rem;
-    background: rgba(60,40,20,0.7); border: 1px solid rgba(200,150,42,0.3);
-    color: var(--parchment); cursor: pointer; margin: 2px; transition: all 0.15s;
-    white-space: nowrap;
+    display: inline-flex; align-items: center; gap: 5px; padding: 4px 8px;
+    font-family: 'Press Start 2P', monospace; font-size: 6px;
+    background: #000; border: 2px solid var(--green-dim); color: var(--green);
+    cursor: pointer; margin: 2px; white-space: nowrap;
   }
-  .shell-pill:hover { border-color: var(--gold); background: rgba(80,55,25,0.8); }
-  .shell-pill.selected { border-color: var(--gold-light); box-shadow: 0 0 8px rgba(255,204,0,0.4); }
+  .shell-pill:hover { border-color: var(--green); }
+  .shell-pill.selected { border-color: var(--green-bright); color: var(--green-bright); background: #001a00; }
   .dye-swatch {
-    width: 20px; height: 20px; border-radius: 50%;
-    border: 2px solid rgba(255,255,255,0.3); cursor: pointer; display: inline-block;
-    transition: all 0.15s; position: relative;
+    width: 18px; height: 18px; border: 2px solid var(--green-dim);
+    cursor: pointer; display: inline-block; image-rendering: pixelated;
   }
-  .dye-swatch:hover { transform: scale(1.2); border-color: var(--gold); }
-  .dye-swatch.selected { border-color: var(--gold-light); box-shadow: 0 0 8px rgba(255,204,0,0.5); transform: scale(1.15); }
-  .dye-swatch-wrap {
-    display: inline-flex; flex-direction: column; align-items: center;
-    gap: 2px; margin: 3px; cursor: pointer;
-  }
-  .dye-swatch-wrap span { font-size: 0.6rem; color: rgba(232,220,200,0.5); }
+  .dye-swatch:hover { border-color: var(--green); }
+  .dye-swatch.selected { border-color: var(--green-bright); outline: 2px solid var(--green-bright); }
+  .dye-swatch-wrap { display: inline-flex; flex-direction: column; align-items: center; gap: 3px; margin: 3px; cursor: pointer; }
+  .dye-swatch-wrap span { font-size: 6px; color: var(--green-dim); }
   .extra-item {
-    font-size: 0.78rem; color: var(--parchment); background: rgba(40,25,10,0.6);
-    border: 1px solid rgba(200,150,42,0.2); border-radius: 3px;
-    padding: 3px 8px; margin: 2px; display: inline-flex; align-items: center; gap: 5px;
-    cursor: pointer;
+    font-family: 'Press Start 2P', monospace; font-size: 6px; color: var(--green);
+    background: #000; border: 2px solid var(--green-dim); padding: 4px 8px;
+    margin: 2px; display: inline-flex; align-items: center; cursor: pointer;
   }
-  .extra-item:hover { border-color: var(--gold); }
-  .extra-item.selected { border-color: var(--gold-light); }
-
+  .extra-item:hover { border-color: var(--green); }
+  .extra-item.selected { border-color: var(--green-bright); background: #001a00; }
   .mortar-field {
-    background: rgba(10,8,20,0.9); border: 1px solid rgba(200,150,42,0.15);
-    border-radius: 8px; padding: 20px;
-    display: flex; flex-direction: column; justify-content: space-between;
-    min-height: 400px;
+    border: 4px solid var(--green); background: #000; padding: 16px;
+    display: flex; flex-direction: column; justify-content: space-between; min-height: 380px;
   }
-  .mortar-instructions {
-    font-size: 0.8rem; color: rgba(232,220,200,0.5); margin-bottom: 16px; line-height: 1.6;
-  }
-  .mortar-row {
-    display: flex; gap: 8px; flex-wrap: wrap; justify-content: center;
-    margin: auto 0; padding: 20px 0;
-  }
+  .mortar-instructions { font-size: 7px; color: var(--green-dim); margin-bottom: 14px; line-height: 2; }
+  .mortar-instructions strong { color: var(--green); }
+  .mortar-row { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; margin: auto 0; padding: 16px 0; }
   .mortar-wrap { display: flex; flex-direction: column; align-items: center; gap: 4px; }
-  .mortar-num { font-size: 0.65rem; color: rgba(232,220,200,0.3); }
+  .mortar-num { font-size: 6px; color: var(--green-dim); }
   .mortar {
-    width: 44px; height: 60px;
-    background: linear-gradient(90deg, #4a3520 0%, #7a5a30 40%, #4a3520 100%);
-    border-radius: 4px 4px 0 0;
-    border: 2px solid var(--wood-mid);
+    width: 44px; height: 56px; background: #001a00; border: 4px solid var(--green-dim);
     cursor: pointer; display: flex; flex-direction: column;
-    align-items: center; justify-content: flex-start;
-    padding-top: 6px; transition: border-color 0.15s;
-    position: relative;
+    align-items: center; justify-content: flex-start; padding-top: 6px; image-rendering: pixelated;
   }
-  .mortar:hover { border-color: rgba(200,150,42,0.6); }
-  .mortar.loaded { border-color: var(--gold); }
-  .mortar.active-target { border-color: var(--gold-light); box-shadow: 0 0 10px rgba(255,204,0,0.5); }
-  .shell-badge {
-    width: 28px; height: 28px; border-radius: 50%;
-    border: 2px solid rgba(255,255,255,0.3);
-  }
-  .mortar-type-label {
-    font-size: 0.55rem; color: rgba(255,255,255,0.6); text-align: center;
-    line-height: 1.1; max-width: 42px; word-break: break-all; margin-top: 2px;
-  }
-  .mortar-ground {
-    height: 16px; background: linear-gradient(0deg, #3d2b1f, #5c3d28);
-    width: 100%; margin-top: -2px;
-  }
+  .mortar:hover { border-color: var(--green); }
+  .mortar.loaded { border-color: var(--green); }
+  .mortar.active-target { border-color: var(--green-bright); box-shadow: 0 0 8px var(--green-bright); }
+  .shell-badge { width: 24px; height: 24px; border: 2px solid rgba(255,255,255,0.3); image-rendering: pixelated; }
+  .mortar-type-label { font-size: 5px; color: var(--green); text-align: center; line-height: 1.4; max-width: 40px; margin-top: 2px; }
+  .mortar-ground { height: 10px; background: var(--green-dim); width: 100%; }
   .timing-badge {
-    font-size: 0.65rem; padding: 2px 5px; border-radius: 3px;
-    background: rgba(40,25,10,0.8); border: 1px solid rgba(200,150,42,0.2);
-    color: var(--gold-light); cursor: pointer;
+    font-family: 'Press Start 2P', monospace; font-size: 6px; padding: 2px 5px;
+    background: #000; border: 2px solid var(--green-dim); color: var(--amber); cursor: pointer;
   }
-  .timing-badge:hover { border-color: var(--gold); }
-
-  .launch-actions { margin-top: 20px; display: flex; justify-content: center; gap: 16px; }
+  .timing-badge:hover { border-color: var(--green); }
+  .launch-actions { margin-top: 16px; display: flex; justify-content: center; gap: 12px; flex-wrap: wrap; }
   .mode-indicator {
-    padding: 6px 12px; background: rgba(200,150,42,0.1); border: 1px solid var(--gold);
-    border-radius: 4px; font-size: 0.8rem; color: var(--gold-light); text-align: center;
-    margin-bottom: 10px;
+    padding: 6px 12px; background: #001a00; border: 2px solid var(--green);
+    font-size: 7px; color: var(--green-bright); text-align: center; margin-bottom: 10px;
   }
 
   /* =========== SHOW =========== */
-  #phase-show {
-    position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-    background: #000;
-  }
-  #fireworks-canvas {
-    display: block; width: 100%; height: 100%;
-  }
+  #phase-show { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: #000; }
+  #fireworks-canvas { display: block; width: 100%; height: 100%; }
   .eval-panel {
-    position: absolute; top: 20px; right: 20px;
-    width: 280px; max-height: calc(100vh - 40px);
-    background: rgba(0,0,0,0.7); border: 1px solid rgba(200,150,42,0.3);
-    border-radius: 6px; padding: 16px; overflow-y: auto;
+    position: absolute; top: 16px; right: 16px; width: 260px; max-height: calc(100vh - 32px);
+    border: 4px solid var(--green); background: rgba(0,0,0,0.85); padding: 12px; overflow-y: auto;
   }
-  .eval-panel h3 { font-family: Georgia, serif; color: var(--gold); margin-bottom: 8px; font-size: 0.9rem; }
-  .eval-text { font-size: 0.85rem; line-height: 1.6; color: var(--parchment); }
+  .eval-panel h3 { font-size: 8px; color: var(--amber); margin-bottom: 8px; border-bottom: 2px solid var(--green-dim); padding-bottom: 6px; }
+  .eval-text { font-size: 7px; line-height: 2; color: var(--green); }
   .show-status {
-    position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%);
-    background: rgba(0,0,0,0.7); border: 1px solid rgba(200,150,42,0.3);
-    border-radius: 4px; padding: 8px 20px; font-family: Georgia, serif;
-    color: var(--gold-light); font-size: 0.9rem;
+    position: absolute; bottom: 16px; left: 50%; transform: translateX(-50%);
+    border: 4px solid var(--green); background: rgba(0,0,0,0.9);
+    padding: 8px 20px; font-size: 8px; color: var(--green-bright); white-space: nowrap;
   }
 
   /* =========== RESULTS =========== */
   #phase-results {
     display: flex; align-items: center; justify-content: center;
-    min-height: 100vh; padding: 24px;
-    background: var(--night-sky);
+    min-height: 100vh; padding: 24px; background: #000;
   }
-  .results-card {
-    background: #f5e8c8; color: var(--ink);
-    border-radius: 8px; padding: 40px; max-width: 600px; width: 100%;
-    box-shadow: 0 8px 40px rgba(0,0,0,0.8);
+  .results-card { max-width: 560px; width: 100%; border: 4px solid var(--green); background: #000; padding: 24px; }
+  .results-title {
+    font-size: 7px; color: var(--green-dim); text-transform: uppercase; letter-spacing: 2px;
+    text-align: center; margin-bottom: 16px; border-bottom: 2px solid var(--green-dim); padding-bottom: 10px;
   }
-  .verdict-badge {
-    text-align: center; margin: 20px 0;
-    font-family: Georgia, serif; font-size: 2rem; font-weight: bold;
-  }
-  .verdict-SPLENDID { color: #c8962a; }
-  .verdict-ADEQUATE { color: #888888; }
-  .verdict-DISAPPOINTING { color: #cc6600; }
-  .verdict-DISGRACE { color: #cc2222; }
-  .verdict-icon { font-size: 2.5rem; display: block; margin-bottom: 8px; }
-  .criteria-list { margin: 20px 0; display: flex; flex-direction: column; gap: 8px; }
+  .verdict-box { border: 4px solid var(--green); padding: 16px; text-align: center; margin: 16px 0; background: #000; }
+  .verdict-box-splendid { border-color: var(--green-bright); }
+  .verdict-box-disgrace { border-color: var(--red); }
+  .verdict-badge-text { font-size: 14px; display: block; margin-bottom: 8px; }
+  .verdict-SPLENDID { color: var(--green-bright); }
+  .verdict-ADEQUATE { color: var(--white); }
+  .verdict-DISAPPOINTING { color: var(--amber); }
+  .verdict-DISGRACE { color: var(--red); }
+  .verdict-sub { font-size: 7px; color: var(--green-dim); }
+  .criteria-list { margin: 16px 0; display: flex; flex-direction: column; gap: 6px; }
   .criteria-item {
-    display: flex; align-items: center; gap: 10px;
-    padding: 8px 12px; border-radius: 4px;
-    background: rgba(0,0,0,0.05); font-size: 0.9rem;
+    display: flex; align-items: flex-start; gap: 8px; padding: 6px 10px;
+    font-size: 7px; line-height: 2; border-left: 4px solid var(--green-dim);
   }
-  .criteria-item.pass { border-left: 3px solid #22aa44; }
-  .criteria-item.fail { border-left: 3px solid #cc2222; }
-  .check-mark { font-size: 1.1rem; }
+  .criteria-item.pass { border-left-color: var(--green); }
+  .criteria-item.fail { border-left-color: var(--red); }
+  .check-mark { font-size: 8px; color: var(--green); }
+  .check-mark.fail-mark { color: var(--red); }
   .results-text {
-    font-style: italic; line-height: 1.7; margin: 16px 0; font-size: 0.9rem;
-    color: var(--ink); padding: 12px; background: rgba(200,150,42,0.1);
-    border-radius: 4px; border-left: 3px solid var(--gold);
+    font-size: 7px; line-height: 2; color: var(--green); padding: 10px 12px;
+    background: #001a00; border: 2px solid var(--green-dim); margin: 12px 0;
   }
-  .results-actions { text-align: center; margin-top: 24px; }
-
-  /* hidden util */
-  .hidden { display: none !important; }
+  .results-actions { text-align: center; margin-top: 20px; }
+  .px-divider { border: none; border-top: 2px solid var(--green-dim); margin: 12px 0; }
 </style>
 </head>
 <body>
 
 <!-- LOADING -->
 <div id="phase-loading">
-  <div style="font-family:Georgia,serif;font-size:2rem;color:var(--gold);">&#127881; Liberty Fireworks</div>
-  <p style="color:rgba(232,220,200,0.6);font-size:0.9rem;">The Town Council is preparing your brief...</p>
-  <div class="spinner"></div>
+  <div style="color:var(--green);font-family:'Press Start 2P',monospace;font-size:10px;text-align:center;line-height:2.5;">
+    LIBERTY FIREWORKS<br><br>
+    CONTACTING TOWN COUNCIL...<br><br>
+    <span class="blink">&#9646;</span>
+  </div>
 </div>
 
 <!-- BRIEF -->
 <div id="phase-brief" class="hidden">
-  <div class="parchment-card">
-    <div class="brief-header">
-      <div style="font-size:0.7rem;text-transform:uppercase;letter-spacing:0.1em;color:#8b6020;margin-bottom:6px;">Town Council Proclamation</div>
-      <h1>Fireworks Show Brief</h1>
+  <div class="brief-card pixel-box">
+    <div class="brief-title-row">
+      <div style="font-size:7px;color:var(--green-dim);margin-bottom:8px;">&#9608;&#9608;&#9608; TOWN COUNCIL BULLETIN &#9608;&#9608;&#9608;</div>
+      <h1>FIREWORKS BRIEF</h1>
     </div>
+    <hr class="px-divider">
     <div class="brief-section">
-      <label>Occasion</label>
+      <label>OCCASION:</label>
       <div class="value" id="brief-occasion"></div>
     </div>
     <div class="brief-section">
-      <label>Required Colors</label>
-      <div class="color-badges" id="brief-colors"></div>
+      <label>COLORS REQUIRED:</label>
+      <div class="color-dots" id="brief-colors"></div>
     </div>
     <div class="brief-section">
-      <label>Minimum Shells</label>
+      <label>MIN. SHELLS:</label>
       <div class="value" id="brief-shells"></div>
     </div>
     <div class="brief-section">
-      <label>Required Finale</label>
+      <label>FINALE:</label>
       <div class="value" id="brief-finale"></div>
     </div>
     <div class="brief-section">
-      <label>Expected Crowd</label>
+      <label>CROWD:</label>
       <div class="value" id="brief-crowd"></div>
     </div>
     <div class="brief-section">
-      <label>Council Note</label>
+      <label>COUNCIL NOTE:</label>
       <div class="council-note" id="brief-note"></div>
     </div>
     <div class="brief-actions">
-      <button class="btn btn-primary" onclick="goToTown()">Begin Shopping &#8594;</button>
+      <button class="ot-btn" onclick="goToTown()">[ BEGIN SHOPPING &#8594; ]</button>
     </div>
   </div>
 </div>
 
 <!-- TOWN -->
 <div id="phase-town" class="hidden">
-  <div class="stars" id="stars-container"></div>
-  <div class="town-hud">
-    <div class="town-title">
-      <h2>&#127748; Colonial Town Square</h2>
-      <p>Visit the shops to prepare your show</p>
+  <div class="ot-hud">
+    <div>
+      <div class="ot-hud-title">LIBERTY FIREWORKS</div>
+      <div class="ot-hud-brief" id="town-brief-hint"></div>
     </div>
-    <div class="budget-counter">
-      <div class="label">Liberty Dollars</div>
-      <div class="amount" id="town-budget">60 LD</div>
-    </div>
-  </div>
-  <div class="brief-bar" id="town-brief-bar"></div>
-  <div class="buildings" id="buildings-row">
-    <div class="building-wrap" onclick="openShop('powder')">
-      <div class="sign">THE POWDER HOUSE</div>
-      <div class="building" style="height:110px;">
-        <div class="roof"></div>
-        <div class="building-body">
-          <div class="building-windows">
-            <div class="window" style="--f:3.5s"></div>
-            <div class="window" style="--f:2.8s"></div>
-          </div>
-          <div class="door"></div>
-        </div>
-      </div>
-      <div class="shop-label">Shells &amp; Pyrotechnics</div>
-    </div>
-    <div class="building-wrap" onclick="openShop('ironmonger')">
-      <div class="sign">THE IRONMONGER</div>
-      <div class="building" style="height:130px;">
-        <div class="roof"></div>
-        <div class="building-body">
-          <div class="building-windows">
-            <div class="window" style="--f:4.2s"></div>
-            <div class="window" style="--f:3.1s"></div>
-          </div>
-          <div class="door"></div>
-        </div>
-      </div>
-      <div class="shop-label">Dyes &amp; Colorants</div>
-    </div>
-    <div class="building-wrap" onclick="openShop('general')">
-      <div class="sign">THE GENERAL STORE</div>
-      <div class="building" style="height:100px;">
-        <div class="roof"></div>
-        <div class="building-body">
-          <div class="building-windows">
-            <div class="window" style="--f:5s"></div>
-            <div class="window" style="--f:3.7s"></div>
-          </div>
-          <div class="door"></div>
-        </div>
-      </div>
-      <div class="shop-label">Fuses &amp; Supplies</div>
+    <div class="ot-hud-right">
+      <div class="ot-hud-budget">FUNDS: <span id="town-budget">60 LD</span></div>
+      <div style="font-size:7px;color:var(--green-dim);" id="town-shell-hint"></div>
     </div>
   </div>
-  <div class="ground"></div>
-  <div class="cobblestone"></div>
-  <div class="town-actions">
-    <button class="btn btn-ghost" onclick="goToTown()">&#8592; Back to Brief</button>
-    <button class="btn btn-primary" onclick="goToLaunch()">Set Up Your Show &#8594;</button>
-  </div>
+  <canvas id="town-canvas"></canvas>
+  <div class="ot-enter-prompt hidden" id="enter-prompt">&#9658; PRESS ENTER TO GO INSIDE &#9668;</div>
+  <div class="ot-footer">USE &#8592; &#8594; ARROW KEYS TO WALK &nbsp;&#9646;&nbsp; ENTER TO ENTER BUILDING</div>
 </div>
 
 <!-- SHOP -->
 <div id="phase-shop" class="hidden">
-  <div class="shop-header">
-    <button class="btn btn-ghost" onclick="returnToTown()" style="padding:8px 16px;">&#8592; Town</button>
+  <div class="shop-top-bar">
+    <button class="ot-btn" onclick="returnToTown()">&#8592; TOWN</button>
     <div>
-      <h2 id="shop-title"></h2>
-      <p id="shop-desc"></p>
+      <div class="shop-terminal-title" id="shop-title"></div>
+      <div class="shop-terminal-sub" id="shop-desc"></div>
     </div>
-    <div style="margin-left:auto;">
-      <div class="budget-counter">
-        <div class="label">Liberty Dollars</div>
-        <div class="amount" id="shop-budget">60 LD</div>
-      </div>
-    </div>
+    <div class="shop-budget-display">FUNDS: <span id="shop-budget">60 LD</span></div>
   </div>
   <div class="shop-layout">
-    <div class="item-grid" id="shop-items"></div>
+    <div>
+      <div class="menu-panel">
+        <div class="menu-panel-header">WHAT WOULD YOU LIKE TO BUY?</div>
+        <div id="shop-items"></div>
+      </div>
+    </div>
     <div class="shop-sidebar">
       <div class="shopkeeper-panel">
-        <h3 id="shopkeeper-name">Ask the Shopkeeper</h3>
-        <div class="shopkeeper-text" id="shopkeeper-text">Click below to get advice...</div>
-        <button class="btn btn-ghost" onclick="askShopkeeper()" id="shopkeeper-btn"
-          style="margin-top:10px;width:100%;font-size:0.8rem;padding:8px;">
-          &#128172; Ask for Advice
+        <h3 id="shopkeeper-name">ASK THE SHOPKEEPER</h3>
+        <div class="shopkeeper-text" id="shopkeeper-text">Click below to ask for advice...</div>
+        <button class="ot-btn" onclick="askShopkeeper()" id="shopkeeper-btn"
+          style="margin-top:10px;width:100%;font-size:7px;padding:8px;">
+          &#9658; ASK FOR ADVICE
         </button>
       </div>
       <div class="inventory-mini">
-        <h3>Your Inventory</h3>
+        <h3>YOUR SUPPLIES</h3>
         <div class="inv-list" id="shop-inv-list"></div>
       </div>
     </div>
@@ -611,40 +419,37 @@
 <!-- LAUNCH FIELD -->
 <div id="phase-launch" class="hidden">
   <div class="launch-header">
-    <h2>&#127747; Load Your Mortars</h2>
+    <h2>LOAD YOUR MORTARS:</h2>
     <div class="launch-brief-reminder" id="launch-brief-reminder"></div>
   </div>
   <div id="launch-mode-indicator" class="mode-indicator hidden"></div>
   <div class="launch-layout">
     <div class="inv-panel">
-      <h3>Inventory</h3>
+      <h3>INVENTORY</h3>
       <div class="inv-section">
-        <h4>Shells <span id="inv-shell-count" style="color:var(--gold-light)"></span></h4>
+        <h4>SHELLS <span id="inv-shell-count" style="color:var(--amber-bright)"></span></h4>
         <div id="inv-shells"></div>
       </div>
       <div class="inv-section">
-        <h4>Dyes</h4>
+        <h4>DYES</h4>
         <div id="inv-dyes"></div>
       </div>
       <div class="inv-section">
-        <h4>Extras</h4>
+        <h4>EXTRAS</h4>
         <div id="inv-extras"></div>
       </div>
     </div>
     <div class="mortar-field">
       <div class="mortar-instructions">
-        Click a <strong style="color:var(--gold)">shell</strong> from your inventory, then click a mortar to load it.<br>
-        Click a <strong style="color:var(--gold)">dye</strong> to activate it, then click a loaded mortar to recolor.<br>
-        Click <strong style="color:var(--gold)">Quick/Slow Fuse</strong>, then click a mortar to change timing.
+        Click a <strong>SHELL</strong> from inventory, then click a mortar to load.<br>
+        Click a <strong>DYE</strong> to activate it, then click a loaded mortar to recolor.<br>
+        Click a <strong>FUSE</strong>, then click a mortar to set timing.
       </div>
       <div class="mortar-row" id="mortar-row"></div>
-      <div style="display:flex;gap:8px;justify-content:center;margin-top:8px;">
-        <div class="mortar-ground" style="width:44px;border-radius:0 0 3px 3px;"></div>
-      </div>
       <div class="launch-actions">
-        <button class="btn btn-ghost" onclick="returnToTown()" style="padding:10px 20px;">&#8592; Back to Town</button>
-        <button class="btn btn-danger" id="launch-btn" onclick="startShow()" disabled>
-          &#128293; LIGHT THE FUSE
+        <button class="ot-btn" onclick="returnToTown()" style="padding:10px 20px;">&#8592; BACK TO TOWN</button>
+        <button class="ot-btn-danger" id="launch-btn" onclick="startShow()" disabled>
+          &#9889; LIGHT THE FUSE
         </button>
       </div>
     </div>
@@ -655,23 +460,24 @@
 <div id="phase-show" class="hidden">
   <canvas id="fireworks-canvas"></canvas>
   <div class="eval-panel">
-    <h3>&#128080; The Crowd Reacts...</h3>
+    <h3>THE CROWD REACTS...</h3>
     <div class="eval-text" id="eval-text"></div>
   </div>
-  <div class="show-status" id="show-status">Lighting fuses...</div>
+  <div class="show-status" id="show-status">LIGHTING FUSES...</div>
 </div>
 
 <!-- RESULTS -->
 <div id="phase-results" class="hidden">
   <div class="results-card">
-    <div style="text-align:center;font-family:Georgia,serif;margin-bottom:8px;font-size:0.8rem;text-transform:uppercase;letter-spacing:0.1em;color:#8b6020;">
-      Town Council Verdict
+    <div class="results-title">TOWN COUNCIL VERDICT</div>
+    <div class="verdict-box" id="verdict-box">
+      <span class="verdict-badge-text" id="verdict-badge"></span>
+      <div class="verdict-sub" id="verdict-sub"></div>
     </div>
-    <div class="verdict-badge" id="verdict-badge"></div>
     <div class="results-text" id="results-text"></div>
     <div class="criteria-list" id="criteria-list"></div>
     <div class="results-actions">
-      <button class="btn btn-primary" onclick="playAgain()">&#9654; Play Again — New Brief</button>
+      <button class="ot-btn" onclick="playAgain()">&#9654; PLAY AGAIN - NEW BRIEF</button>
     </div>
   </div>
 </div>
@@ -694,13 +500,65 @@ const state = {
   activeShop: null,
   shopkeeperText: '',
   evaluationText: '',
-  activeSelection: null, // { type: 'shell'|'dye'|'fuse', index, item }
+  activeSelection: null,
   canvas: null,
   ctx: null,
   particles: [],
+  projectiles: [],
   animFrame: null,
   firingTimeout: null,
+  showEndTime: 0,
+  playerX: 0,
+  playerDir: 1,
 };
+
+// ── AUDIO ──────────────────────────────────────────────────────
+let audioCtx = null;
+function getAudioCtx() {
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  return audioCtx;
+}
+function playBoom(scale = 1) {
+  try {
+    const ctx = getAudioCtx();
+    const now = ctx.currentTime;
+    const len = ctx.sampleRate * 0.22;
+    const buf = ctx.createBuffer(1, len, ctx.sampleRate);
+    const d = buf.getChannelData(0);
+    for (let i = 0; i < len; i++) d[i] = (Math.random()*2-1) * Math.pow(1 - i/len, 3);
+    const noise = ctx.createBufferSource();
+    noise.buffer = buf;
+    const gN = ctx.createGain();
+    gN.gain.setValueAtTime(0.7 * Math.min(scale, 2), now);
+    gN.gain.exponentialRampToValueAtTime(0.001, now + 0.25);
+    noise.connect(gN); gN.connect(ctx.destination);
+    noise.start(now); noise.stop(now + 0.25);
+    const osc = ctx.createOscillator();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(90 * scale, now);
+    osc.frequency.exponentialRampToValueAtTime(22, now + 0.55);
+    const gO = ctx.createGain();
+    gO.gain.setValueAtTime(0.55 * Math.min(scale, 2), now);
+    gO.gain.exponentialRampToValueAtTime(0.001, now + 0.55);
+    osc.connect(gO); gO.connect(ctx.destination);
+    osc.start(now); osc.stop(now + 0.55);
+  } catch(e) {}
+}
+function playWhistle() {
+  try {
+    const ctx = getAudioCtx();
+    const now = ctx.currentTime;
+    const osc = ctx.createOscillator();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(300, now);
+    osc.frequency.exponentialRampToValueAtTime(1500, now + 0.38);
+    const g = ctx.createGain();
+    g.gain.setValueAtTime(0.12, now);
+    g.gain.exponentialRampToValueAtTime(0.001, now + 0.38);
+    osc.connect(g); g.connect(ctx.destination);
+    osc.start(now); osc.stop(now + 0.38);
+  } catch(e) {}
+}
 
 // ============================================================
 // SHOP DATA
@@ -748,6 +606,16 @@ const SHOPS = {
 };
 
 // ============================================================
+// TOWN BUILDINGS — 4th is the launch field exit
+// ============================================================
+const TOWN_BUILDINGS = [
+  { id: 'powder',     label: 'POWDER HOUSE',  sublabel: 'Shells & Pyro', x: 0.18, isLaunch: false },
+  { id: 'ironmonger', label: 'IRONMONGER',     sublabel: 'Dyes & Colors', x: 0.42, isLaunch: false },
+  { id: 'general',    label: 'GENERAL STORE',  sublabel: 'Fuses & Gear',  x: 0.66, isLaunch: false },
+  { id: 'launch',     label: 'LAUNCH FIELD',   sublabel: '[ EXIT ] >>',   x: 0.88, isLaunch: true  },
+];
+
+// ============================================================
 // PHASE MANAGEMENT
 // ============================================================
 function showPhase(name) {
@@ -758,7 +626,7 @@ function showPhase(name) {
 }
 
 // ============================================================
-// LOADING → BRIEF
+// LOADING -> BRIEF
 // ============================================================
 async function loadBrief() {
   showPhase('loading');
@@ -769,15 +637,15 @@ async function loadBrief() {
     showPhase('brief');
   } catch(e) {
     document.getElementById('phase-loading').innerHTML =
-      '<p style="color:#ff4444;">Error loading brief: ' + e.message + '</p>' +
-      '<button class="btn btn-ghost" onclick="loadBrief()" style="margin-top:16px;">Retry</button>';
+      '<div style="color:#cc2222;font-family:\'Press Start 2P\',monospace;font-size:8px;padding:24px;text-align:center;">ERROR: ' + e.message + '</div>' +
+      '<div style="text-align:center;margin-top:16px;"><button class="ot-btn" onclick="loadBrief()">RETRY</button></div>';
   }
 }
 
 function renderBrief() {
   const b = state.brief;
   document.getElementById('brief-occasion').textContent = b.occasion;
-  document.getElementById('brief-shells').textContent = b.min_shells + ' shells minimum';
+  document.getElementById('brief-shells').textContent = b.min_shells + ' SHELLS MINIMUM';
   document.getElementById('brief-finale').textContent = b.finale_type;
   document.getElementById('brief-crowd').textContent =
     b.crowd_size.charAt(0).toUpperCase() + b.crowd_size.slice(1) + ' crowd';
@@ -785,62 +653,238 @@ function renderBrief() {
   const colorContainer = document.getElementById('brief-colors');
   colorContainer.innerHTML = '';
   (b.required_colors || []).forEach(c => {
-    const badge = document.createElement('span');
-    badge.className = 'color-badge';
-    badge.textContent = c;
     const hex = COLORS[c] || '#888';
-    badge.style.background = hex;
-    if (c === 'White' || c === 'Silver') { badge.style.color = '#333'; badge.style.textShadow = 'none'; }
-    colorContainer.appendChild(badge);
+    const dot = document.createElement('span');
+    dot.className = 'color-dot';
+    dot.style.background = hex;
+    const lbl = document.createElement('span');
+    lbl.className = 'color-dot-label';
+    lbl.textContent = c.toUpperCase();
+    colorContainer.appendChild(dot);
+    colorContainer.appendChild(lbl);
   });
 }
 
 // ============================================================
-// TOWN
+// TOWN — WALKING MECHANIC
 // ============================================================
-function goToTown() {
-  generateStars();
-  updateTownBudget();
-  const b = state.brief;
-  document.getElementById('town-brief-bar').innerHTML =
-    `Need: <span>${(b.required_colors||[]).join(', ')}</span> &nbsp;|&nbsp; ` +
-    `Min shells: <span>${b.min_shells}</span> &nbsp;|&nbsp; ` +
-    `Finale: <span>${b.finale_type}</span>`;
-  showPhase('town');
+let townAnimFrame = null;
+const townKeys = {};
+let playerFrame = 0;
+let nearbyBuilding = null;
+
+// Pre-calculated star positions
+const STAR_POSITIONS = [
+  [50,30],[150,50],[300,20],[420,45],[560,25],[700,55],[880,30],
+  [200,70],[400,15],[600,60],[750,40],[100,65],[900,20],[480,50],[320,35]
+];
+
+function drawTownCanvas() {
+  const canvas = document.getElementById('town-canvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width, H = canvas.height;
+
+  // Sky
+  ctx.fillStyle = '#000';
+  ctx.fillRect(0, 0, W, H);
+
+  // Stars (scaled across canvas width)
+  ctx.fillStyle = '#ffffff';
+  STAR_POSITIONS.forEach(s => {
+    const px = (s[0] / 960) * W;
+    ctx.fillRect(px, s[1], 2, 2);
+  });
+
+  // Moon
+  ctx.fillStyle = '#ddddaa';
+  ctx.beginPath();
+  ctx.arc(W - 60, 45, 18, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Ground
+  ctx.fillStyle = '#0a1a06';
+  ctx.fillRect(0, H - 80, W, 80);
+
+  // Dirt path
+  ctx.fillStyle = '#1a1200';
+  ctx.fillRect(0, H - 60, W, 40);
+
+  // Buildings
+  TOWN_BUILDINGS.forEach(b => {
+    drawBuilding(ctx, b.x * W, H - 80, b);
+  });
+
+  // Player
+  drawPlayer(ctx, state.playerX, H - 80);
 }
 
-function generateStars() {
-  const container = document.getElementById('stars-container');
-  container.innerHTML = '';
-  for (let i = 0; i < 60; i++) {
-    const s = document.createElement('div');
-    s.className = 'star';
-    const size = Math.random() * 2 + 1;
-    s.style.cssText = `
-      width:${size}px;height:${size}px;
-      top:${Math.random() * 70}%;left:${Math.random() * 100}%;
-      --op:${0.3 + Math.random() * 0.7};
-      --dur:${2 + Math.random() * 4}s;
-      animation-delay:${Math.random() * 4}s;
-    `;
-    container.appendChild(s);
+function drawBuilding(ctx, cx, groundY, b) {
+  const bw = 80, bh = 110;
+  const bx = cx - bw / 2;
+  const by = groundY - bh;
+
+  // Main structure
+  ctx.fillStyle = b.isLaunch ? '#0d200d' : '#0d1a0d';
+  ctx.fillRect(bx, by, bw, bh);
+
+  // Roof line
+  ctx.fillStyle = b.isLaunch ? '#1a4a1a' : '#1a3a1a';
+  ctx.fillRect(bx - 4, by - 8, bw + 8, 10);
+
+  // Door
+  ctx.fillStyle = b.isLaunch ? '#224422' : '#1a3a1a';
+  ctx.fillRect(cx - 11, groundY - 34, 22, 34);
+
+  // Windows
+  ctx.fillStyle = b.isLaunch ? '#66aa44' : '#aaaa44';
+  ctx.fillRect(bx + 8, by + 18, 16, 16);
+  ctx.fillRect(bx + bw - 24, by + 18, 16, 16);
+
+  // Launch field arrow
+  if (b.isLaunch) {
+    ctx.fillStyle = '#33cc33';
+    ctx.font = '10px monospace';
+    ctx.textAlign = 'center';
+    ctx.fillText('>>>', cx, by + 70);
+  }
+
+  // Proximity glow
+  const isNear = Math.abs(state.playerX - cx) < 70;
+  if (isNear) {
+    ctx.strokeStyle = '#33cc33';
+    ctx.lineWidth = 3;
+    ctx.strokeRect(bx - 3, by - 3, bw + 6, bh + 3);
+  }
+
+  // Labels
+  ctx.fillStyle = isNear ? '#66ff66' : '#33cc33';
+  ctx.font = '7px monospace';
+  ctx.textAlign = 'center';
+  ctx.fillText(b.label, cx, by - 14);
+  ctx.fillStyle = '#1a7a1a';
+  ctx.font = '6px monospace';
+  ctx.fillText(b.sublabel, cx, by - 4);
+}
+
+function drawPlayer(ctx, x, groundY) {
+  const isMoving = townKeys['ArrowLeft'] || townKeys['ArrowRight'] ||
+    townKeys['a'] || townKeys['A'] || townKeys['d'] || townKeys['D'];
+  const legAnim = Math.floor(playerFrame / 8) % 2;
+
+  // Head
+  ctx.fillStyle = '#ddbb88';
+  ctx.fillRect(x - 5, groundY - 34, 10, 10);
+
+  // Hat
+  ctx.fillStyle = '#2a1a0a';
+  ctx.fillRect(x - 6, groundY - 38, 12, 5);
+  ctx.fillRect(x - 4, groundY - 43, 8, 6);
+
+  // Body
+  ctx.fillStyle = '#336633';
+  ctx.fillRect(x - 5, groundY - 24, 10, 13);
+
+  // Legs
+  ctx.fillStyle = '#664422';
+  if (isMoving && legAnim === 0) {
+    ctx.fillRect(x - 5, groundY - 11, 5, 10);
+    ctx.fillRect(x, groundY - 11, 5, 7);
+  } else if (isMoving) {
+    ctx.fillRect(x - 5, groundY - 11, 5, 7);
+    ctx.fillRect(x, groundY - 11, 5, 10);
+  } else {
+    ctx.fillRect(x - 5, groundY - 11, 5, 9);
+    ctx.fillRect(x, groundY - 11, 5, 9);
   }
 }
 
-function updateTownBudget() {
-  document.getElementById('town-budget').textContent = state.budget + ' LD';
+function startTownLoop() {
+  if (townAnimFrame) cancelAnimationFrame(townAnimFrame);
+  nearbyBuilding = null;
+  function loop() {
+    if (state.phase !== 'town') return;
+    const speed = 3;
+    if (townKeys['ArrowLeft'] || townKeys['a'] || townKeys['A']) { state.playerX -= speed; state.playerDir = -1; }
+    if (townKeys['ArrowRight'] || townKeys['d'] || townKeys['D']) { state.playerX += speed; state.playerDir = 1; }
+    const canvas = document.getElementById('town-canvas');
+    if (canvas) state.playerX = Math.max(16, Math.min(canvas.width - 16, state.playerX));
+    playerFrame++;
+    nearbyBuilding = null;
+    if (canvas) {
+      TOWN_BUILDINGS.forEach(b => {
+        if (Math.abs(state.playerX - b.x * canvas.width) < 70) nearbyBuilding = b;
+      });
+    }
+    const prompt = document.getElementById('enter-prompt');
+    if (prompt) prompt.classList.toggle('hidden', !nearbyBuilding);
+    drawTownCanvas();
+    townAnimFrame = requestAnimationFrame(loop);
+  }
+  loop();
 }
+
+function stopTownLoop() {
+  if (townAnimFrame) { cancelAnimationFrame(townAnimFrame); townAnimFrame = null; }
+  const prompt = document.getElementById('enter-prompt');
+  if (prompt) prompt.classList.add('hidden');
+}
+
+// Key listeners — attached once
+document.addEventListener('keydown', e => {
+  townKeys[e.key] = true;
+  if ((e.key === 'Enter' || e.key === ' ') && state.phase === 'town' && nearbyBuilding) {
+    e.preventDefault();
+    stopTownLoop();
+    if (nearbyBuilding.isLaunch) { goToLaunch(); } else { openShop(nearbyBuilding.id); }
+  }
+});
+document.addEventListener('keyup', e => { townKeys[e.key] = false; });
+
+function updateTownBudget() {
+  const el = document.getElementById('town-budget');
+  if (el) el.textContent = state.budget + ' LD';
+}
+
+function updateTownHudHints() {
+  const b = state.brief;
+  const hintEl = document.getElementById('town-brief-hint');
+  if (hintEl) hintEl.textContent = 'NEED: ' + (b.required_colors||[]).join(', ').toUpperCase() +
+    ' | MIN: ' + b.min_shells + ' | FINALE: ' + b.finale_type.toUpperCase();
+  const shellHintEl = document.getElementById('town-shell-hint');
+  if (shellHintEl) shellHintEl.textContent = state.inventory.shells.length > 0
+    ? state.inventory.shells.length + ' SHELLS IN PACK' : 'NO SHELLS YET';
+}
+
+function goToTown() {
+  try { getAudioCtx().resume(); } catch(e) {}
+  updateTownBudget();
+  updateTownHudHints();
+  const canvas = document.getElementById('town-canvas');
+  if (canvas) { canvas.width = window.innerWidth; canvas.height = 320; }
+  if (state.playerX === 0) state.playerX = window.innerWidth / 2;
+  showPhase('town');
+  startTownLoop();
+}
+
+window.addEventListener('resize', () => {
+  if (state.phase === 'town') {
+    const canvas = document.getElementById('town-canvas');
+    if (canvas) { canvas.width = window.innerWidth; canvas.height = 320; }
+  }
+});
 
 // ============================================================
 // SHOP
 // ============================================================
 function openShop(shopId) {
+  stopTownLoop();
   state.activeShop = shopId;
   state.activeSelection = null;
   const shop = SHOPS[shopId];
-  document.getElementById('shop-title').textContent = shop.name;
+  document.getElementById('shop-title').textContent = shop.name.toUpperCase();
   document.getElementById('shop-desc').textContent = shop.desc;
-  document.getElementById('shopkeeper-name').textContent = shop.keeper + ' says:';
+  document.getElementById('shopkeeper-name').textContent = shop.keeper.toUpperCase() + ' SAYS:';
   document.getElementById('shopkeeper-text').textContent = 'Click below to ask ' + shop.keeper + ' for advice...';
   renderShopItems(shop);
   updateShopBudget();
@@ -851,30 +895,72 @@ function openShop(shopId) {
 function renderShopItems(shop) {
   const grid = document.getElementById('shop-items');
   grid.innerHTML = '';
+  const briefColors = state.brief?.required_colors || [];
+  const briefFinale = state.brief?.finale_type;
   shop.items.forEach((item, idx) => {
-    const card = document.createElement('div');
-    card.className = 'item-card';
-    const colorDot = item.color
-      ? `<span class="item-color-dot" style="background:${COLORS[item.color]||'#888'};"></span>`
-      : '';
-    card.innerHTML = `
-      <div class="item-name">${item.name}</div>
-      <div class="item-price">${colorDot}${item.color ? item.color + ' — ' : ''}$${item.price} LD</div>
-      ${item.effect ? `<div class="item-effect">${item.effect}</div>` : ''}
-      <button class="item-btn" onclick="buyItem('${state.activeShop}', ${idx})" id="buy-${state.activeShop}-${idx}">
-        Buy — $${item.price}
-      </button>
-    `;
-    grid.appendChild(card);
+    const row = document.createElement('div');
+    row.className = 'menu-row';
+    const isNeededColor = item.color && briefColors.includes(item.color);
+    const isFinaleShell = item.shellType && item.shellType === briefFinale;
+
+    const numEl = document.createElement('div');
+    numEl.className = 'menu-row-num';
+    numEl.textContent = (idx + 1) + '.';
+
+    const infoCol = document.createElement('div');
+    infoCol.style.flex = '1';
+
+    const nameEl = document.createElement('div');
+    nameEl.className = 'menu-row-name';
+    nameEl.textContent = item.name.toUpperCase();
+    infoCol.appendChild(nameEl);
+
+    if (item.effect) {
+      const effEl = document.createElement('div');
+      effEl.className = 'menu-row-effect';
+      effEl.textContent = item.effect;
+      infoCol.appendChild(effEl);
+    }
+    if (isFinaleShell) {
+      const h = document.createElement('div');
+      h.className = 'menu-row-hint'; h.textContent = '[* FINALE REQUIRED]';
+      infoCol.appendChild(h);
+    } else if (isNeededColor) {
+      const h = document.createElement('div');
+      h.className = 'menu-row-hint'; h.textContent = '[OK COLOR NEEDED]';
+      infoCol.appendChild(h);
+    }
+
+    const priceEl = document.createElement('div');
+    priceEl.className = 'menu-row-price';
+    if (item.color) {
+      const dot = document.createElement('span');
+      dot.style.cssText = 'display:inline-block;width:10px;height:10px;background:' + (COLORS[item.color]||'#888') + ';border:1px solid #33cc33;margin-right:6px;vertical-align:middle;image-rendering:pixelated;';
+      priceEl.appendChild(dot);
+    }
+    priceEl.appendChild(document.createTextNode('$' + item.price + ' LD'));
+
+    const buyBtn = document.createElement('button');
+    buyBtn.className = 'menu-row-buy';
+    buyBtn.id = 'buy-' + state.activeShop + '-' + idx;
+    buyBtn.textContent = 'BUY';
+    buyBtn.disabled = state.budget < item.price;
+    buyBtn.onclick = e => { e.stopPropagation(); buyItem(state.activeShop, idx); };
+    row.onclick = () => { if (state.budget >= item.price) buyItem(state.activeShop, idx); };
+
+    row.appendChild(numEl);
+    row.appendChild(infoCol);
+    row.appendChild(priceEl);
+    row.appendChild(buyBtn);
+    grid.appendChild(row);
   });
-  updateBuyButtons();
 }
 
 function updateBuyButtons() {
   if (!state.activeShop) return;
   const shop = SHOPS[state.activeShop];
   shop.items.forEach((item, idx) => {
-    const btn = document.getElementById(`buy-${state.activeShop}-${idx}`);
+    const btn = document.getElementById('buy-' + state.activeShop + '-' + idx);
     if (btn) btn.disabled = state.budget < item.price;
   });
 }
@@ -884,20 +970,17 @@ function buyItem(shopId, itemIdx) {
   const item = shop.items[itemIdx];
   if (state.budget < item.price) return;
   state.budget -= item.price;
-
   if (item.type === 'shell') {
     state.inventory.shells.push({ name: item.name, shellType: item.shellType, color: item.color, baseColor: item.color });
   } else if (item.type === 'dye') {
     state.inventory.dyes.push({ name: item.name, color: item.color });
   } else if (item.type === 'extra') {
     if (item.fuseType === 'rack') {
-      // Add 2 mortar slots immediately if in launch phase, or track count
       state.inventory.extras.push({ name: item.name, fuseType: item.fuseType });
     } else {
       state.inventory.extras.push({ name: item.name, fuseType: item.fuseType });
     }
   }
-
   updateShopBudget();
   updateTownBudget();
   updateBuyButtons();
@@ -912,18 +995,18 @@ function renderShopInventory() {
   const list = document.getElementById('shop-inv-list');
   list.innerHTML = '';
   const allItems = [
-    ...state.inventory.shells.map(s => `${s.name} (${s.color})`),
-    ...state.inventory.dyes.map(d => d.name),
-    ...state.inventory.extras.map(e => e.name),
+    ...state.inventory.shells.map(s => '* ' + s.name.toUpperCase() + ' (' + s.color.toUpperCase() + ')'),
+    ...state.inventory.dyes.map(d => '* ' + d.name.toUpperCase()),
+    ...state.inventory.extras.map(e => '* ' + e.name.toUpperCase()),
   ];
   if (allItems.length === 0) {
-    list.innerHTML = '<div class="inv-item" style="opacity:0.4;">Nothing yet...</div>';
+    list.innerHTML = '<div class="inv-item" style="opacity:0.4;">NOTHING YET...</div>';
     return;
   }
   allItems.forEach(label => {
     const row = document.createElement('div');
     row.className = 'inv-item';
-    row.innerHTML = `<span style="color:var(--gold);">•</span> ${label}`;
+    row.textContent = label;
     list.appendChild(row);
   });
 }
@@ -933,16 +1016,11 @@ async function askShopkeeper() {
   btn.disabled = true;
   btn.textContent = '...';
   document.getElementById('shopkeeper-text').textContent = '';
-
   try {
     const r = await fetch('/api/shopkeeper', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        shop_type: state.activeShop,
-        brief: state.brief,
-        inventory: state.inventory
-      })
+      body: JSON.stringify({ shop_type: state.activeShop, brief: state.brief, inventory: state.inventory })
     });
     const textEl = document.getElementById('shopkeeper-text');
     const reader = r.body.getReader();
@@ -963,65 +1041,66 @@ async function askShopkeeper() {
       }
     }
   } catch(e) {
-    document.getElementById('shopkeeper-text').textContent = 'The shopkeeper is busy. Try again.';
+    document.getElementById('shopkeeper-text').textContent = 'THE SHOPKEEPER IS BUSY. TRY AGAIN.';
   }
   btn.disabled = false;
-  btn.textContent = '↩ Ask Again';
+  btn.textContent = '> ASK AGAIN';
 }
 
 function returnToTown() {
   showPhase('town');
   updateTownBudget();
+  updateTownHudHints();
+  const canvas = document.getElementById('town-canvas');
+  if (canvas) { canvas.width = window.innerWidth; canvas.height = 320; }
+  startTownLoop();
 }
 
 // ============================================================
 // LAUNCH FIELD
 // ============================================================
 function goToLaunch() {
-  // Init mortars: base 8, +2 per rack bought
+  stopTownLoop();
   const rackCount = state.inventory.extras.filter(e => e.fuseType === 'rack').length;
   const mortar_count = Math.min(12, 8 + rackCount * 2);
   state.mortars = Array(mortar_count).fill(null).map(() => ({ shell: null, delay: 1.0 }));
   state.activeSelection = null;
-
-  // Brief reminder
   const b = state.brief;
   document.getElementById('launch-brief-reminder').innerHTML =
-    `Colors needed: <span>${(b.required_colors||[]).join(', ')}</span> &nbsp;|&nbsp; ` +
-    `Min shells: <span>${b.min_shells}</span> &nbsp;|&nbsp; ` +
-    `Finale: <span>${b.finale_type}</span>`;
-
+    'COLORS NEEDED: <span>' + (b.required_colors||[]).join(', ').toUpperCase() + '</span> &nbsp;|&nbsp; ' +
+    'MIN: <span>' + b.min_shells + '</span> SHELLS &nbsp;|&nbsp; ' +
+    'FINALE: <span>' + b.finale_type.toUpperCase() + '</span>';
   renderLaunchInventory();
   renderMortarRow();
   showPhase('launch');
 }
 
 function renderLaunchInventory() {
-  // Shells
   const shellsEl = document.getElementById('inv-shells');
   shellsEl.innerHTML = '';
   document.getElementById('inv-shell-count').textContent =
-    state.inventory.shells.length > 0 ? `(${state.inventory.shells.length})` : '';
+    state.inventory.shells.length > 0 ? '(' + state.inventory.shells.length + ')' : '';
   if (state.inventory.shells.length === 0) {
-    shellsEl.innerHTML = '<div style="font-size:0.75rem;opacity:0.4;color:var(--parchment);">No shells — go buy some!</div>';
+    shellsEl.innerHTML = '<div style="font-size:7px;opacity:0.4;color:var(--green);">NO SHELLS - GO BUY SOME!</div>';
   } else {
     state.inventory.shells.forEach((s, idx) => {
       const pill = document.createElement('span');
       pill.className = 'shell-pill';
       pill.dataset.index = idx;
       const hex = COLORS[s.color] || '#888';
-      const dot = `<span style="width:10px;height:10px;border-radius:50%;background:${hex};display:inline-block;border:1px solid rgba(255,255,255,0.3);"></span>`;
-      pill.innerHTML = `${dot} ${s.shellType}`;
+      const dot = document.createElement('span');
+      dot.style.cssText = 'width:8px;height:8px;border:1px solid #33cc33;background:' + hex + ';display:inline-block;image-rendering:pixelated;';
+      pill.appendChild(dot);
+      pill.appendChild(document.createTextNode(' ' + s.shellType.toUpperCase().slice(0,8)));
       pill.onclick = () => selectShell(idx);
       shellsEl.appendChild(pill);
     });
   }
 
-  // Dyes
   const dyesEl = document.getElementById('inv-dyes');
   dyesEl.innerHTML = '';
   if (state.inventory.dyes.length === 0) {
-    dyesEl.innerHTML = '<div style="font-size:0.75rem;opacity:0.4;color:var(--parchment);">No dyes</div>';
+    dyesEl.innerHTML = '<div style="font-size:7px;opacity:0.4;color:var(--green);">NO DYES</div>';
   } else {
     state.inventory.dyes.forEach((d, idx) => {
       const wrap = document.createElement('span');
@@ -1032,7 +1111,7 @@ function renderLaunchInventory() {
       swatch.style.background = COLORS[d.color] || '#888';
       swatch.title = d.name;
       const label = document.createElement('span');
-      label.textContent = d.color;
+      label.textContent = d.color.toUpperCase().slice(0,3);
       wrap.appendChild(swatch);
       wrap.appendChild(label);
       wrap.onclick = () => selectDye(idx);
@@ -1040,18 +1119,17 @@ function renderLaunchInventory() {
     });
   }
 
-  // Extras (fuses)
   const extrasEl = document.getElementById('inv-extras');
   extrasEl.innerHTML = '';
   const fuses = state.inventory.extras.filter(e => e.fuseType === 'quick' || e.fuseType === 'slow');
   if (fuses.length === 0) {
-    extrasEl.innerHTML = '<div style="font-size:0.75rem;opacity:0.4;color:var(--parchment);">No fuses</div>';
+    extrasEl.innerHTML = '<div style="font-size:7px;opacity:0.4;color:var(--green);">NO FUSES</div>';
   } else {
     fuses.forEach((e, idx) => {
       const realIdx = state.inventory.extras.indexOf(e);
       const el = document.createElement('span');
       el.className = 'extra-item';
-      el.textContent = e.name;
+      el.textContent = e.name.toUpperCase();
       el.onclick = () => selectFuse(realIdx);
       extrasEl.appendChild(el);
     });
@@ -1063,39 +1141,28 @@ function selectShell(idx) {
   clearSelections();
   state.activeSelection = { type: 'shell', index: idx };
   const pills = document.querySelectorAll('.shell-pill');
-  pills.forEach(p => {
-    if (parseInt(p.dataset.index) === idx) p.classList.add('selected');
-  });
-  showModeIndicator('Click a mortar slot to load this shell');
+  pills.forEach(p => { if (parseInt(p.dataset.index) === idx) p.classList.add('selected'); });
+  showModeIndicator('CLICK A MORTAR SLOT TO LOAD THIS SHELL');
 }
 
 function selectDye(idx) {
   clearSelections();
   state.activeSelection = { type: 'dye', index: idx };
   const wraps = document.querySelectorAll('.dye-swatch-wrap');
-  wraps.forEach(w => {
-    if (parseInt(w.dataset.index) === idx) w.querySelector('.dye-swatch').classList.add('selected');
-  });
-  showModeIndicator('Click a loaded mortar to apply this dye');
+  wraps.forEach(w => { if (parseInt(w.dataset.index) === idx) w.querySelector('.dye-swatch').classList.add('selected'); });
+  showModeIndicator('CLICK A LOADED MORTAR TO APPLY THIS DYE');
 }
 
 function selectFuse(idx) {
   clearSelections();
   state.activeSelection = { type: 'fuse', index: idx };
-  const items = document.querySelectorAll('.extra-item');
-  items.forEach((el, i) => {
-    const fuses = state.inventory.extras.filter(e => e.fuseType === 'quick' || e.fuseType === 'slow');
-    // find the item at this extra index
-  });
-  // simpler: just highlight based on extra index
   const allExtras = state.inventory.extras;
   document.querySelectorAll('.extra-item').forEach((el, i) => {
-    // match by position among fuse-type extras
     const fuseExtras = allExtras.filter(e => e.fuseType === 'quick' || e.fuseType === 'slow');
     const fuse = fuseExtras[i];
     if (allExtras.indexOf(fuse) === idx) el.classList.add('selected');
   });
-  showModeIndicator('Click a mortar slot to apply this fuse');
+  showModeIndicator('CLICK A MORTAR SLOT TO APPLY THIS FUSE');
 }
 
 function clearSelections() {
@@ -1109,7 +1176,7 @@ function clearSelections() {
 
 function showModeIndicator(text) {
   const el = document.getElementById('launch-mode-indicator');
-  el.textContent = '✦ ' + text + ' — click elsewhere to cancel';
+  el.textContent = '> ' + text + ' -- CLICK ELSEWHERE TO CANCEL';
   el.classList.remove('hidden');
 }
 
@@ -1119,9 +1186,7 @@ function hideModeIndicator() {
 
 function clickMortar(mortarIdx) {
   if (!state.activeSelection) {
-    // Clicking empty mortar with no selection — try to unload
     if (state.mortars[mortarIdx] && state.mortars[mortarIdx].shell) {
-      // Return shell to inventory
       state.inventory.shells.unshift(state.mortars[mortarIdx].shell);
       state.mortars[mortarIdx] = { shell: null, delay: 1.0 };
       renderMortarRow();
@@ -1129,11 +1194,9 @@ function clickMortar(mortarIdx) {
     }
     return;
   }
-
   const sel = state.activeSelection;
   if (sel.type === 'shell') {
     if (state.mortars[mortarIdx].shell) {
-      // Mortar already loaded — return old shell to inventory
       state.inventory.shells.unshift(state.mortars[mortarIdx].shell);
     }
     const shell = state.inventory.shells[sel.index];
@@ -1144,7 +1207,7 @@ function clickMortar(mortarIdx) {
     renderLaunchInventory();
   } else if (sel.type === 'dye') {
     if (!state.mortars[mortarIdx].shell) {
-      showModeIndicator('That mortar is empty! Load a shell first.');
+      showModeIndicator('THAT MORTAR IS EMPTY! LOAD A SHELL FIRST.');
       return;
     }
     const dye = state.inventory.dyes[sel.index];
@@ -1182,7 +1245,7 @@ function renderMortarRow() {
     tube.className = 'mortar' + (m.shell ? ' loaded' : '');
     tube.onclick = () => clickMortar(idx);
     tube.title = m.shell
-      ? `${m.shellType} — ${m.color} (click to unload)`
+      ? m.shell.shellType + ' -- ' + m.shell.color + ' (click to unload)'
       : 'Empty mortar (click to load)';
 
     if (m.shell) {
@@ -1192,13 +1255,17 @@ function renderMortarRow() {
       tube.appendChild(badge);
       const typeLabel = document.createElement('div');
       typeLabel.className = 'mortar-type-label';
-      // Abbreviate type
       const abbr = {
-        'Standard': 'Std', 'Star Shell': 'Star', 'Chrysanthemum': 'Chrys',
-        'Peony': 'Peon', 'Comet': 'Com', 'Willow': 'Wil', 'Roman Candle': 'RC'
+        'Standard': 'STD', 'Star Shell': 'STAR', 'Chrysanthemum': 'CHRY',
+        'Peony': 'PEON', 'Comet': 'COM', 'Willow': 'WIL', 'Roman Candle': 'RC'
       };
-      typeLabel.textContent = abbr[m.shell.shellType] || m.shell.shellType.slice(0,4);
+      typeLabel.textContent = abbr[m.shell.shellType] || m.shell.shellType.slice(0,4).toUpperCase();
       tube.appendChild(typeLabel);
+    } else {
+      const emptyEl = document.createElement('div');
+      emptyEl.style.cssText = 'font-size:16px;color:#1a7a1a;margin-top:6px;line-height:1;';
+      emptyEl.textContent = '▓';
+      tube.appendChild(emptyEl);
     }
 
     const groundBar = document.createElement('div');
@@ -1206,8 +1273,8 @@ function renderMortarRow() {
 
     const timing = document.createElement('div');
     timing.className = 'timing-badge';
-    timing.textContent = m.delay.toFixed(1) + 's';
-    timing.onclick = (e) => { e.stopPropagation(); /* timing badge click handled by fuse selection */ };
+    timing.textContent = '[' + m.delay.toFixed(1) + 's]';
+    timing.onclick = e => { e.stopPropagation(); };
 
     wrap.appendChild(numLabel);
     wrap.appendChild(tube);
@@ -1228,7 +1295,6 @@ function updateLaunchButton() {
 // ============================================================
 function startShow() {
   showPhase('show');
-
   const canvas = document.getElementById('fireworks-canvas');
   canvas.width = window.innerWidth;
   canvas.height = window.innerHeight;
@@ -1237,40 +1303,32 @@ function startShow() {
   state.particles = [];
   state.evaluationText = '';
 
-  // Get loaded mortars in order
   const loadedMortars = state.mortars
     .map((m, idx) => ({ ...m, index: idx }))
     .filter(m => m.shell);
 
-  // Prepare eval data immediately
   const colorsUsed = [...new Set(loadedMortars.map(m => m.shell.color))];
   const finaleType = loadedMortars.length > 0 ? loadedMortars[loadedMortars.length - 1].shell.shellType : null;
   const shellCount = loadedMortars.length;
 
-  // Start streaming evaluation right away
-  streamEvaluation({ brief: state.brief, colors_used: colorsUsed, finale_type: finaleType, shell_count: shellCount });
-
-  // Start animation loop
   requestAnimationFrame(animLoop);
 
-  // Schedule shell firings
   let elapsed = 0;
   const n = loadedMortars.length;
   loadedMortars.forEach((m, seq) => {
-    // Stagger shells across canvas x
     const xPos = (canvas.width * 0.1) + (canvas.width * 0.8) * (n === 1 ? 0.5 : seq / (n - 1));
     setTimeout(() => {
       fireShell(m.shell, xPos);
-      document.getElementById('show-status').textContent =
-        `Firing shell ${seq + 1} of ${n}...`;
+      document.getElementById('show-status').textContent = 'FIRING SHELL ' + (seq + 1) + ' OF ' + n + '...';
       if (seq === n - 1) {
-        setTimeout(() => {
-          document.getElementById('show-status').textContent = 'Show complete! Awaiting verdict...';
-        }, 3000);
+        setTimeout(() => { document.getElementById('show-status').textContent = 'SHOW COMPLETE! AWAITING VERDICT...'; }, 2500);
       }
     }, elapsed * 1000);
     elapsed += m.delay;
   });
+
+  state.showEndTime = Date.now() + elapsed * 1000 + 2500;
+  streamEvaluation({ brief: state.brief, colors_used: colorsUsed, finale_type: finaleType, shell_count: shellCount });
 }
 
 async function streamEvaluation(data) {
@@ -1296,8 +1354,8 @@ async function streamEvaluation(data) {
           const raw = line.slice(6).trim();
           if (raw === '[DONE]') {
             state.evaluationText = fullText;
-            // Show results after a small delay
-            setTimeout(() => showResults(data, fullText), 2500);
+            const wait = Math.max(1500, state.showEndTime - Date.now() + 1000);
+            setTimeout(() => showResults(data, fullText), wait);
             return;
           }
           try {
@@ -1322,14 +1380,30 @@ function animLoop() {
   const canvas = state.canvas;
   const ctx = state.ctx;
 
-  // Fade background
   ctx.fillStyle = 'rgba(2,3,15,0.18)';
   ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-  // Draw silhouette skyline
   drawSkyline(ctx, canvas.width, canvas.height);
 
-  // Update + draw particles
+  state.projectiles = state.projectiles.filter(p => {
+    p.x += p.vx;
+    p.y += p.vy;
+    p.vy += 0.25;
+    if (Math.random() > 0.35) {
+      state.particles.push(makeParticle(p.x, p.y, (Math.random()-0.5)*0.5, (Math.random()-0.5)*0.5+0.3, '#ffdd88', 16, 1.5, 0.04, false));
+    }
+    if (p.vy >= 0 || p.y <= p.targetY) {
+      burstShell(p.shell, p.x, p.y);
+      return false;
+    }
+    ctx.globalAlpha = 1;
+    ctx.fillStyle = '#fff5cc';
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, 3.5, 0, Math.PI * 2);
+    ctx.fill();
+    return true;
+  });
+
   state.particles = state.particles.filter(p => p.life > 0);
   for (const p of state.particles) {
     updateParticle(p);
@@ -1348,10 +1422,7 @@ function drawSkyline(ctx, w, h) {
     { x: w - 300, w: 70, h: 100 }, { x: w - 240, w: 55, h: 130 }, { x: w - 200, w: 80, h: 70 },
     { x: w - 150, w: 60, h: 110 }, { x: w - 110, w: 50, h: 90 }, { x: w - 80, w: 80, h: 80 },
   ];
-  buildings.forEach(b => {
-    ctx.fillRect(b.x, h - b.h, b.w, b.h);
-  });
-  // Ground
+  buildings.forEach(b => { ctx.fillRect(b.x, h - b.h, b.w, b.h); });
   ctx.fillStyle = '#040408';
   ctx.fillRect(0, h - 30, w, 30);
 }
@@ -1371,7 +1442,6 @@ function drawParticle(ctx, p) {
   const alpha = Math.max(0, p.life / p.maxLife);
   ctx.globalAlpha = alpha;
   ctx.fillStyle = p.color;
-
   if (p.trail && p.trail.length > 1) {
     ctx.strokeStyle = p.color;
     ctx.lineWidth = p.size * alpha;
@@ -1395,49 +1465,38 @@ function makeParticle(x, y, vx, vy, color, life, size, gravity, useTrail) {
 
 function fireShell(shell, mortar_x) {
   const canvas = state.canvas;
-  const isFinale = shell.shellType === 'Chrysanthemum' &&
-    state.mortars.filter(m => m.shell).length > 0 &&
-    state.mortars[state.mortars.length - 1]?.shell?.shellType === 'Chrysanthemum';
-
-  const targetX = mortar_x + (Math.random() - 0.5) * 80;
-  const targetY = canvas.height * (0.12 + Math.random() * 0.30);
-
-  // Launch streak upward
-  const streakCount = 3;
-  for (let i = 0; i < streakCount; i++) {
-    const steps = 20;
-    for (let s = 0; s < steps; s++) {
-      setTimeout(() => {
-        state.particles.push(makeParticle(
-          mortar_x + (Math.random()-0.5)*4,
-          canvas.height - 60 - s * ((canvas.height - 60 - targetY) / steps) + (Math.random()-0.5)*4,
-          (Math.random()-0.5)*0.5, 0, '#ffdd88', 15, 1.5, 0, false
-        ));
-      }, s * 18);
-    }
+  if (shell.shellType === 'Roman Candle') {
+    playWhistle();
+    setTimeout(() => { playBoom(0.7); createRomanCandle(mortar_x, canvas.height - 60, COLORS[shell.color] || '#ff2222'); }, 200);
+    return;
   }
+  const targetX = mortar_x + (Math.random() - 0.5) * 80;
+  const targetY = canvas.height * (0.10 + Math.random() * 0.28);
+  const distUp = (canvas.height - 60) - targetY;
+  const vy0 = -Math.sqrt(2 * 0.25 * distUp);
+  const framesToApex = Math.abs(vy0) / 0.25;
+  const vx = (targetX - mortar_x) / framesToApex;
+  playWhistle();
+  state.projectiles.push({ x: mortar_x, y: canvas.height - 60, vx, vy: vy0, targetY, shell });
+}
 
-  // Burst at apex
-  const burstDelay = 380;
-  setTimeout(() => {
-    const color = COLORS[shell.color] || '#ffffff';
-    const shellType = shell.shellType;
-
-    if (shellType === 'Standard' || shellType === 'Peony') {
-      createRoundBurst(targetX, targetY, color, 45, 1.3, shell.shellType === 'Peony');
-    } else if (shellType === 'Chrysanthemum') {
-      const scale = isFinale ? 2.0 : 1.5;
-      createRoundBurst(targetX, targetY, COLORS['Gold'] || color, 80 * scale, scale * 0.8, false, true);
-    } else if (shellType === 'Star Shell') {
-      createStarBurst(targetX, targetY, color, 14);
-    } else if (shellType === 'Comet') {
-      createComet(targetX, targetY, color);
-    } else if (shellType === 'Willow') {
-      createWillow(targetX, targetY, color);
-    } else if (shellType === 'Roman Candle') {
-      createRomanCandle(mortar_x, canvas.height - 60, color);
-    }
-  }, burstDelay);
+function burstShell(shell, x, y) {
+  const isFinale = shell.shellType === state.brief?.finale_type;
+  playBoom(isFinale ? 1.8 : 1);
+  const color = COLORS[shell.color] || '#ffffff';
+  const t = shell.shellType;
+  if (t === 'Standard' || t === 'Peony') {
+    createRoundBurst(x, y, color, 45, 1.3, t === 'Peony');
+  } else if (t === 'Chrysanthemum') {
+    const scale = isFinale ? 2.2 : 1.5;
+    createRoundBurst(x, y, COLORS['Gold'] || color, Math.round(80 * scale), scale * 0.8, false, true);
+  } else if (t === 'Star Shell') {
+    createStarBurst(x, y, color, isFinale ? 20 : 14);
+  } else if (t === 'Comet') {
+    createComet(x, y, color);
+  } else if (t === 'Willow') {
+    createWillow(x, y, color, isFinale);
+  }
 }
 
 function createRoundBurst(x, y, color, count, speed, softFade, longTrail) {
@@ -1450,7 +1509,6 @@ function createRoundBurst(x, y, color, count, speed, softFade, longTrail) {
       color, life, longTrail ? 2 : 2.5, softFade ? 0.04 : 0.02, longTrail
     ));
   }
-  // Flash
   state.particles.push(makeParticle(x, y, 0, 0, '#ffffff', 8, 8, 0, false));
 }
 
@@ -1462,7 +1520,6 @@ function createStarBurst(x, y, color, count) {
       x, y, Math.cos(angle) * spd, Math.sin(angle) * spd,
       color, 70 + Math.random() * 30, 3, 0.015, true
     ));
-    // Secondary sparkle
     if (Math.random() > 0.5) {
       state.particles.push(makeParticle(
         x + (Math.random()-0.5)*10, y + (Math.random()-0.5)*10,
@@ -1474,53 +1531,37 @@ function createStarBurst(x, y, color, count) {
 }
 
 function createComet(x, y, color) {
-  // Rising comet is done in fireShell streak — just do apex pop
   for (let i = 0; i < 20; i++) {
     const angle = Math.random() * Math.PI * 2;
     const spd = 1 + Math.random() * 2;
-    state.particles.push(makeParticle(
-      x, y, Math.cos(angle)*spd, Math.sin(angle)*spd,
-      color, 40 + Math.random()*20, 2, 0.03, false
-    ));
+    state.particles.push(makeParticle(x, y, Math.cos(angle)*spd, Math.sin(angle)*spd, color, 40 + Math.random()*20, 2, 0.03, false));
   }
   state.particles.push(makeParticle(x, y, 0, 0, '#ffffff', 6, 6, 0, false));
 }
 
-function createWillow(x, y, color) {
-  for (let i = 0; i < 50; i++) {
-    const angle = (i / 50) * Math.PI * 2;
-    const spd = 1.5 + Math.random() * 1.5;
-    state.particles.push(makeParticle(
-      x, y, Math.cos(angle) * spd, Math.sin(angle) * spd - 1,
-      color, 90 + Math.random() * 40, 2, 0.06, true // stronger gravity = droop
-    ));
+function createWillow(x, y, color, isFinale = false) {
+  const count = isFinale ? 90 : 50;
+  const spd = isFinale ? 2.5 : 1.5;
+  for (let i = 0; i < count; i++) {
+    const angle = (i / count) * Math.PI * 2;
+    const s = spd + Math.random() * 1.5;
+    state.particles.push(makeParticle(x, y, Math.cos(angle) * s, Math.sin(angle) * s - 1, color, 90 + Math.random() * 40, isFinale ? 2.5 : 2, 0.06, true));
   }
-  state.particles.push(makeParticle(x, y, 0, 0, '#ffffff', 8, 6, 0, false));
+  state.particles.push(makeParticle(x, y, 0, 0, '#ffffff', 8, isFinale ? 10 : 6, 0, false));
 }
 
 function createRomanCandle(x, y, color) {
-  // 3 sequential small bursts
   for (let seq = 0; seq < 3; seq++) {
     setTimeout(() => {
       const burstY = y - 80 - seq * 40;
       const burstX = x + (Math.random()-0.5)*30;
-      // Rising star
       for (let s = 0; s < 12; s++) {
-        state.particles.push(makeParticle(
-          x + (Math.random()-0.5)*4,
-          y - s * 8,
-          (Math.random()-0.5)*0.8, 0,
-          color, 12, 2, 0, false
-        ));
+        state.particles.push(makeParticle(x + (Math.random()-0.5)*4, y - s * 8, (Math.random()-0.5)*0.8, 0, color, 12, 2, 0, false));
       }
-      // Small pop
       setTimeout(() => {
         for (let i = 0; i < 18; i++) {
           const a = (i/18)*Math.PI*2;
-          state.particles.push(makeParticle(
-            burstX, burstY, Math.cos(a)*1.5, Math.sin(a)*1.5,
-            color, 30, 2, 0.02, false
-          ));
+          state.particles.push(makeParticle(burstX, burstY, Math.cos(a)*1.5, Math.sin(a)*1.5, color, 30, 2, 0.02, false));
         }
       }, 100);
     }, seq * 420);
@@ -1531,10 +1572,7 @@ function createRomanCandle(x, y, color) {
 // RESULTS
 // ============================================================
 function showResults(evalData, fullText) {
-  if (state.animFrame) {
-    cancelAnimationFrame(state.animFrame);
-    state.animFrame = null;
-  }
+  if (state.animFrame) { cancelAnimationFrame(state.animFrame); state.animFrame = null; }
 
   const b = state.brief;
   const colorsMet = (b.required_colors || []).every(c => (evalData.colors_used || []).includes(c));
@@ -1542,44 +1580,65 @@ function showResults(evalData, fullText) {
   const finaleMet = evalData.finale_type === b.finale_type;
 
   const metCount = [colorsMet, countMet, finaleMet].filter(Boolean).length;
-  let verdict, icon;
-  if (metCount === 3) { verdict = 'SPLENDID'; icon = '👑'; }
-  else if (metCount === 2) { verdict = 'ADEQUATE'; icon = '🥈'; }
-  else if (metCount === 1) { verdict = 'DISAPPOINTING'; icon = '↘'; }
-  else { verdict = 'A DISGRACE'; icon = '💀'; }
+  let verdict;
+  if (metCount === 3) { verdict = 'SPLENDID'; }
+  else if (metCount === 2) { verdict = 'ADEQUATE'; }
+  else if (metCount === 1) { verdict = 'DISAPPOINTING'; }
+  else { verdict = 'A DISGRACE'; }
 
-  // Extract verdict from text if present
   const textUpper = fullText.toUpperCase();
-  if (textUpper.includes('SPLENDID')) verdict = 'SPLENDID', icon = '👑';
-  else if (textUpper.includes('A DISGRACE')) verdict = 'A DISGRACE', icon = '💀';
-  else if (textUpper.includes('DISAPPOINTING')) verdict = 'DISAPPOINTING', icon = '↘';
-  else if (textUpper.includes('ADEQUATE')) verdict = 'ADEQUATE', icon = '🥈';
+  if (textUpper.includes('SPLENDID')) verdict = 'SPLENDID';
+  else if (textUpper.includes('A DISGRACE')) verdict = 'A DISGRACE';
+  else if (textUpper.includes('DISAPPOINTING')) verdict = 'DISAPPOINTING';
+  else if (textUpper.includes('ADEQUATE')) verdict = 'ADEQUATE';
 
-  const verdictKey = verdict.replace(/ /g, '-').replace('A-', '');
-  document.getElementById('verdict-badge').innerHTML =
-    `<span class="verdict-icon">${icon}</span>
-     <span class="verdict-${verdictKey === 'DISGRACE' ? 'DISGRACE' : verdict}">${verdict}</span>`;
+  const isSplendid = verdict === 'SPLENDID';
+  const isDisgrace = verdict === 'A DISGRACE';
+
+  const box = document.getElementById('verdict-box');
+  box.className = 'verdict-box' + (isSplendid ? ' verdict-box-splendid' : isDisgrace ? ' verdict-box-disgrace' : '');
+
+  const badgeEl = document.getElementById('verdict-badge');
+  badgeEl.className = 'verdict-badge-text verdict-' + (isDisgrace ? 'DISGRACE' : verdict);
+  badgeEl.textContent = verdict;
+
+  const subEl = document.getElementById('verdict-sub');
+  if (isSplendid) subEl.textContent = 'THE CROWD GOES WILD!';
+  else if (isDisgrace) subEl.textContent = 'YOU HAVE DISAPPOINTED THE TOWN COUNCIL.';
+  else if (verdict === 'ADEQUATE') subEl.textContent = 'A PASSABLE DISPLAY.';
+  else subEl.textContent = 'THE CROWD IS UNIMPRESSED.';
 
   document.getElementById('results-text').textContent = fullText;
 
   const criteria = document.getElementById('criteria-list');
   criteria.innerHTML = '';
   const checks = [
-    { label: 'Required Colors', met: colorsMet, detail: colorsMet
-      ? `(${(b.required_colors||[]).join(', ')}) ✓`
-      : `Needed: ${(b.required_colors||[]).join(', ')} — Had: ${(evalData.colors_used||[]).join(', ')}` },
-    { label: 'Shell Count', met: countMet, detail: countMet
-      ? `${evalData.shell_count} shells (min ${b.min_shells}) ✓`
-      : `Fired ${evalData.shell_count}, needed ${b.min_shells}` },
-    { label: 'Required Finale', met: finaleMet, detail: finaleMet
-      ? `${b.finale_type} ✓`
-      : `Needed ${b.finale_type}, fired ${evalData.finale_type || 'nothing'}` },
+    { label: 'REQUIRED COLORS', met: colorsMet, detail: colorsMet
+      ? '(' + (b.required_colors||[]).join(', ') + ') OK'
+      : 'NEEDED: ' + (b.required_colors||[]).join(', ') + ' -- HAD: ' + (evalData.colors_used||[]).join(', ') },
+    { label: 'SHELL COUNT', met: countMet, detail: countMet
+      ? evalData.shell_count + ' SHELLS (MIN ' + b.min_shells + ') OK'
+      : 'FIRED ' + evalData.shell_count + ', NEEDED ' + b.min_shells },
+    { label: 'FINALE', met: finaleMet, detail: finaleMet
+      ? b.finale_type + ' OK'
+      : 'NEEDED ' + b.finale_type + ', FIRED ' + (evalData.finale_type || 'NOTHING') },
   ];
   checks.forEach(c => {
     const item = document.createElement('div');
     item.className = 'criteria-item ' + (c.met ? 'pass' : 'fail');
-    item.innerHTML = `<span class="check-mark">${c.met ? '✓' : '✗'}</span>
-      <strong>${c.label}:</strong> <span style="opacity:0.8;">${c.detail}</span>`;
+    const mark = document.createElement('span');
+    mark.className = 'check-mark' + (c.met ? '' : ' fail-mark');
+    mark.textContent = c.met ? '[OK]' : '[--]';
+    const labelEl = document.createElement('span');
+    labelEl.style.color = 'var(--amber)';
+    labelEl.textContent = c.label + ': ';
+    const detailEl = document.createElement('span');
+    detailEl.style.opacity = '0.8';
+    detailEl.textContent = c.detail;
+    item.appendChild(mark);
+    item.appendChild(document.createTextNode(' '));
+    item.appendChild(labelEl);
+    item.appendChild(detailEl);
     criteria.appendChild(item);
   });
 
@@ -1596,6 +1655,7 @@ function playAgain() {
   state.activeSelection = null;
   state.evaluationText = '';
   state.particles = [];
+  state.playerX = 0;
   if (state.animFrame) { cancelAnimationFrame(state.animFrame); state.animFrame = null; }
   loadBrief();
 }
