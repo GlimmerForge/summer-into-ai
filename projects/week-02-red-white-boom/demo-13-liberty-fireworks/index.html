@@ -454,6 +454,9 @@
         Click a <strong>DYE</strong> to activate it, then click a loaded mortar to recolor.<br>
         Click a <strong>FUSE</strong>, then click a mortar to set timing.
       </div>
+      <div style="text-align:center;margin-bottom:8px;">
+        <span id="loaded-count" style="font-family:'Press Start 2P',monospace;font-size:8px;color:var(--amber-bright);"></span>
+      </div>
       <div class="mortar-row" id="mortar-row"></div>
       <div class="launch-actions">
         <button class="ot-btn" onclick="returnToTown()" style="padding:10px 20px;">&#8592; BACK TO TOWN</button>
@@ -1539,6 +1542,9 @@ function renderMortarRow() {
   };
   const row = document.getElementById('mortar-row');
   row.innerHTML = '';
+  const loadedCount = state.mortars.filter(m => m.shell).length;
+  const countEl = document.getElementById('loaded-count');
+  if (countEl) countEl.textContent = loadedCount + ' SHELL' + (loadedCount !== 1 ? 'S' : '') + ' WILL FIRE';
   state.mortars.forEach((m, idx) => {
     const wrap = document.createElement('div');
     wrap.className = 'mortar-wrap';
@@ -1601,7 +1607,11 @@ function renderMortarRow() {
 
 function updateLaunchButton() {
   const loaded = state.mortars.filter(m => m.shell).length;
-  document.getElementById('launch-btn').disabled = loaded === 0;
+  const btn = document.getElementById('launch-btn');
+  btn.disabled = loaded === 0;
+  btn.innerHTML = loaded > 0
+    ? '&#9889; FIRE ' + loaded + ' SHELL' + (loaded !== 1 ? 'S' : '')
+    : '&#9889; LIGHT THE FUSE';
 }
 
 // ============================================================
