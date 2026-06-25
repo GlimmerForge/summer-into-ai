@@ -1,0 +1,7 @@
+{
+  "outputDirectory": ".",
+  "ignoreCommand": "exit 0",
+  "functions": {
+    "api/*.js": { "maxDuration": 30 }
+  }
+}
