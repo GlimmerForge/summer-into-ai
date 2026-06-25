@@ -192,12 +192,59 @@ Each demo is its own Vercel project importing the same GitHub repo.
 
 ## Publishing workflow (after building a demo)
 
-When the user says "create the Substack draft", "get images", "push", or similar:
+When the user says "create the Substack draft", "get images", "push", or similar, do ALL of this — do not ask the user to do any step manually:
 
 1. **Create `README.md`** in the demo folder if it doesn't exist — see `SUBSTACK_TEMPLATE.md` for the README template. It must include local dev instructions, env vars table, and Vercel deploy steps.
-2. **Take screenshots** manually (Win+Shift+S or browser screenshot) and save to `demo-folder/public/assets/hero.png` + `gameplay-1.png`. After Vercel deploy, they're at `https://[slug].vercel.app/assets/[image].png`.
-3. **Git commit and push** — include the demo folder, README, vercel.json, and assets.
-4. **Create Substack draft** via the MCP tool `mcp__substack-api__create_draft_post` with HTML body (the curl session token expires; MCP tool has fresh auth). The "Code & README" link in the post should point to the README.md file directly, not the repo root.
-5. **Tell the user the Vercel env vars** needed for their project settings.
 
-Full details and post structure in `SUBSTACK_TEMPLATE.md`.
+2. **Take screenshots** using `tools/substack/screenshot.mjs` (automated Playwright, no manual steps):
+   ```bash
+   # Start vercel dev first
+   cd projects/[week]/[demo] && npx vercel dev --yes --listen 3001 &
+   sleep 7
+   # Take screenshots (pass a relevant Met Museum URL for the hero)
+   node tools/substack/screenshot.mjs \
+     --port 3001 \
+     --out projects/[week]/[demo]/public/assets \
+     --hero-image "https://images.metmuseum.org/CRDImages/ad/original/DP215410.jpg"
+   ```
+   Known-good Met Museum URLs are listed in `SUBSTACK_WORKFLOW.md`.
+
+3. **Upload screenshots** to Substack CDN using `tools/substack/upload-images.mjs`:
+   ```bash
+   node tools/substack/upload-images.mjs \
+     --dir projects/[week]/[demo]/public/assets \
+     --out /tmp/image_urls.json
+   ```
+
+4. **Write `substack_body.json`** in the demo folder — Tiptap JSON (no image nodes, those are inserted automatically). Include a tagging paragraph as the **first node** in the doc:
+   ```json
+   {"type":"paragraph","attrs":{"textAlign":null},"content":[
+     {"type":"text","text":"Week N of "},
+     {"type":"text","marks":[{"type":"link","attrs":{"href":"https://advisoryhour.substack.com","target":"_blank","rel":"noopener noreferrer nofollow","class":null}}],"text":"Summer into AI 2026"},
+     {"type":"text","text":" hosted by "},
+     {"type":"text","marks":[{"type":"link","attrs":{"href":"https://advisoryhour.substack.com","target":"_blank","rel":"noopener noreferrer nofollow","class":null}}],"text":"@advisoryhour"},
+     {"type":"text","text":" — theme: [Theme Name]."}
+   ]}
+   ```
+   Then the rest of the content (intro paragraph, How the AI works, How to play, Where to play, footer). See `SUBSTACK_WORKFLOW.md` for the full Tiptap format spec.
+
+5. **Create the draft** using `tools/substack/create-draft.mjs`:
+   ```bash
+   node tools/substack/create-draft.mjs \
+     --body projects/[week]/[demo]/substack_body.json \
+     --images /tmp/image_urls.json \
+     --title "Summer into AI 2026: Demo Name" \
+     --subtitle "One sentence hook."
+   ```
+   The script inserts the three images in the correct positions and handles all encoding correctly. It prints the draft URL when done.
+
+6. **Git commit and push** — include the demo folder, README, assets, substack_body.json.
+
+7. **Tell the user the Vercel env vars** needed for their project settings and the draft URL to review.
+
+**Full details, Tiptap format reference, credential locations, and troubleshooting:** `SUBSTACK_WORKFLOW.md`  
+**Post structure and format:** `SUBSTACK_TEMPLATE.md`
+
+**NEVER use the MCP `create_draft_post` tool** — it renders HTML as raw text in the editor.  
+**NEVER use PowerShell Invoke-RestMethod** for image uploads — drops connection on large bodies.  
+**NEVER do `BODY=$(cat file)`** — corrupts em dashes and other non-ASCII in shell variables.
