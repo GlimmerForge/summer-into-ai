@@ -63,8 +63,8 @@
     {"type":"text","marks":[{"type":"link","attrs":{"href":"https://demo-08-the-convention.vercel.app","target":"_blank","rel":"noopener noreferrer nofollow","class":null}}],"text":"demo-08-the-convention.vercel.app"}
   ]},
   {"type":"paragraph","attrs":{"textAlign":null},"content":[
-    {"type":"text","marks":[{"type":"strong"}],"text":"Code: "},
-    {"type":"text","marks":[{"type":"link","attrs":{"href":"https://github.com/JStrait515/summer-into-ai/tree/master/projects/week-02-red-white-boom/demo-08-the-convention","target":"_blank","rel":"noopener noreferrer nofollow","class":null}}],"text":"github.com/JStrait515/summer-into-ai"}
+    {"type":"text","marks":[{"type":"strong"}],"text":"README: "},
+    {"type":"text","marks":[{"type":"link","attrs":{"href":"https://github.com/GlimmerForge/summer-into-ai/blob/master/projects/week-02-red-white-boom/demo-08-the-convention/README.md","target":"_blank","rel":"noopener noreferrer nofollow","class":null}}],"text":"github.com/GlimmerForge/summer-into-ai"}
   ]},
   {"type":"horizontal_rule"},
   {"type":"paragraph","attrs":{"textAlign":null},"content":[
