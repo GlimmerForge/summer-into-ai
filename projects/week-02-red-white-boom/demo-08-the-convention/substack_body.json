@@ -1,0 +1,73 @@
+{"type":"doc","content":[
+  {"type":"paragraph","attrs":{"textAlign":null},"content":[
+    {"type":"text","text":"Week 2 of "},
+    {"type":"text","marks":[{"type":"link","attrs":{"href":"https://advisoryhour.substack.com","target":"_blank","rel":"noopener noreferrer nofollow","class":null}}],"text":"Summer into AI 2026"},
+    {"type":"text","text":" hosted by "},
+    {"type":"text","marks":[{"type":"link","attrs":{"href":"https://advisoryhour.substack.com","target":"_blank","rel":"noopener noreferrer nofollow","class":null}}],"text":"@advisoryhour"},
+    {"type":"text","text":" — theme: Red, White & Boom."}
+  ]},
+  {"type":"paragraph","attrs":{"textAlign":null},"content":[
+    {"type":"text","marks":[{"type":"strong"}],"text":"The Convention"},
+    {"type":"text","text":" runs five founding fathers as five independent Claude instances. Pick a question — slavery, standing armies, federal power, the Bill of Rights — and all five agents stream their opening statements simultaneously. Then the debate runs itself: every agent votes on whether to respond and to whom, the highest-urgency unheard voice gets the floor, and you hear it in their ElevenLabs voice. Up to 24 separate API calls per debate, all tracked live in the header."}
+  ]},
+  {"type":"heading","attrs":{"textAlign":null,"level":2},"content":[
+    {"type":"text","text":"How the AI works"}
+  ]},
+  {"type":"bullet_list","content":[
+    {"type":"list_item","content":[{"type":"paragraph","attrs":{"textAlign":null},"content":[
+      {"type":"text","marks":[{"type":"strong"}],"text":"5 parallel opening streams"},
+      {"type":"text","text":" — all five founders hit "},
+      {"type":"text","marks":[{"type":"code"}],"text":"/api/speak"},
+      {"type":"text","text":" simultaneously. Five independent SSE streams, each with a historically-grounded system prompt. You watch all five stream in real time."}
+    ]}]},
+    {"type":"list_item","content":[{"type":"paragraph","attrs":{"textAlign":null},"content":[
+      {"type":"text","marks":[{"type":"strong"}],"text":"5 parallel reaction calls per exchange"},
+      {"type":"text","text":" — after each statement, every agent hits "},
+      {"type":"text","marks":[{"type":"code"}],"text":"/api/react"},
+      {"type":"text","text":" simultaneously. Each returns structured tool-use output: "},
+      {"type":"text","marks":[{"type":"code"}],"text":"{ wantsToRespond, targetFounder, targetArgument, urgency }"},
+      {"type":"text","text":". The highest-urgency agent who hasn’t spoken yet gets the floor."}
+    ]}]},
+    {"type":"list_item","content":[{"type":"paragraph","attrs":{"textAlign":null},"content":[
+      {"type":"text","marks":[{"type":"strong"}],"text":"Structured synthesis"},
+      {"type":"text","text":" — a final Claude tool-use call extracts points of agreement, fault lines (with which founders are on which side), the sharpest exchange, and a convention verdict."}
+    ]}]},
+    {"type":"list_item","content":[{"type":"paragraph","attrs":{"textAlign":null},"content":[
+      {"type":"text","marks":[{"type":"strong"}],"text":"ElevenLabs voices"},
+      {"type":"text","text":" — each founder has a distinct voice chosen for character fit. Hamilton gets the dominant firm voice. Franklin gets the only “old”-age voice in the library."}
+    ]}]}
+  ]},
+  {"type":"heading","attrs":{"textAlign":null,"level":2},"content":[
+    {"type":"text","text":"How to play"}
+  ]},
+  {"type":"bullet_list","content":[
+    {"type":"list_item","content":[{"type":"paragraph","attrs":{"textAlign":null},"content":[
+      {"type":"text","text":"Pick one of the six question chips or type your own, then hit "},
+      {"type":"text","marks":[{"type":"strong"}],"text":"Convene"}
+    ]}]},
+    {"type":"list_item","content":[{"type":"paragraph","attrs":{"textAlign":null},"content":[
+      {"type":"text","text":"Watch all five founders stream in parallel, then hear each one read aloud"}
+    ]}]},
+    {"type":"list_item","content":[{"type":"paragraph","attrs":{"textAlign":null},"content":[
+      {"type":"text","text":"Three exchange rounds follow — agents vote simultaneously on who should respond. Watch the founder cards pulse while they deliberate, then the winner lights up and speaks"}
+    ]}]},
+    {"type":"list_item","content":[{"type":"paragraph","attrs":{"textAlign":null},"content":[
+      {"type":"text","text":"Read the structured analysis at the end: who agreed, who clashed sharpest, what the Convention decided"}
+    ]}]}
+  ]},
+  {"type":"heading","attrs":{"textAlign":null,"level":2},"content":[
+    {"type":"text","text":"Where to play"}
+  ]},
+  {"type":"paragraph","attrs":{"textAlign":null},"content":[
+    {"type":"text","marks":[{"type":"strong"}],"text":"Demo: "},
+    {"type":"text","marks":[{"type":"link","attrs":{"href":"https://demo-08-the-convention.vercel.app","target":"_blank","rel":"noopener noreferrer nofollow","class":null}}],"text":"demo-08-the-convention.vercel.app"}
+  ]},
+  {"type":"paragraph","attrs":{"textAlign":null},"content":[
+    {"type":"text","marks":[{"type":"strong"}],"text":"Code: "},
+    {"type":"text","marks":[{"type":"link","attrs":{"href":"https://github.com/JStrait515/summer-into-ai/tree/master/projects/week-02-red-white-boom/demo-08-the-convention","target":"_blank","rel":"noopener noreferrer nofollow","class":null}}],"text":"github.com/JStrait515/summer-into-ai"}
+  ]},
+  {"type":"horizontal_rule"},
+  {"type":"paragraph","attrs":{"textAlign":null},"content":[
+    {"type":"text","marks":[{"type":"em"}],"text":"Summer into AI 2026 · Week 2: Red, White & Boom"}
+  ]}
+]}

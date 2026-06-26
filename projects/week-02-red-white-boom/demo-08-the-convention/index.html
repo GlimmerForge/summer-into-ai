@@ -1,0 +1,1381 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Convention — Multi-Agent Founding Debate</title>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg: #0c0e12;
+  --surface: #13161d;
+  --border: #242834;
+  --text: #ddd8cc;
+  --muted: #6b7280;
+  --gold: #c8a45e;
+  --jefferson: #5a9e7a;
+  --hamilton: #5a82b8;
+  --madison: #b89a5a;
+  --mason: #b85a5a;
+  --franklin: #8a7e6e;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Georgia', serif;
+  min-height: 100vh;
+  line-height: 1.65;
+}
+
+/* ── HEADER ── */
+header {
+  border-bottom: 1px solid var(--border);
+  padding: 28px 32px 24px;
+  display: flex;
+  align-items: baseline;
+  gap: 24px;
+  flex-wrap: wrap;
+}
+
+header h1 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  color: var(--gold);
+  font-family: 'Georgia', serif;
+}
+
+header p {
+  font-size: 0.85rem;
+  color: var(--muted);
+  font-family: monospace;
+  flex: 1;
+}
+
+.tech-badge {
+  font-family: monospace;
+  font-size: 0.72rem;
+  color: var(--muted);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 3px 8px;
+  white-space: nowrap;
+}
+
+/* ── MAIN LAYOUT ── */
+.container {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 0 24px 80px;
+}
+
+/* ── FOUNDERS ROW ── */
+#founders-row {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 10px;
+  padding: 32px 0 0;
+}
+
+.founder-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 14px 10px;
+  text-align: center;
+  cursor: pointer;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  position: relative;
+}
+
+.founder-card:hover {
+  border-color: var(--muted);
+}
+
+.founder-card.active {
+  border-color: var(--founder-color, var(--gold));
+  box-shadow: 0 0 16px -4px var(--founder-color, var(--gold));
+}
+
+.founder-card.spoke {
+  opacity: 0.45;
+}
+
+/* deliberating: all pulsing while parallel react calls run */
+.founder-card.active:not(.spoke) {
+  animation: deliberate 1.4s ease-in-out infinite;
+}
+
+@keyframes deliberate {
+  0%, 100% { box-shadow: 0 0 6px -4px var(--founder-color, var(--gold)); }
+  50% { box-shadow: 0 0 18px -2px var(--founder-color, var(--gold)); }
+}
+
+.founder-card.active.spoke {
+  opacity: 1;
+}
+
+.founder-initial {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--founder-color, var(--gold));
+  color: var(--bg);
+  font-size: 0.85rem;
+  font-weight: 700;
+  font-family: monospace;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 10px;
+}
+
+.founder-name {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  margin-bottom: 3px;
+  color: var(--text);
+}
+
+.founder-tagline {
+  font-size: 0.64rem;
+  color: var(--muted);
+  font-family: monospace;
+  line-height: 1.3;
+}
+
+.prompt-toggle {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  background: none;
+  border: none;
+  color: var(--muted);
+  font-size: 0.6rem;
+  font-family: monospace;
+  cursor: pointer;
+  padding: 2px 4px;
+  border-radius: 3px;
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+
+.founder-card:hover .prompt-toggle {
+  opacity: 1;
+}
+
+.prompt-toggle:hover {
+  color: var(--text);
+  background: var(--border);
+}
+
+/* ── QUESTION SECTION ── */
+#question-section {
+  padding: 36px 0 0;
+}
+
+#question-section h2 {
+  font-size: 0.78rem;
+  font-family: monospace;
+  color: var(--muted);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  margin-bottom: 14px;
+}
+
+.question-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.chip {
+  font-family: monospace;
+  font-size: 0.72rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 100px;
+  padding: 5px 12px;
+  color: var(--muted);
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s;
+}
+
+.chip:hover {
+  border-color: var(--gold);
+  color: var(--gold);
+}
+
+.input-row {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+}
+
+#question-input {
+  flex: 1;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text);
+  font-family: 'Georgia', serif;
+  font-size: 0.95rem;
+  padding: 12px 14px;
+  resize: vertical;
+  min-height: 60px;
+  line-height: 1.5;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+#question-input:focus {
+  border-color: var(--gold);
+}
+
+#question-input::placeholder {
+  color: var(--muted);
+  font-style: italic;
+}
+
+#convene-btn {
+  background: var(--gold);
+  color: var(--bg);
+  border: none;
+  border-radius: 6px;
+  padding: 12px 22px;
+  font-family: 'Georgia', serif;
+  font-size: 0.9rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: opacity 0.2s;
+}
+
+#convene-btn:hover:not(:disabled) {
+  opacity: 0.85;
+}
+
+#convene-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* ── STATUS BAR ── */
+#status-bar {
+  margin-top: 28px;
+  font-family: monospace;
+  font-size: 0.78rem;
+  color: var(--muted);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 20px;
+}
+
+.status-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--gold);
+  animation: pulse 1.4s ease-in-out infinite;
+  display: none;
+}
+
+.status-dot.active {
+  display: block;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.2; }
+}
+
+/* ── PARALLEL GRID (Round 1) ── */
+#parallel-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 10px;
+  margin-top: 28px;
+}
+
+.parallel-panel {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 14px 12px;
+  transition: border-color 0.3s, box-shadow 0.3s;
+  min-height: 120px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.parallel-panel.streaming {
+  border-color: var(--panel-color, var(--gold));
+  box-shadow: 0 0 12px -4px var(--panel-color, var(--gold));
+}
+
+.parallel-panel.done {
+  opacity: 0.75;
+}
+
+.parallel-panel-header {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.parallel-panel-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.parallel-panel-name {
+  font-family: monospace;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+}
+
+.parallel-panel-text {
+  font-size: 0.75rem;
+  line-height: 1.5;
+  color: var(--text);
+  flex: 1;
+}
+
+/* ── ORCHESTRATOR ── */
+#orchestrator-panel {
+  margin-top: 16px;
+  background: var(--surface);
+  border: 1px solid var(--gold);
+  border-radius: 8px;
+  padding: 16px 20px;
+}
+
+#orchestrator-panel h3 {
+  font-family: monospace;
+  font-size: 0.68rem;
+  color: var(--gold);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  margin-bottom: 10px;
+}
+
+#orchestrator-note {
+  font-family: monospace;
+  font-size: 0.75rem;
+  color: var(--muted);
+  font-style: italic;
+  margin-bottom: 12px;
+}
+
+#orchestrator-order {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.order-chip {
+  font-family: monospace;
+  font-size: 0.68rem;
+  padding: 3px 10px;
+  border-radius: 100px;
+  color: var(--bg);
+  font-weight: 700;
+}
+
+/* ── STAGE ── */
+#stage {
+  margin-top: 32px;
+  min-height: 180px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 28px 32px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  transition: border-color 0.3s;
+}
+
+#stage.speaking {
+  border-color: var(--stage-color, var(--gold));
+}
+
+#stage-speaker {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+#stage-initial {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  font-family: monospace;
+  font-size: 0.65rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--bg);
+  flex-shrink: 0;
+}
+
+#stage-name {
+  font-family: monospace;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+#stage-role {
+  font-family: monospace;
+  font-size: 0.62rem;
+  color: var(--muted);
+}
+
+#stage-round {
+  font-family: monospace;
+  font-size: 0.62rem;
+  color: var(--muted);
+  margin-left: auto;
+}
+
+#stage-text {
+  font-size: 1.05rem;
+  line-height: 1.75;
+  color: var(--text);
+  min-height: 80px;
+  opacity: 1;
+  transition: opacity 0.25s;
+}
+
+#stage-text.fading {
+  opacity: 0;
+}
+
+.cursor {
+  display: inline-block;
+  width: 2px;
+  height: 1em;
+  background: var(--gold);
+  vertical-align: middle;
+  margin-left: 2px;
+  animation: blink 0.8s step-end infinite;
+}
+
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+/* ── SPEAKING BARS ── */
+#stage-bars {
+  display: flex;
+  align-items: flex-end;
+  gap: 4px;
+  height: 32px;
+  margin-top: 16px;
+}
+
+.bar {
+  width: 4px;
+  border-radius: 2px;
+  background: var(--stage-color, var(--gold));
+  animation: bar-bounce 0.9s ease-in-out infinite;
+  min-height: 4px;
+}
+
+.bar:nth-child(1) { animation-delay: 0s; }
+.bar:nth-child(2) { animation-delay: 0.12s; }
+.bar:nth-child(3) { animation-delay: 0.24s; }
+.bar:nth-child(4) { animation-delay: 0.36s; }
+.bar:nth-child(5) { animation-delay: 0.48s; }
+.bar:nth-child(6) { animation-delay: 0.36s; }
+.bar:nth-child(7) { animation-delay: 0.24s; }
+
+@keyframes bar-bounce {
+  0%, 100% { height: 4px; }
+  50% { height: 28px; }
+}
+
+#stage-bars.idle .bar {
+  animation: none;
+  height: 4px;
+}
+
+/* ── CALL COUNTER ── */
+#call-counter {
+  font-family: monospace;
+  font-size: 0.72rem;
+  color: var(--muted);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 3px 8px;
+  white-space: nowrap;
+  transition: color 0.3s;
+}
+
+#call-counter.active {
+  color: var(--gold);
+  border-color: var(--gold);
+}
+
+/* ── SYNTHESIS ── */
+#synthesis {
+  margin-top: 48px;
+  border-top: 1px solid var(--border);
+  padding-top: 36px;
+}
+
+#synthesis h2 {
+  font-size: 0.78rem;
+  font-family: monospace;
+  color: var(--muted);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  margin-bottom: 24px;
+}
+
+.synthesis-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.synthesis-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 18px;
+}
+
+.synthesis-card.full {
+  grid-column: 1 / -1;
+}
+
+.synthesis-card h3 {
+  font-family: monospace;
+  font-size: 0.68rem;
+  color: var(--muted);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  margin-bottom: 12px;
+}
+
+.synthesis-card ul {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.synthesis-card ul li {
+  font-size: 0.85rem;
+  color: var(--text);
+  padding-left: 14px;
+  position: relative;
+  line-height: 1.5;
+}
+
+.synthesis-card ul li::before {
+  content: '—';
+  position: absolute;
+  left: 0;
+  color: var(--gold);
+}
+
+.fault-line {
+  margin-bottom: 16px;
+}
+
+.fault-line:last-child {
+  margin-bottom: 0;
+}
+
+.fault-issue {
+  font-family: monospace;
+  font-size: 0.78rem;
+  color: var(--gold);
+  margin-bottom: 8px;
+}
+
+.fault-sides {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.fault-side {
+  font-size: 0.8rem;
+  line-height: 1.5;
+}
+
+.fault-side-names {
+  font-family: monospace;
+  font-size: 0.68rem;
+  color: var(--muted);
+  margin-bottom: 4px;
+}
+
+.exchange-names {
+  font-family: monospace;
+  font-size: 0.8rem;
+  color: var(--gold);
+  margin-bottom: 6px;
+}
+
+.prescient-delegate {
+  font-family: monospace;
+  font-size: 0.8rem;
+  color: var(--gold);
+  margin-bottom: 6px;
+}
+
+.prescient-body {
+  font-size: 0.85rem;
+  line-height: 1.5;
+  margin-bottom: 6px;
+}
+
+.prescient-why {
+  font-size: 0.78rem;
+  color: var(--muted);
+  font-style: italic;
+}
+
+.verdict-text {
+  font-size: 0.93rem;
+  line-height: 1.7;
+  color: var(--text);
+}
+
+/* ── PROMPT MODAL ── */
+#prompt-modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.75);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  padding: 24px;
+}
+
+#prompt-modal[hidden] { display: none; }
+
+.modal-box {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  max-width: 640px;
+  width: 100%;
+  max-height: 80vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border);
+}
+
+.modal-header h3 {
+  font-family: monospace;
+  font-size: 0.8rem;
+  color: var(--muted);
+  letter-spacing: 0.08em;
+}
+
+.modal-close {
+  background: none;
+  border: none;
+  color: var(--muted);
+  font-size: 1.1rem;
+  cursor: pointer;
+  padding: 2px 6px;
+  border-radius: 4px;
+  line-height: 1;
+}
+
+.modal-close:hover { color: var(--text); background: var(--border); }
+
+.modal-body {
+  overflow-y: auto;
+  padding: 20px;
+}
+
+.modal-body pre {
+  font-family: monospace;
+  font-size: 0.75rem;
+  color: var(--text);
+  white-space: pre-wrap;
+  line-height: 1.6;
+}
+
+/* ── RESPONSIVE ── */
+@media (max-width: 640px) {
+  #founders-row { grid-template-columns: repeat(3, 1fr); }
+  .statement { grid-template-columns: 1fr; }
+  .statement-meta { text-align: left; }
+  .synthesis-grid { grid-template-columns: 1fr; }
+  .fault-sides { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>THE CONVENTION</h1>
+  <p>Philadelphia · July 4th, 1776 · The Declaration is signed. Now build the republic.</p>
+  <div class="tech-badge">claude-sonnet-4-6 · 5 agents · 2 rounds · SSE streaming</div>
+  <div id="call-counter">0 API calls</div>
+</header>
+
+<div class="container">
+
+  <!-- FOUNDERS ROW -->
+  <div id="founders-row">
+    <div class="founder-card" id="card-jefferson" style="--founder-color: var(--jefferson)" data-key="jefferson">
+      <button class="prompt-toggle" data-key="jefferson" title="View system prompt">sys</button>
+      <div class="founder-initial" style="background: var(--jefferson)">TJ</div>
+      <div class="founder-name">Jefferson</div>
+      <div class="founder-tagline">Liberty · States · Agrarian order</div>
+    </div>
+    <div class="founder-card" id="card-hamilton" style="--founder-color: var(--hamilton)" data-key="hamilton">
+      <button class="prompt-toggle" data-key="hamilton" title="View system prompt">sys</button>
+      <div class="founder-initial" style="background: var(--hamilton)">AH</div>
+      <div class="founder-name">Hamilton</div>
+      <div class="founder-tagline">Federal power · Commerce · Executive energy</div>
+    </div>
+    <div class="founder-card" id="card-madison" style="--founder-color: var(--madison)" data-key="madison">
+      <button class="prompt-toggle" data-key="madison" title="View system prompt">sys</button>
+      <div class="founder-initial" style="background: var(--madison)">JM</div>
+      <div class="founder-name">Madison</div>
+      <div class="founder-tagline">Checks · Factions · Constitutional design</div>
+    </div>
+    <div class="founder-card" id="card-mason" style="--founder-color: var(--mason)" data-key="mason">
+      <button class="prompt-toggle" data-key="mason" title="View system prompt">sys</button>
+      <div class="founder-initial" style="background: var(--mason)">GM</div>
+      <div class="founder-name">Mason</div>
+      <div class="founder-tagline">Bill of Rights · Anti-tyranny · Dissent</div>
+    </div>
+    <div class="founder-card" id="card-franklin" style="--founder-color: var(--franklin)" data-key="franklin">
+      <button class="prompt-toggle" data-key="franklin" title="View system prompt">sys</button>
+      <div class="founder-initial" style="background: var(--franklin)">BF</div>
+      <div class="founder-name">Franklin</div>
+      <div class="founder-tagline">Pragmatism · Compromise · Long view</div>
+    </div>
+  </div>
+
+  <!-- QUESTION SECTION -->
+  <div id="question-section">
+    <h2>Put a question before the founders</h2>
+    <div class="question-chips">
+      <button class="chip" data-q="Should slavery be abolished in the new republic, or does union require we leave it to the states?">Slavery & union</button>
+      <button class="chip" data-q="Should the new nation maintain a standing professional army, or rely on state militias alone?">Standing army</button>
+      <button class="chip" data-q="How much power should the central government hold over the individual states?">Federal vs. states</button>
+      <button class="chip" data-q="Should there be a Bill of Rights explicitly protecting individual liberties against the federal government?">Bill of Rights</button>
+      <button class="chip" data-q="Should the President be elected by the people, chosen by Congress, or serve for life?">The executive</button>
+      <button class="chip" data-q="Should the new nation take on the war debts of the states, or let each state settle its own accounts?">War debts</button>
+    </div>
+    <div class="input-row">
+      <textarea id="question-input" placeholder="Or put your own question before the founders…" rows="2"></textarea>
+      <button id="convene-btn">Convene</button>
+    </div>
+  </div>
+
+  <!-- STATUS -->
+  <div id="status-bar">
+    <div class="status-dot" id="status-dot"></div>
+    <span id="status-text"></span>
+  </div>
+
+  <!-- ROUND 1: parallel grid -->
+  <div id="parallel-grid" hidden></div>
+
+  <!-- ORCHESTRATOR -->
+  <div id="orchestrator-panel" hidden>
+    <h3>Moderator — Round II Order</h3>
+    <div id="orchestrator-note"></div>
+    <div id="orchestrator-order"></div>
+  </div>
+
+  <!-- STAGE: single-speaker view -->
+  <div id="stage" hidden>
+    <div id="stage-speaker">
+      <div id="stage-initial"></div>
+      <div>
+        <div id="stage-name"></div>
+        <div id="stage-role"></div>
+      </div>
+      <div id="stage-round"></div>
+    </div>
+    <div id="stage-text"></div>
+    <div id="stage-bars" hidden>
+      <div class="bar"></div><div class="bar"></div><div class="bar"></div>
+      <div class="bar"></div><div class="bar"></div><div class="bar"></div>
+      <div class="bar"></div>
+    </div>
+    <div style="font-family:monospace;font-size:0.62rem;color:var(--muted);margin-top:12px">Philadelphia · July 4th, 1776</div>
+  </div>
+
+  <!-- SYNTHESIS -->
+  <div id="synthesis" hidden></div>
+
+</div>
+
+<!-- PROMPT MODAL -->
+<div id="prompt-modal" hidden>
+  <div class="modal-box">
+    <div class="modal-header">
+      <h3 id="modal-title">SYSTEM PROMPT</h3>
+      <button class="modal-close" id="modal-close">✕</button>
+    </div>
+    <div class="modal-body">
+      <pre id="modal-content"></pre>
+    </div>
+  </div>
+</div>
+
+<script>
+const FOUNDERS = [
+  { key: 'jefferson', name: 'Thomas Jefferson', role: 'Author, Declaration of Independence', color: 'var(--jefferson)',
+    system: `You are Thomas Jefferson (1743–1826), speaking as documented in the Declaration of Independence, Notes on the State of Virginia, your Presidential Inaugural Addresses, and your correspondence with Madison, Adams, and others.
+
+Your documented positions:
+- Government power must be strictly limited; "that government is best which governs least"
+- States are the primary laboratories of self-governance; federal authority must be explicitly enumerated and narrow
+- An agrarian republic of independent farmers is the foundation of civic virtue and liberty; cities and banks breed corruption
+- Individual conscience is sacred and beyond government reach in all matters
+- The Constitution should be revisited every 19 years — "the earth belongs to the living"
+- Standing armies and concentrated wealth are existential threats to republican government
+- You proclaimed universal liberty while enslaving hundreds — a contradiction you never fully resolved
+
+Speak in first person with eloquence and philosophical sweep. Reference specific historical precedents, your own writings, or classical sources when relevant. Never speak abstractly about "founding principles" — argue from your specific documented views. Do not begin your response with your own name. 3–5 sentences per statement.` },
+
+  { key: 'hamilton', name: 'Alexander Hamilton', role: 'First Secretary of the Treasury', color: 'var(--hamilton)',
+    system: `You are Alexander Hamilton (1755–1804), speaking as documented in The Federalist Papers, your Treasury Reports to Congress, your Constitutional Convention speeches, and your correspondence.
+
+Your documented positions:
+- A strong national government is the sine qua non of national survival; the Articles of Confederation proved confederation fails
+- Commerce, manufacturing, and financial instruments — not agrarianism — are the engine of national power and independence
+- A national bank, permanent public credit, and a standing army are necessary instruments of any modern state
+- Pure democracy degenerates into mob rule; republican institutions must temper and channel popular passion
+- Federal law must be supreme; states are useful administrative units, not sovereign entities
+- The executive must be energetic, unitary, and relatively independent — weak executives produce chaos
+
+Speak with precision, urgency, and occasional sharpness. You believe every major constitutional question has stakes for national survival. Reference your experience as Washington's chief aide and as Treasury Secretary when relevant. Do not begin your response with your own name. 3–5 sentences per statement.` },
+
+  { key: 'madison', name: 'James Madison', role: 'Father of the Constitution', color: 'var(--madison)',
+    system: `You are James Madison (1751–1836), speaking as documented in The Federalist Papers (especially No. 10 and No. 51), your detailed notes from the Constitutional Convention, and your extensive correspondence.
+
+Your documented positions:
+- Factions are the inevitable consequence of liberty; the Constitution must pit ambition against ambition so no single faction can dominate
+- An extended republic with many competing interests is more stable than a small democracy where one faction captures everything (Federalist No. 10)
+- "If men were angels, no government would be necessary" — institutional design, not personal virtue, is the foundation of free government
+- Separation of powers and bicameralism matter more than which branch holds a specific power
+- The Constitution is a framework of careful compromises, not a fixed ideological document
+- You have evolved: initially a strong nationalist, you grew increasingly alarmed by concentrated federal power as you saw it used in practice
+
+Speak with careful, procedural precision. You are the constitutional architect — you think in mechanisms, not ideals. Reference specific constitutional provisions, your Federalist Papers, or Convention debates when relevant. Do not begin your response with your own name. 3–5 sentences per statement.` },
+
+  { key: 'mason', name: 'George Mason', role: 'Author, Virginia Declaration of Rights', color: 'var(--mason)',
+    system: `You are George Mason (1725–1792), speaking as documented in the Virginia Declaration of Rights, your Constitutional Convention speeches, your Anti-Federalist writings, and your refusal to sign the Constitution without a Bill of Rights.
+
+Your documented positions:
+- Individual rights must be explicitly enumerated in a Bill of Rights; a constitution without one is a blank check for federal tyranny
+- A standing army in peacetime is the single most dangerous instrument of despotism in all of history
+- The Senate is an unaccountable aristocratic body — too few men, serving too long, with too little connection to the people
+- The President as designed has dangerous monarchical tendencies; you predicted an elected king within fifty years
+- Commercial and financial interests will inevitably corrupt and capture the federal government
+- You argued against the slave trade clause at the Convention, calling it an "infernal traffic," despite being a slaveholder yourself
+
+Speak with moral urgency and historical weight, drawing on Magna Carta, English common law, and the natural rights tradition. You are the principled dissenter who was vindicated by the Bill of Rights. Do not begin your response with your own name. 3–5 sentences per statement.` },
+
+  { key: 'franklin', name: 'Benjamin Franklin', role: 'Elder Statesman, Diplomat, Scientist', color: 'var(--franklin)',
+    system: `You are Benjamin Franklin (1706–1790), the eldest statesman in any room, speaking as documented in your Autobiography, Poor Richard's Almanack, your Constitutional Convention speeches, and your correspondence.
+
+Your documented positions:
+- No single man's judgment is infallible, including your own — therefore no government should concentrate power in too few hands
+- The Constitution is imperfect, but it is the best that imperfect men could produce; you urge colleagues to doubt their own certainty
+- Commerce and industry are virtuous when pursued with frugality and public spirit; they become corrupting when pursued for their own sake
+- You became an ardent abolitionist in your final years and see slavery as the republic's original sin and eventual ruin
+- Practical experiment and empirical observation matter more than theoretical consistency
+- Compromise is not weakness — it is the only mechanism by which free people with different interests can govern themselves
+
+Speak with wit, genuine humility, and the authority of long experience. Use anecdote, historical parallel, or a well-placed aphorism. Acknowledge what you don't know. Do not begin your response with your own name. 3–5 sentences per statement.` }
+];
+
+const FOUNDER_MAP = Object.fromEntries(FOUNDERS.map(f => [f.key, f]));
+
+let debating = false;
+
+// ── CHIPS ──
+document.querySelectorAll('.chip').forEach(chip => {
+  chip.addEventListener('click', () => {
+    document.getElementById('question-input').value = chip.dataset.q;
+  });
+});
+
+// ── PROMPT MODAL ──
+document.querySelectorAll('.prompt-toggle').forEach(btn => {
+  btn.addEventListener('click', e => {
+    e.stopPropagation();
+    const f = FOUNDER_MAP[btn.dataset.key];
+    document.getElementById('modal-title').textContent = `SYSTEM PROMPT — ${f.name.toUpperCase()}`;
+    document.getElementById('modal-content').textContent = f.system;
+    document.getElementById('prompt-modal').hidden = false;
+  });
+});
+
+document.getElementById('modal-close').addEventListener('click', () => {
+  document.getElementById('prompt-modal').hidden = true;
+});
+
+document.getElementById('prompt-modal').addEventListener('click', e => {
+  if (e.target === document.getElementById('prompt-modal')) {
+    document.getElementById('prompt-modal').hidden = true;
+  }
+});
+
+// ── CONVENE ──
+document.getElementById('convene-btn').addEventListener('click', async () => {
+  const question = document.getElementById('question-input').value.trim();
+  if (!question || debating) return;
+  // unlock AudioContext on first user gesture
+  try { getAudioCtx().resume(); } catch {}
+  await runDebate(question);
+});
+
+document.getElementById('question-input').addEventListener('keydown', e => {
+  if (e.key === 'Enter' && !e.shiftKey) {
+    e.preventDefault();
+    document.getElementById('convene-btn').click();
+  }
+});
+
+// ── STREAMING ──
+async function streamSpeak({ founderKey, question, history, round, directive = null, onChunk }) {
+  const response = await fetch('/api/speak', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ founderKey, question, history, round, directive })
+  });
+  if (!response.ok) throw new Error(`API error ${response.status}`);
+
+  const reader = response.body.getReader();
+  const decoder = new TextDecoder();
+  let buffer = '';
+  let fullText = '';
+
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    buffer += decoder.decode(value, { stream: true });
+    const lines = buffer.split('\n');
+    buffer = lines.pop();
+    for (const line of lines) {
+      if (!line.startsWith('data: ')) continue;
+      const payload = line.slice(6).trim();
+      if (payload === '[DONE]') return fullText;
+      try {
+        const parsed = JSON.parse(payload);
+        if (parsed.text) {
+          fullText += parsed.text;
+          if (onChunk) onChunk(fullText);
+        }
+      } catch {}
+    }
+  }
+  return fullText;
+}
+
+// keep streamFounder._liveUpdate shim for any legacy references
+const streamFounder = { _liveUpdate: null };
+
+// ── CALL COUNTER ──
+let callCount = 0;
+
+function bumpCallCount(n = 1) {
+  callCount += n;
+  const el = document.getElementById('call-counter');
+  el.textContent = `${callCount} API calls`;
+  el.classList.add('active');
+  setTimeout(() => el.classList.remove('active'), 600);
+}
+
+// ── PARALLEL GRID ──
+function buildParallelGrid() {
+  const grid = document.getElementById('parallel-grid');
+  grid.innerHTML = '';
+  grid.hidden = false;
+  const panels = {};
+  for (const f of FOUNDERS) {
+    const panel = document.createElement('div');
+    panel.className = 'parallel-panel streaming';
+    panel.style.setProperty('--panel-color', f.color);
+    panel.innerHTML = `
+      <div class="parallel-panel-header">
+        <div class="parallel-panel-dot" style="background:${f.color}"></div>
+        <div class="parallel-panel-name" style="color:${f.color}">${f.name.split(' ').pop()}</div>
+      </div>
+      <div class="parallel-panel-text" id="pp-${f.key}"><span class="cursor"></span></div>`;
+    grid.appendChild(panel);
+    panels[f.key] = panel;
+  }
+  return panels;
+}
+
+// ── STAGE ──
+function setStage(founder, roundLabel, { voiceOnly = false, speaking = false } = {}) {
+  const stage = document.getElementById('stage');
+  stage.hidden = false;
+  stage.style.setProperty('--stage-color', founder.color);
+  stage.classList.toggle('speaking', speaking && !voiceOnly);
+
+  document.getElementById('stage-initial').textContent = founder.name.split(' ').map(w => w[0]).join('').slice(0, 2);
+  document.getElementById('stage-initial').style.background = founder.color;
+  document.getElementById('stage-name').style.color = founder.color;
+  document.getElementById('stage-name').textContent = founder.name;
+  document.getElementById('stage-role').textContent = founder.role;
+  document.getElementById('stage-round').textContent = roundLabel;
+
+  const textEl = document.getElementById('stage-text');
+  const barsEl = document.getElementById('stage-bars');
+  if (voiceOnly) {
+    textEl.hidden = true;
+    barsEl.hidden = false;
+    barsEl.classList.toggle('idle', !speaking);
+  } else {
+    textEl.hidden = false;
+    barsEl.hidden = true;
+  }
+}
+
+async function clearStage() {
+  document.getElementById('stage').classList.remove('speaking');
+  const stage = document.getElementById('stage');
+  stage.style.opacity = '0';
+  stage.style.transition = 'opacity 0.25s';
+  await new Promise(r => setTimeout(r, 260));
+  stage.hidden = true;
+  stage.style.opacity = '';
+  stage.style.transition = '';
+}
+
+// ── SPEAKER SELECTION ──
+// Prefer founders who haven't spoken in exchanges yet. Among eligible, weighted random by urgency.
+function selectNextSpeaker(reactions, lastSpeakerKey, heardSet) {
+  const score = { high: 3, medium: 2, low: 1 };
+  const active = reactions.filter(r => r.wantsToRespond && r.founderKey !== lastSpeakerKey);
+  if (!active.length) return null;
+
+  // Strongly prefer those who haven't had an exchange turn yet
+  const unheard = active.filter(r => !heardSet.has(r.founderKey));
+  const pool = unheard.length > 0 ? unheard : active;
+
+  // Weighted random so urgency matters but doesn't always win
+  const totalWeight = pool.reduce((sum, r) => sum + (score[r.urgency] || 1), 0);
+  let rand = Math.random() * totalWeight;
+  for (const r of pool) {
+    rand -= (score[r.urgency] || 1);
+    if (rand <= 0) return r;
+  }
+  return pool[pool.length - 1];
+}
+
+// ── DELIBERATION UI ──
+function setDeliberating(reactionMap) {
+  FOUNDERS.forEach(f => {
+    const card = document.getElementById('card-' + f.key);
+    if (!card) return;
+    card.classList.remove('active', 'spoke');
+    const reaction = reactionMap?.[f.key];
+    if (reaction) {
+      card.classList.toggle('active', reaction.wantsToRespond);
+      card.classList.toggle('spoke', !reaction.wantsToRespond);
+    } else {
+      card.classList.add('active'); // all pulsing while deliberating
+    }
+  });
+}
+
+// ── MAIN DEBATE ──
+async function runDebate(question) {
+  debating = true;
+  callCount = 0;
+  document.getElementById('call-counter').textContent = '0 API calls';
+  document.getElementById('convene-btn').disabled = true;
+  document.getElementById('question-section').style.opacity = '0.4';
+  document.getElementById('question-section').style.pointerEvents = 'none';
+  document.getElementById('synthesis').innerHTML = '';
+  document.getElementById('synthesis').hidden = true;
+  document.getElementById('orchestrator-panel').hidden = true;
+  document.getElementById('parallel-grid').hidden = true;
+  document.getElementById('stage').hidden = true;
+
+  const dot = document.getElementById('status-dot');
+  const statusText = document.getElementById('status-text');
+  dot.classList.add('active');
+
+  // ── OPENING: ALL 5 PARALLEL ──
+  statusText.textContent = 'Opening statements — five delegates speaking simultaneously…';
+  document.querySelectorAll('.founder-card').forEach(c => c.classList.add('active'));
+
+  const panels = buildParallelGrid();
+
+  const openingResults = await Promise.all(FOUNDERS.map(founder => {
+    bumpCallCount();
+    return streamSpeak({
+      founderKey: founder.key,
+      question,
+      history: [],
+      round: 1,
+      onChunk: (text) => {
+        const el = document.getElementById(`pp-${founder.key}`);
+        el.textContent = text;
+        const cur = document.createElement('span');
+        cur.className = 'cursor';
+        el.appendChild(cur);
+      }
+    }).then(text => {
+      panels[founder.key].classList.remove('streaming');
+      panels[founder.key].classList.add('done');
+      document.getElementById(`pp-${founder.key}`).textContent = text;
+      return { founderKey: founder.key, name: founder.name, text };
+    }).catch(() => ({ founderKey: founder.key, name: founder.name, text: '[No response]' }));
+  }));
+
+  document.querySelectorAll('.founder-card').forEach(c => c.classList.remove('active'));
+
+  const history = openingResults.map(r => ({ name: r.name, text: r.text, round: 0 }));
+
+  // ── VOICE: play each opening in order, highlight panel while speaking ──
+  statusText.textContent = 'The floor speaks…';
+  for (const r of openingResults) {
+    const panel = panels[r.founderKey];
+    panel.classList.add('streaming');
+    panel.classList.remove('done');
+    await playVoice(r.founderKey, r.text, statusText);
+    panel.classList.remove('streaming');
+    panel.classList.add('done');
+  }
+
+  document.getElementById('parallel-grid').hidden = true;
+  document.querySelectorAll('.founder-card').forEach(c => c.classList.remove('active', 'spoke'));
+
+  // ── EXCHANGE LOOP: agents react, highest urgency speaks ──
+  const MAX_EXCHANGES = 3;
+  let lastSpeaker = null;
+  const heardSet = new Set(); // founders who've had an exchange turn
+
+  for (let ex = 0; ex < MAX_EXCHANGES; ex++) {
+    // All 5 react simultaneously
+    statusText.textContent = `Five agents deliberating… (exchange ${ex + 1})`;
+    setDeliberating(null);
+
+    bumpCallCount(5);
+    const reactions = await Promise.all(FOUNDERS.map(f =>
+      fetch('/api/react', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ founderKey: f.key, question, history })
+      })
+        .then(r => r.json())
+        .catch(() => ({ founderKey: f.key, wantsToRespond: false }))
+    ));
+
+    // Show who wants to speak
+    const reactionMap = Object.fromEntries(reactions.map(r => [r.founderKey, r]));
+    setDeliberating(reactionMap);
+    await new Promise(r => setTimeout(r, 700));
+
+    // Select speaker — prefer unheard voices
+    const selected = selectNextSpeaker(reactions, lastSpeaker, heardSet);
+    if (!selected) {
+      statusText.textContent = 'The floor falls silent.';
+      break;
+    }
+
+    lastSpeaker = selected.founderKey;
+    heardSet.add(selected.founderKey);
+    const founder = FOUNDER_MAP[selected.founderKey];
+    const targetName = selected.targetFounder ? FOUNDER_MAP[selected.targetFounder]?.name?.split(' ').pop() : null;
+    const directive = selected.targetArgument
+      ? `Challenge ${targetName || 'the last speaker'}'s argument that ${selected.targetArgument}. Be direct and sharp.`
+      : 'Respond to the strongest argument made against your position. Be direct.';
+
+    // Flash selected card
+    document.querySelectorAll('.founder-card').forEach(c => c.classList.remove('active', 'spoke'));
+    document.getElementById('card-' + selected.founderKey)?.classList.add('active');
+    statusText.textContent = `${founder.name.split(' ').pop()} has the floor…`;
+    await new Promise(r => setTimeout(r, 300));
+
+    // Fetch response silently, show idle bars
+    setStage(founder, `Exchange ${ex + 1}`, { voiceOnly: true, speaking: false });
+    bumpCallCount();
+
+    let fullText = '';
+    try {
+      fullText = await streamSpeak({ founderKey: selected.founderKey, question, history, round: 2, directive });
+    } catch { fullText = '[No response]'; }
+
+    history.push({ name: founder.name, text: fullText, round: ex + 1 });
+
+    // Voice
+    setStage(founder, `Exchange ${ex + 1}`, { voiceOnly: true, speaking: true });
+    await playVoice(selected.founderKey, fullText, statusText);
+
+    document.getElementById('card-' + selected.founderKey)?.classList.add('spoke');
+    await clearStage();
+  }
+
+  // ── SYNTHESIS ──
+  document.querySelectorAll('.founder-card').forEach(c => c.classList.remove('active', 'spoke'));
+  document.getElementById('stage').hidden = true;
+  statusText.textContent = 'Analyzing the debate…';
+  bumpCallCount();
+
+  try {
+    const sres = await fetch('/api/synthesize', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ question, debate: history })
+    });
+    if (sres.ok) renderSynthesis(await sres.json());
+  } catch (err) { console.error('Synthesis error:', err); }
+
+  dot.classList.remove('active');
+  statusText.textContent = 'The Convention has concluded.';
+  document.getElementById('question-section').style.opacity = '';
+  document.getElementById('question-section').style.pointerEvents = '';
+  debating = false;
+  document.getElementById('convene-btn').disabled = false;
+  document.getElementById('convene-btn').textContent = 'Reconvene';
+}
+
+// ── VOICE ──
+let audioCtx = null;
+
+function getAudioCtx() {
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  return audioCtx;
+}
+
+async function playVoice(founderKey, text, statusEl) {
+  try {
+    const prevText = statusEl.textContent;
+    statusEl.textContent = `${FOUNDER_MAP[founderKey].name.split(' ').pop()} speaking…`;
+
+    const res = await fetch('/api/voice', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ founderKey, text }),
+    });
+
+    if (!res.ok) { statusEl.textContent = prevText; return; }
+
+    const arrayBuffer = await res.arrayBuffer();
+    const ctx = getAudioCtx();
+    const decoded = await ctx.decodeAudioData(arrayBuffer);
+    const source = ctx.createBufferSource();
+    source.buffer = decoded;
+    source.connect(ctx.destination);
+
+    await new Promise(resolve => {
+      source.onended = resolve;
+      source.start(0);
+    });
+
+    statusEl.textContent = prevText;
+  } catch {
+    // voice is optional — continue silently
+  }
+}
+
+function renderSynthesis(data) {
+  const el = document.getElementById('synthesis');
+  el.hidden = false;
+
+  let html = `<h2>Convention Analysis</h2><div class="synthesis-grid">`;
+
+  // Points of agreement
+  if (data.points_of_agreement?.length) {
+    html += `<div class="synthesis-card">
+      <h3>Points of Agreement</h3>
+      <ul>${data.points_of_agreement.map(p => `<li>${p}</li>`).join('')}</ul>
+    </div>`;
+  }
+
+  // Sharpest exchange
+  if (data.sharpest_exchange) {
+    html += `<div class="synthesis-card">
+      <h3>Sharpest Exchange</h3>
+      <div class="exchange-names">${data.sharpest_exchange.between.join(' vs. ')}</div>
+      <div style="font-size:0.85rem;line-height:1.5">${data.sharpest_exchange.on}</div>
+    </div>`;
+  }
+
+  // Fault lines
+  if (data.fault_lines?.length) {
+    html += `<div class="synthesis-card full"><h3>Fault Lines</h3>`;
+    for (const fl of data.fault_lines) {
+      html += `<div class="fault-line">
+        <div class="fault-issue">${fl.issue}</div>
+        <div class="fault-sides">
+          <div class="fault-side">
+            <div class="fault-side-names">${fl.federalist_side.delegates.join(', ')}</div>
+            <div>${fl.federalist_side.position}</div>
+          </div>
+          <div class="fault-side">
+            <div class="fault-side-names">${fl.anti_federalist_side.delegates.join(', ')}</div>
+            <div>${fl.anti_federalist_side.position}</div>
+          </div>
+        </div>
+      </div>`;
+    }
+    html += `</div>`;
+  }
+
+  // Most prescient
+  if (data.most_prescient) {
+    html += `<div class="synthesis-card">
+      <h3>Most Prescient</h3>
+      <div class="prescient-delegate">${data.most_prescient.delegate}</div>
+      <div class="prescient-body">${data.most_prescient.what_they_said}</div>
+      <div class="prescient-why">${data.most_prescient.why_prescient}</div>
+    </div>`;
+  }
+
+  // Verdict
+  if (data.verdict) {
+    html += `<div class="synthesis-card full">
+      <h3>Convention Verdict</h3>
+      <div class="verdict-text">${data.verdict}</div>
+    </div>`;
+  }
+
+  html += `</div>`;
+  el.innerHTML = html;
+  el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+</script>
+</body>
+</html>
