@@ -1295,6 +1295,20 @@ async function askShopkeeper() {
         }
       }
     }
+    // Speak the full text via ElevenLabs TTS
+    const fullText = textEl.textContent.trim();
+    if (fullText) {
+      fetch('/api/speak', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text: fullText, shop: state.activeShop })
+      }).then(r => r.blob()).then(blob => {
+        const url = URL.createObjectURL(blob);
+        const audio = new Audio(url);
+        audio.onended = () => URL.revokeObjectURL(url);
+        audio.play().catch(() => {});
+      }).catch(() => {});
+    }
   } catch(e) {
     document.getElementById('shopkeeper-text').textContent = 'THE SHOPKEEPER IS BUSY. TRY AGAIN.';
   }
