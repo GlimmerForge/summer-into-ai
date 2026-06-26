@@ -3,6 +3,8 @@ name: Deploy Changed Demos
 on:
   push:
     branches: [master]
+    paths:
+      - 'projects/**'
   workflow_dispatch:
     inputs:
       w01-found-a-republic:
