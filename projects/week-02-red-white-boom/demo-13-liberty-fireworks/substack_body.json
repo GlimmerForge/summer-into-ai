@@ -56,7 +56,7 @@
   ]},
   {"type":"paragraph","attrs":{"textAlign":null},"content":[
     {"type":"text","marks":[{"type":"strong"}],"text":"Demo: "},
-    {"type":"text","marks":[{"type":"link","attrs":{"href":"https://liberty-fireworks.vercel.app","target":"_blank","rel":"noopener noreferrer nofollow","class":null}}],"text":"liberty-fireworks.vercel.app"}
+    {"type":"text","marks":[{"type":"link","attrs":{"href":"https://liberty-fireworks.vercel.app/","target":"_blank","rel":"noopener noreferrer nofollow","class":null}}],"text":"liberty-fireworks.vercel.app"}
   ]},
   {"type":"paragraph","attrs":{"textAlign":null},"content":[
     {"type":"text","marks":[{"type":"strong"}],"text":"Code: "},

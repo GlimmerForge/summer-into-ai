@@ -2,7 +2,7 @@
 
 > Walk a colonial town, buy shells from period shops, wire your own mortars — then launch while Claude's Town Council judges your show live.
 
-**Live demo:** [https://liberty-fireworks.vercel.app](https://liberty-fireworks.vercel.app)  
+**Live demo:** [https://liberty-fireworks.vercel.app](https://liberty-fireworks.vercel.app/)  
 **Part of:** [Summer into AI 2026](https://advisoryhour.substack.com) · Week 2 · Theme: Red, White & Boom
 
 ## What it is
