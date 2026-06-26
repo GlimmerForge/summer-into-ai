@@ -513,7 +513,7 @@ const state = {
   inventory: { shells: [], dyes: [], extras: [] },
   budget: 120,
   mortars: [],
-  activeShop: null,
+  activeShop: null, shopAudio: null,
   shopkeeperText: '',
   evaluationText: '',
   activeSelection: null,
@@ -1307,9 +1307,9 @@ async function askShopkeeper() {
         body: JSON.stringify({ text: fullText, shop: state.activeShop })
       }).then(r => r.blob()).then(blob => {
         const url = URL.createObjectURL(blob);
-        const audio = new Audio(url);
-        audio.onended = () => URL.revokeObjectURL(url);
-        audio.play().catch(() => {});
+        state.shopAudio = new Audio(url);
+        state.shopAudio.onended = () => { URL.revokeObjectURL(url); state.shopAudio = null; };
+        state.shopAudio.play().catch(() => {});
       }).catch(() => {});
     }
   } catch(e) {
@@ -1320,6 +1320,7 @@ async function askShopkeeper() {
 }
 
 function returnToTown() {
+  if (state.shopAudio) { state.shopAudio.pause(); state.shopAudio = null; }
   playDoor(false);
   showPhase('town');
   updateTownBudget();
