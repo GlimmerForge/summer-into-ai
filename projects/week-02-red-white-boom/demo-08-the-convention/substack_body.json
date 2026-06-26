@@ -60,7 +60,7 @@
   ]},
   {"type":"paragraph","attrs":{"textAlign":null},"content":[
     {"type":"text","marks":[{"type":"strong"}],"text":"Demo: "},
-    {"type":"text","marks":[{"type":"link","attrs":{"href":"https://demo-08-the-convention.vercel.app","target":"_blank","rel":"noopener noreferrer nofollow","class":null}}],"text":"demo-08-the-convention.vercel.app"}
+    {"type":"text","marks":[{"type":"link","attrs":{"href":"https://convention-1776.vercel.app","target":"_blank","rel":"noopener noreferrer nofollow","class":null}}],"text":"convention-1776.vercel.app"}
   ]},
   {"type":"paragraph","attrs":{"textAlign":null},"content":[
     {"type":"text","marks":[{"type":"strong"}],"text":"README: "},

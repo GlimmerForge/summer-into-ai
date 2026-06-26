@@ -2,7 +2,7 @@
 
 > Five founding fathers. Five simultaneous Claude instances. A debate that runs itself.
 
-**Live demo:** [https://demo-08-the-convention.vercel.app](https://demo-08-the-convention.vercel.app)  
+**Live demo:** [https://convention-1776.vercel.app](https://convention-1776.vercel.app)  
 **Part of:** [Summer into AI 2026](https://advisoryhour.substack.com) · Week 2 · Theme: Red, White & Boom
 
 ## What it is
