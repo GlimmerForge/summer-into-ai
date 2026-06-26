@@ -414,7 +414,7 @@
         <div class="shopkeeper-text" id="shopkeeper-text">Click below to ask for advice...</div>
         <button class="ot-btn" onclick="askShopkeeper()" id="shopkeeper-btn"
           style="margin-top:10px;width:100%;font-size:7px;padding:8px;">
-          &#9658; ASK FOR ADVICE
+          &#9658; ASK AGAIN
         </button>
       </div>
       <div class="inventory-mini">
@@ -1137,11 +1137,13 @@ function openShop(shopId) {
   document.getElementById('shop-title').textContent = shop.name.toUpperCase();
   document.getElementById('shop-desc').textContent = shop.desc;
   document.getElementById('shopkeeper-name').textContent = shop.keeper.toUpperCase() + ' SAYS:';
-  document.getElementById('shopkeeper-text').textContent = 'Click below to ask ' + shop.keeper + ' for advice...';
+  document.getElementById('shopkeeper-text').textContent = '';
   renderShopItems(shop);
   updateShopBudget();
   renderShopInventory();
   showPhase('shop');
+  // Auto-greet on entry
+  setTimeout(askShopkeeper, 400);
 }
 
 function renderShopItems(shop) {
