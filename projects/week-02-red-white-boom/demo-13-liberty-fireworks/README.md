@@ -1,57 +1,52 @@
 # Liberty Fireworks
 
-> Walk a colonial town, buy firework shells from period shops, wire your own fuses — then launch while Claude's Town Council judges you live.
+> Walk a colonial town, buy shells from period shops, wire your own mortars — then launch while Claude's Town Council judges your show live.
 
-**Week 2 — Red, White & Boom** | Summer Into AI 2026
+**Live demo:** [https://liberty-fireworks.vercel.app](https://liberty-fireworks.vercel.app)  
+**Part of:** [Summer into AI 2026](https://advisoryhour.substack.com) · Week 2 · Theme: Red, White & Boom
 
----
+## What it is
 
-## How AI Powers It
+An Oregon Trail-style colonial fireworks game where every decision matters. The Town Council issues a brief (required colors, minimum shells, finale type) and you have 120 Liberty Dollars to shop three period stores. Load your 16 mortars, wire fuses, apply dyes — then watch Claude judge your show shell by shell with a live streaming verdict.
 
-Three distinct Claude calls drive the full experience:
+## How to run locally
 
-| Endpoint | What Claude Does |
-|---|---|
-| `POST /api/brief` | Uses tool calling (`set_show_brief`) to generate a structured show brief: occasion, required colors, min shells, finale type, crowd size, council note — all in character |
-| `POST /api/shopkeeper` | Streams in-character shopkeeper advice (Old Jacob / Mistress Hawthorne / Young Thomas) tailored to the player's brief and current inventory |
-| `POST /api/evaluate` | Streams a vivid colonial crowd reaction + Town Council verdict while fireworks are still exploding on screen |
+1. Clone the repo and `cd` into this folder
+2. Copy `.env.local.example` to `.env.local` and fill in your API keys
+3. `npm install`
+4. `node server.js`
+5. Open http://localhost:3013
 
-Remove any one of these and the game loses a core layer: the shopping advice goes generic, the show has no stakes, and the whole loop collapses.
+## Environment variables
 
----
-
-## How to Play
-
-1. **Read the Brief** — the Town Council tells you what they want: specific colors, minimum shells, and a required finale type
-2. **Visit 3 Shops** — buy shells from the Powder House, dyes from the Ironmonger, fuses and racks from the General Store (budget: 60 Liberty Dollars)
-3. **Load Your Mortars** — drag shells into mortar slots, apply dyes to change colors, set fuse timing with Quick/Slow fuses
-4. **Light the Fuse** — watch your show fire left-to-right while Claude streams the crowd reaction live
-5. **See Your Verdict** — SPLENDID / ADEQUATE / DISAPPOINTING / A DISGRACE based on how well you met the brief
-
----
-
-## Local Dev
-
-```bash
-cd projects/week-02-red-white-boom/demo-13-liberty-fireworks
-cp .env.local .env.local   # edit with your real key
-npx vercel dev --listen 3001
-# open http://localhost:3001
-```
-
----
-
-## Environment Variables
-
-| Variable | Required | Description |
+| Variable | Required | Where to get it |
 |---|---|---|
-| `ANTHROPIC_API_KEY` | Yes | Anthropic API key — get one at console.anthropic.com |
+| `ANTHROPIC_API_KEY` | Yes | https://console.anthropic.com |
+| `ELEVENLABS_API_KEY` | Yes | https://elevenlabs.io → Profile → API Keys |
 
----
+## Deploy to Vercel
 
-## Vercel Deployment
+1. Import repo into Vercel, set **Root Directory** to `projects/week-02-red-white-boom/demo-13-liberty-fireworks`
+2. Add environment variables in Project Settings → Environment Variables
+3. Deploy — no build step required
 
-1. Import this repo to Vercel as a new project
-2. Set **Root Directory** to `projects/week-02-red-white-boom/demo-13-liberty-fireworks`
-3. Add environment variable: `ANTHROPIC_API_KEY`
-4. Deploy — no build command needed
+## How to play
+
+- Read the Town Council brief — note required colors, shell count, and finale type
+- Visit the Powder House, Ironmonger, and General Store to buy shells, dyes, and fuses
+- On the launch screen, load shells into mortar slots and apply dyes to recolor
+- Hit FIRE and watch your show while Claude streams the crowd reaction live
+- Receive your verdict: SPLENDID / ADEQUATE / DISAPPOINTING / A DISGRACE
+
+## How the AI works
+
+- **Brief generation** (`/api/brief`) — Claude tool-calls `set_show_brief` to produce a structured show brief: occasion, required colors, minimum shells, finale type, crowd size, council note — all in colonial voice
+- **Shopkeeper chat** (`/api/shopkeeper`) — streams in-character advice from Old Jacob, Mistress Hawthorne, or Young Thomas, tailored to your current brief and inventory
+- **Show evaluation** (`/api/evaluate`) — Claude receives the full shell-by-shell breakdown of your show and streams a vivid, specific council verdict referencing actual shells you fired
+- **Crowd sound** (`/api/crowd`) — ElevenLabs sound generation produces a real crowd cheer or boo at the results screen based on your verdict
+
+## Tech
+
+- Claude (`claude-sonnet-4-6`) via Anthropic SDK — brief generation, shopkeeper dialogue, show evaluation
+- ElevenLabs sound generation API — crowd reaction audio
+- Vanilla JS + HTML Canvas — no framework, no build step

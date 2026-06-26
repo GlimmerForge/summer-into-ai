@@ -1,0 +1,69 @@
+{"type":"doc","content":[
+  {"type":"paragraph","attrs":{"textAlign":null},"content":[
+    {"type":"text","text":"Week 2 of "},
+    {"type":"text","marks":[{"type":"link","attrs":{"href":"https://advisoryhour.substack.com","target":"_blank","rel":"noopener noreferrer nofollow","class":null}}],"text":"Summer into AI 2026"},
+    {"type":"text","text":" hosted by "},
+    {"type":"text","marks":[{"type":"link","attrs":{"href":"https://advisoryhour.substack.com","target":"_blank","rel":"noopener noreferrer nofollow","class":null}}],"text":"@advisoryhour"},
+    {"type":"text","text":" — theme: Red, White & Boom."}
+  ]},
+  {"type":"paragraph","attrs":{"textAlign":null},"content":[
+    {"type":"text","marks":[{"type":"strong"}],"text":"Liberty Fireworks"},
+    {"type":"text","text":" is an Oregon Trail–style colonial game where you shop a 1776 town, wire your own mortar rack, and let Claude’s Town Council judge your show live — shell by shell."}
+  ]},
+  {"type":"heading","attrs":{"textAlign":null,"level":2},"content":[
+    {"type":"text","text":"How the AI works"}
+  ]},
+  {"type":"bullet_list","content":[
+    {"type":"list_item","content":[{"type":"paragraph","attrs":{"textAlign":null},"content":[
+      {"type":"text","marks":[{"type":"strong"}],"text":"Brief generation"},
+      {"type":"text","text":" — Claude tool-calls a structured schema to produce a show brief: occasion, required colors, minimum shells, finale type, crowd size, and a council note in period voice. Every run is a different historical moment (Treaty of Paris, Washington’s Birthday, Yorktown Victory)."}
+    ]}]},
+    {"type":"list_item","content":[{"type":"paragraph","attrs":{"textAlign":null},"content":[
+      {"type":"text","marks":[{"type":"strong"}],"text":"Shopkeeper dialogue"},
+      {"type":"text","text":" — Streaming character dialogue from Old Jacob at the Powder House, Mistress Hawthorne at the Ironmonger, and Young Thomas at the General Store — each tailored to your current inventory and brief requirements."}
+    ]}]},
+    {"type":"list_item","content":[{"type":"paragraph","attrs":{"textAlign":null},"content":[
+      {"type":"text","marks":[{"type":"strong"}],"text":"Show evaluation"},
+      {"type":"text","text":" — Claude receives a shell-by-shell breakdown of your actual show (position, type, color, dye, delay, whether it was the finale) and streams a vivid colonial verdict referencing specific shells you fired. SPLENDID / ADEQUATE / DISAPPOINTING / A DISGRACE."}
+    ]}]},
+    {"type":"list_item","content":[{"type":"paragraph","attrs":{"textAlign":null},"content":[
+      {"type":"text","marks":[{"type":"strong"}],"text":"Crowd sound"},
+      {"type":"text","text":" — ElevenLabs sound generation produces a real crowd cheer or boo at the results screen based on your verdict."}
+    ]}]}
+  ]},
+  {"type":"heading","attrs":{"textAlign":null,"level":2},"content":[
+    {"type":"text","text":"How to play"}
+  ]},
+  {"type":"bullet_list","content":[
+    {"type":"list_item","content":[{"type":"paragraph","attrs":{"textAlign":null},"content":[
+      {"type":"text","text":"Read the Town Council brief — note required colors, shell minimum, and finale type"}
+    ]}]},
+    {"type":"list_item","content":[{"type":"paragraph","attrs":{"textAlign":null},"content":[
+      {"type":"text","text":"Walk the colonial town (arrow keys) and enter the three shops to spend your 120 Liberty Dollars"}
+    ]}]},
+    {"type":"list_item","content":[{"type":"paragraph","attrs":{"textAlign":null},"content":[
+      {"type":"text","text":"Load shells into mortar slots, apply dyes to recolor, set fuse timing for your sequence"}
+    ]}]},
+    {"type":"list_item","content":[{"type":"paragraph","attrs":{"textAlign":null},"content":[
+      {"type":"text","text":"Hit FIRE and watch the show while Claude streams the crowd reaction live"}
+    ]}]},
+    {"type":"list_item","content":[{"type":"paragraph","attrs":{"textAlign":null},"content":[
+      {"type":"text","text":"Receive your verdict — and hear the crowd cheer or boo via ElevenLabs"}
+    ]}]}
+  ]},
+  {"type":"heading","attrs":{"textAlign":null,"level":2},"content":[
+    {"type":"text","text":"Where to play"}
+  ]},
+  {"type":"paragraph","attrs":{"textAlign":null},"content":[
+    {"type":"text","marks":[{"type":"strong"}],"text":"Demo: "},
+    {"type":"text","marks":[{"type":"link","attrs":{"href":"https://liberty-fireworks.vercel.app","target":"_blank","rel":"noopener noreferrer nofollow","class":null}}],"text":"liberty-fireworks.vercel.app"}
+  ]},
+  {"type":"paragraph","attrs":{"textAlign":null},"content":[
+    {"type":"text","marks":[{"type":"strong"}],"text":"Code: "},
+    {"type":"text","marks":[{"type":"link","attrs":{"href":"https://github.com/JStrait515/summer-into-ai/tree/master/projects/week-02-red-white-boom/demo-13-liberty-fireworks","target":"_blank","rel":"noopener noreferrer nofollow","class":null}}],"text":"GitHub"}
+  ]},
+  {"type":"horizontal_rule"},
+  {"type":"paragraph","attrs":{"textAlign":null},"content":[
+    {"type":"text","marks":[{"type":"em"}],"text":"Summer into AI 2026 · Week 2: Red, White & Boom"}
+  ]}
+]}
