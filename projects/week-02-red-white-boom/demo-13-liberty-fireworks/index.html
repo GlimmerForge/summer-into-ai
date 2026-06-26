@@ -513,7 +513,7 @@ const state = {
   inventory: { shells: [], dyes: [], extras: [] },
   budget: 120,
   mortars: [],
-  activeShop: null, shopAudio: null,
+  activeShop: null, shopAudio: null, shopVisits: {},
   shopkeeperText: '',
   evaluationText: '',
   activeSelection: null,
@@ -1132,6 +1132,7 @@ function openShop(shopId) {
   stopTownLoop();
   playDoor(true);
   state.activeShop = shopId;
+  state.shopVisits[shopId] = (state.shopVisits[shopId] || 0) + 1;
   state.activeSelection = null;
   const shop = SHOPS[shopId];
   document.getElementById('shop-title').textContent = shop.name.toUpperCase();
@@ -1275,7 +1276,7 @@ async function askShopkeeper() {
     const r = await fetch('/api/shopkeeper', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ shop_type: state.activeShop, brief: state.brief, inventory: state.inventory })
+      body: JSON.stringify({ shop_type: state.activeShop, brief: state.brief, inventory: state.inventory, visit: state.shopVisits[state.activeShop] || 1 })
     });
     const textEl = document.getElementById('shopkeeper-text');
     const reader = r.body.getReader();

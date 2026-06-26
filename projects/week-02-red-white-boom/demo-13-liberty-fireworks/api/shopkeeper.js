@@ -5,7 +5,7 @@ export const config = { api: { bodyParser: true } };
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).end();
   const body = typeof req.body === 'string' ? JSON.parse(req.body) : req.body;
-  const { shop_type, brief, inventory } = body;
+  const { shop_type, brief, inventory, visit = 1 } = body;
 
   res.setHeader('Content-Type', 'text/event-stream');
   res.setHeader('Cache-Control', 'no-cache');
@@ -29,7 +29,10 @@ Minimum shells: ${brief.min_shells}
 Required finale: ${brief.finale_type}
 Customer's current inventory: ${JSON.stringify(inventory)}
 
-Give 1-2 sentences of spoken advice on what to buy. Name specific items from your shop. Plain spoken words only — no asterisks, no bold, no markdown. Colonial tone.`
+${visit === 1
+  ? 'Greet the customer briefly, then give 1 sentence of advice on what to buy from your shop.'
+  : 'Welcome them back warmly (e.g. "Ah, back again!" or "Good to see you return!"), then give 1 sentence of new advice based on what they have now.'}
+Plain spoken words only — no asterisks, no bold, no markdown. Colonial tone.`
     }]
   });
 
