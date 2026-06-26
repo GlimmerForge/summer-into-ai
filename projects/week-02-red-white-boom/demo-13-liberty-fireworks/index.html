@@ -1291,7 +1291,10 @@ async function askShopkeeper() {
         if (line.startsWith('data: ')) {
           const data = line.slice(6).trim();
           if (data === '[DONE]') break;
-          try { textEl.textContent += JSON.parse(data).text; } catch(e) {}
+          try {
+            const chunk = JSON.parse(data).text.replace(/\*+/g, '');
+            textEl.textContent += chunk;
+          } catch(e) {}
         }
       }
     }

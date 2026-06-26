@@ -1,11 +1,20 @@
 export const config = { api: { bodyParser: true } };
 
-// Different voice per shopkeeper character
+// Colonial small-town character voices
 const VOICES = {
-  powder:     'pNInz6obpgDQGcFmaJgB', // Adam — deep, gruff (Old Jacob)
-  ironmonger: '21m00Tcm4TlvDq8ikWAM', // Rachel — sharp, precise (Mistress Hawthorne)
-  general:    'yoZ06aMxZJJ28mfd3POQ', // Sam — young, chatty (Young Thomas)
+  powder:     'N2lVS1w4EtoT3dr4eOWO', // Callum — rough, weathered (Old Jacob)
+  ironmonger: 'Xb7hH8MSUJpSbSDYk0k2', // Alice — proper British female (Mistress Hawthorne)
+  general:    'IKne3meq5aSn9XLyUdCD', // Charlie — young British male (Young Thomas)
 };
+
+function stripMarkdown(text) {
+  return text
+    .replace(/\*\*(.+?)\*\*/g, '$1')
+    .replace(/\*(.+?)\*/g, '$1')
+    .replace(/\*/g, '')
+    .replace(/_(.+?)_/g, '$1')
+    .trim();
+}
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).end();
@@ -14,6 +23,7 @@ export default async function handler(req, res) {
   if (!text) return res.status(400).end();
 
   const voiceId = VOICES[shop] || VOICES.powder;
+  const clean = stripMarkdown(text);
 
   const r = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`, {
     method: 'POST',
@@ -22,9 +32,9 @@ export default async function handler(req, res) {
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      text,
-      model_id: 'eleven_monolingual_v1',
-      voice_settings: { stability: 0.55, similarity_boost: 0.75 },
+      text: clean,
+      model_id: 'eleven_turbo_v2',
+      voice_settings: { stability: 0.6, similarity_boost: 0.75 },
     }),
   });
 

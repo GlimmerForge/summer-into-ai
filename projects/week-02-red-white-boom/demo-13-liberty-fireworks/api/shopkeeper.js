@@ -19,7 +19,7 @@ export default async function handler(req, res) {
 
   const stream = await client.messages.stream({
     model: 'claude-sonnet-4-6',
-    max_tokens: 200,
+    max_tokens: 100,
     messages: [{
       role: 'user',
       content: `You are ${shopNames[shop_type] || 'the shopkeeper'}.
@@ -29,7 +29,7 @@ Minimum shells: ${brief.min_shells}
 Required finale: ${brief.finale_type}
 Customer's current inventory: ${JSON.stringify(inventory)}
 
-Give 2-3 sentences of in-character advice on what to buy. Be specific — name items from your shop that would help meet the brief. Keep it short and colonial in tone.`
+Give 1-2 sentences of spoken advice on what to buy. Name specific items from your shop. Plain spoken words only — no asterisks, no bold, no markdown. Colonial tone.`
     }]
   });
 
