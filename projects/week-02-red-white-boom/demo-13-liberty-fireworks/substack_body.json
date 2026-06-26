@@ -19,8 +19,8 @@
       {"type":"text","text":" — Claude tool-calls a structured schema to produce a show brief: occasion, required colors, minimum shells, finale type, crowd size, and a council note in period voice. Every run is a different historical moment (Treaty of Paris, Washington’s Birthday, Yorktown Victory)."}
     ]}]},
     {"type":"list_item","content":[{"type":"paragraph","attrs":{"textAlign":null},"content":[
-      {"type":"text","marks":[{"type":"strong"}],"text":"Shopkeeper dialogue"},
-      {"type":"text","text":" — Streaming character dialogue from Old Jacob at the Powder House, Mistress Hawthorne at the Ironmonger, and Young Thomas at the General Store — each tailored to your current inventory and brief requirements."}
+      {"type":"text","marks":[{"type":"strong"}],"text":"Shopkeeper voices"},
+      {"type":"text","text":" — Each shopkeeper streams in-character advice and then speaks it aloud via ElevenLabs TTS. Old Jacob at the Powder House, Mistress Hawthorne at the Ironmonger, and Young Thomas at the General Store each have their own voice and remember if you've been in before."}
     ]}]},
     {"type":"list_item","content":[{"type":"paragraph","attrs":{"textAlign":null},"content":[
       {"type":"text","marks":[{"type":"strong"}],"text":"Show evaluation"},
