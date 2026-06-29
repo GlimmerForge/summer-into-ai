@@ -55,6 +55,10 @@ on:
         description: 'week-02 / the-convention'
         type: boolean
         default: false
+      w02-the-broadcast:
+        description: 'week-02 / the-broadcast'
+        type: boolean
+        default: false
 
 jobs:
   deploy:
@@ -87,6 +91,7 @@ jobs:
             [ "${{ github.event.inputs.w02-sons-of-liberty }}"   = "true" ] && CHANGED="$CHANGED\nprojects/week-02-red-white-boom/demo-12-sons-of-liberty"
             [ "${{ github.event.inputs.w02-liberty-fireworks }}" = "true" ] && CHANGED="$CHANGED\nprojects/week-02-red-white-boom/demo-13-liberty-fireworks"
             [ "${{ github.event.inputs.w02-the-convention }}"   = "true" ] && CHANGED="$CHANGED\nprojects/week-02-red-white-boom/demo-08-the-convention"
+            [ "${{ github.event.inputs.w02-the-broadcast }}"   = "true" ] && CHANGED="$CHANGED\nprojects/week-02-red-white-boom/demo-09-the-broadcast"
 
           elif [ "${{ github.event.before }}" = "0000000000000000000000000000000000000000" ]; then
             CHANGED=$(find projects -mindepth 2 -maxdepth 2 -type d -name 'demo-*' | sort)
