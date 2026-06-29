@@ -94,7 +94,8 @@ The dispatch should read as period-authentic cipher — comprehensible to someon
         }
       }
     ],
-    tool_choice: { type: 'any' }
+    tool_choice: { type: 'any' },
+    messages: [{ role: 'user', content: 'Generate the intelligence dispatch now.' }]
     });
   } catch (err) {
     console.error('dispatch error:', err);
