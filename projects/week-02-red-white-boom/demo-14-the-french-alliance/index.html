@@ -1,0 +1,1462 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The French Alliance — Mission to Paris, 1778</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Crimson+Text:ital,wght@0,400;0,600;1,400&display=swap');
+
+  :root {
+    --bg: #07071a;
+    --navy: #0a0a2e;
+    --deep: #0d0d35;
+    --gold: #c8a45e;
+    --gold-bright: #e8c47e;
+    --gold-dim: #8a6e3e;
+    --cream: #f5ead6;
+    --cream-dim: #c8b898;
+    --red-france: #8b1a2e;
+    --blue-france: #1a2e6e;
+    --panel: rgba(10,10,40,0.85);
+    --border: rgba(200,164,94,0.3);
+    --border-bright: rgba(200,164,94,0.7);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    background-image:
+      radial-gradient(ellipse at 20% 10%, rgba(30,20,80,0.5) 0%, transparent 60%),
+      radial-gradient(ellipse at 80% 90%, rgba(20,10,60,0.4) 0%, transparent 60%),
+      url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23c8a45e' fill-opacity='0.03'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+    color: var(--cream);
+    font-family: 'Crimson Text', Georgia, serif;
+    min-height: 100vh;
+    padding: 0 0 60px;
+  }
+
+  /* HEADER */
+  header {
+    background: linear-gradient(180deg, rgba(10,10,30,0.98) 0%, rgba(10,10,40,0.9) 100%);
+    border-bottom: 1px solid var(--border-bright);
+    padding: 0;
+    position: relative;
+  }
+
+  .header-inner {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 18px 24px;
+    display: flex;
+    align-items: center;
+    gap: 20px;
+  }
+
+  /* Franklin SVG portrait */
+  .franklin-portrait {
+    width: 72px;
+    height: 72px;
+    flex-shrink: 0;
+  }
+
+  .header-title {
+    flex: 1;
+  }
+
+  .header-title .subtitle {
+    font-family: 'Cinzel', serif;
+    font-size: 11px;
+    letter-spacing: 4px;
+    color: var(--gold-dim);
+    text-transform: uppercase;
+    margin-bottom: 4px;
+  }
+
+  .header-title h1 {
+    font-family: 'Cinzel', serif;
+    font-size: 28px;
+    font-weight: 700;
+    color: var(--gold);
+    letter-spacing: 2px;
+    line-height: 1;
+  }
+
+  .header-title .dateline {
+    font-style: italic;
+    color: var(--cream-dim);
+    font-size: 14px;
+    margin-top: 4px;
+  }
+
+  .round-indicator {
+    text-align: right;
+    font-family: 'Cinzel', serif;
+  }
+
+  .round-label {
+    font-size: 10px;
+    letter-spacing: 3px;
+    color: var(--gold-dim);
+    text-transform: uppercase;
+  }
+
+  .round-num {
+    font-size: 32px;
+    color: var(--gold);
+    font-weight: 700;
+    line-height: 1;
+  }
+
+  .round-of {
+    font-size: 12px;
+    color: var(--cream-dim);
+  }
+
+  /* SCORE BAR */
+  .score-bar {
+    background: rgba(10,10,35,0.9);
+    border-bottom: 1px solid var(--border);
+    padding: 10px 24px;
+  }
+
+  .score-bar-inner {
+    max-width: 1100px;
+    margin: 0 auto;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+
+  .score-label {
+    font-family: 'Cinzel', serif;
+    font-size: 10px;
+    letter-spacing: 2px;
+    color: var(--gold-dim);
+    white-space: nowrap;
+  }
+
+  .score-track {
+    flex: 1;
+    height: 8px;
+    background: rgba(200,164,94,0.12);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    overflow: hidden;
+  }
+
+  .score-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--gold-dim), var(--gold-bright));
+    border-radius: 4px;
+    transition: width 0.6s ease;
+  }
+
+  .score-value {
+    font-family: 'Cinzel', serif;
+    font-size: 13px;
+    color: var(--gold);
+    white-space: nowrap;
+    min-width: 80px;
+    text-align: right;
+  }
+
+  .threshold-note {
+    font-size: 11px;
+    color: var(--cream-dim);
+    font-style: italic;
+  }
+
+  /* MAIN LAYOUT */
+  .main {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 24px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: auto auto;
+    gap: 20px;
+  }
+
+  .factions-grid {
+    grid-column: 1 / -1;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+
+  /* FACTION CARDS */
+  .faction-card {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 16px;
+    position: relative;
+    transition: border-color 0.3s, box-shadow 0.3s;
+  }
+
+  .faction-card.targeted {
+    border-color: var(--gold);
+    box-shadow: 0 0 20px rgba(200,164,94,0.2);
+  }
+
+  .faction-card.selected-target {
+    border-color: var(--gold-bright);
+    box-shadow: 0 0 30px rgba(200,164,94,0.35);
+  }
+
+  .faction-header {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    margin-bottom: 12px;
+  }
+
+  .faction-emblem {
+    width: 48px;
+    height: 48px;
+    flex-shrink: 0;
+  }
+
+  .faction-info {
+    flex: 1;
+  }
+
+  .faction-name {
+    font-family: 'Cinzel', serif;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--gold);
+    letter-spacing: 0.5px;
+    line-height: 1.2;
+  }
+
+  .faction-interest {
+    font-style: italic;
+    color: var(--cream-dim);
+    font-size: 13px;
+    margin-top: 2px;
+    line-height: 1.3;
+  }
+
+  .alignment-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+  }
+
+  .alignment-label {
+    font-family: 'Cinzel', serif;
+    font-size: 9px;
+    letter-spacing: 2px;
+    color: var(--gold-dim);
+    white-space: nowrap;
+  }
+
+  .alignment-track {
+    flex: 1;
+    height: 6px;
+    background: rgba(200,164,94,0.1);
+    border: 1px solid rgba(200,164,94,0.2);
+    border-radius: 3px;
+    overflow: hidden;
+  }
+
+  .alignment-fill {
+    height: 100%;
+    border-radius: 3px;
+    transition: width 0.8s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+
+  .alignment-pct {
+    font-family: 'Cinzel', serif;
+    font-size: 12px;
+    color: var(--gold-bright);
+    min-width: 32px;
+    text-align: right;
+  }
+
+  .faction-voice {
+    font-style: italic;
+    color: var(--cream-dim);
+    font-size: 13px;
+    line-height: 1.5;
+    min-height: 38px;
+    padding-top: 8px;
+    border-top: 1px solid var(--border);
+  }
+
+  .faction-voice:empty::before {
+    content: attr(data-placeholder);
+    opacity: 0.45;
+    font-size: 12px;
+  }
+
+  .faction-weight-badge {
+    position: absolute;
+    top: 10px;
+    right: 12px;
+    font-family: 'Cinzel', serif;
+    font-size: 9px;
+    letter-spacing: 1px;
+    color: var(--gold-dim);
+    background: rgba(200,164,94,0.08);
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    padding: 2px 5px;
+  }
+
+  /* ARGUMENT PANEL */
+  .argument-panel {
+    grid-column: 1 / -1;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 20px;
+  }
+
+  .argument-panel h2 {
+    font-family: 'Cinzel', serif;
+    font-size: 12px;
+    letter-spacing: 3px;
+    color: var(--gold-dim);
+    text-transform: uppercase;
+    margin-bottom: 16px;
+  }
+
+  .argument-controls {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 12px;
+    margin-bottom: 12px;
+  }
+
+  .faction-select-wrap {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .faction-select-wrap label {
+    font-family: 'Cinzel', serif;
+    font-size: 10px;
+    letter-spacing: 2px;
+    color: var(--gold-dim);
+  }
+
+  select#factionSelect {
+    background: rgba(10,10,40,0.9);
+    border: 1px solid var(--border-bright);
+    color: var(--cream);
+    font-family: 'Crimson Text', serif;
+    font-size: 16px;
+    padding: 10px 14px;
+    border-radius: 3px;
+    cursor: pointer;
+    width: 100%;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23c8a45e' stroke-width='1.5' fill='none'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    padding-right: 32px;
+  }
+
+  select#factionSelect:focus { outline: none; border-color: var(--gold); }
+
+  .deliver-btn {
+    font-family: 'Cinzel', serif;
+    font-size: 13px;
+    letter-spacing: 2px;
+    background: linear-gradient(135deg, #8a6a2a, var(--gold), #8a6a2a);
+    color: #1a1000;
+    border: none;
+    padding: 12px 28px;
+    cursor: pointer;
+    border-radius: 3px;
+    white-space: nowrap;
+    transition: opacity 0.2s, transform 0.1s;
+    align-self: flex-end;
+  }
+
+  .deliver-btn:hover:not(:disabled) {
+    opacity: 0.9;
+    transform: translateY(-1px);
+  }
+
+  .deliver-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+    transform: none;
+  }
+
+  .textarea-wrap {
+    position: relative;
+  }
+
+  textarea#argumentInput {
+    width: 100%;
+    background: rgba(5,5,20,0.8);
+    border: 1px solid var(--border);
+    color: var(--cream);
+    font-family: 'Crimson Text', serif;
+    font-size: 17px;
+    line-height: 1.6;
+    padding: 14px;
+    border-radius: 3px;
+    resize: vertical;
+    min-height: 90px;
+    transition: border-color 0.2s;
+  }
+
+  textarea#argumentInput:focus {
+    outline: none;
+    border-color: var(--gold);
+  }
+
+  textarea#argumentInput::placeholder {
+    color: rgba(200,184,152,0.35);
+    font-style: italic;
+  }
+
+  .char-count {
+    position: absolute;
+    bottom: 10px;
+    right: 12px;
+    font-size: 11px;
+    color: var(--gold-dim);
+    font-family: 'Cinzel', serif;
+    pointer-events: none;
+  }
+
+  .char-count.over { color: #e87878; }
+
+  /* STATUS LOG */
+  .status-log {
+    margin-top: 12px;
+    padding: 12px;
+    background: rgba(5,5,20,0.6);
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    min-height: 60px;
+    font-size: 14px;
+    line-height: 1.6;
+    color: var(--cream-dim);
+  }
+
+  .status-log .log-entry {
+    margin-bottom: 8px;
+  }
+
+  .status-log .log-entry:last-child { margin-bottom: 0; }
+
+  .log-faction {
+    font-family: 'Cinzel', serif;
+    font-size: 11px;
+    color: var(--gold);
+    letter-spacing: 1px;
+  }
+
+  .log-worked { color: #7ec87e; }
+  .log-failed { color: #e87878; }
+  .log-demand { color: #e8c47e; font-style: italic; }
+
+  /* OPENING GAMBIT */
+  .gambit-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(5,5,15,0.96);
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+  }
+
+  .gambit-panel {
+    max-width: 680px;
+    width: 100%;
+    background: var(--deep);
+    border: 1px solid var(--border-bright);
+    border-radius: 6px;
+    padding: 36px;
+    position: relative;
+  }
+
+  .gambit-panel::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: 6px;
+    background: radial-gradient(ellipse at 50% 0%, rgba(200,164,94,0.06) 0%, transparent 70%);
+    pointer-events: none;
+  }
+
+  .gambit-panel h2 {
+    font-family: 'Cinzel', serif;
+    font-size: 22px;
+    color: var(--gold);
+    text-align: center;
+    margin-bottom: 8px;
+  }
+
+  .gambit-panel .intro {
+    text-align: center;
+    font-style: italic;
+    color: var(--cream-dim);
+    font-size: 15px;
+    margin-bottom: 8px;
+    line-height: 1.6;
+  }
+
+  .gambit-panel .scene {
+    text-align: center;
+    color: var(--cream-dim);
+    font-size: 14px;
+    margin-bottom: 24px;
+    line-height: 1.5;
+    padding: 12px;
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    background: rgba(200,164,94,0.04);
+  }
+
+  .gambit-label {
+    font-family: 'Cinzel', serif;
+    font-size: 10px;
+    letter-spacing: 3px;
+    color: var(--gold-dim);
+    text-align: center;
+    margin-bottom: 16px;
+  }
+
+  .gambit-options {
+    display: grid;
+    gap: 10px;
+  }
+
+  .gambit-btn {
+    background: rgba(10,10,35,0.8);
+    border: 1px solid var(--border);
+    color: var(--cream);
+    font-family: 'Crimson Text', serif;
+    font-size: 15px;
+    padding: 14px 18px;
+    border-radius: 3px;
+    cursor: pointer;
+    text-align: left;
+    transition: border-color 0.2s, background 0.2s;
+    line-height: 1.5;
+  }
+
+  .gambit-btn:hover {
+    border-color: var(--gold);
+    background: rgba(200,164,94,0.08);
+  }
+
+  .gambit-btn .gambit-title {
+    font-family: 'Cinzel', serif;
+    font-size: 12px;
+    color: var(--gold);
+    display: block;
+    margin-bottom: 3px;
+    letter-spacing: 0.5px;
+  }
+
+  /* LOADING STATE */
+  .loading-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(5,5,15,0.85);
+    z-index: 50;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .loading-overlay.active { display: flex; }
+
+  .quill-spinner {
+    font-size: 48px;
+    animation: quillWrite 1.2s ease-in-out infinite;
+    transform-origin: bottom right;
+  }
+
+  @keyframes quillWrite {
+    0%, 100% { transform: rotate(-10deg) translateX(0); opacity: 0.7; }
+    25% { transform: rotate(5deg) translateX(4px); opacity: 1; }
+    50% { transform: rotate(-8deg) translateX(2px); opacity: 0.85; }
+    75% { transform: rotate(3deg) translateX(-2px); opacity: 1; }
+  }
+
+  .loading-text {
+    font-family: 'Cinzel', serif;
+    font-size: 14px;
+    letter-spacing: 3px;
+    color: var(--gold);
+    text-transform: uppercase;
+    animation: pulse 2s ease-in-out infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 0.6; }
+    50% { opacity: 1; }
+  }
+
+  .loading-sub {
+    font-style: italic;
+    color: var(--cream-dim);
+    font-size: 14px;
+  }
+
+  /* END SCREENS */
+  .end-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 200;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+  }
+
+  .end-overlay.active { display: flex; }
+
+  .end-overlay.win {
+    background: radial-gradient(ellipse at center, rgba(20,20,60,0.97) 0%, rgba(5,5,15,0.99) 100%);
+  }
+
+  .end-overlay.lose {
+    background: radial-gradient(ellipse at center, rgba(30,10,10,0.97) 0%, rgba(5,5,15,0.99) 100%);
+  }
+
+  .end-panel {
+    max-width: 700px;
+    width: 100%;
+    text-align: center;
+    border: 1px solid var(--border-bright);
+    border-radius: 6px;
+    padding: 48px 36px;
+    position: relative;
+  }
+
+  .end-overlay.win .end-panel {
+    background: rgba(10,10,35,0.95);
+  }
+
+  .end-overlay.lose .end-panel {
+    background: rgba(20,8,8,0.95);
+    border-color: rgba(180,60,60,0.4);
+  }
+
+  .end-fleur {
+    font-size: 36px;
+    margin-bottom: 16px;
+  }
+
+  .end-title {
+    font-family: 'Cinzel', serif;
+    font-size: 26px;
+    font-weight: 700;
+    color: var(--gold);
+    margin-bottom: 8px;
+    line-height: 1.2;
+  }
+
+  .end-overlay.lose .end-title {
+    color: #e07878;
+  }
+
+  .end-date {
+    font-family: 'Cinzel', serif;
+    font-size: 12px;
+    letter-spacing: 3px;
+    color: var(--gold-dim);
+    margin-bottom: 24px;
+  }
+
+  .end-narration {
+    font-size: 16px;
+    line-height: 1.8;
+    color: var(--cream);
+    font-style: italic;
+    margin-bottom: 28px;
+    padding: 16px;
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    background: rgba(200,164,94,0.04);
+  }
+
+  .end-alignments {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 24px;
+    text-align: left;
+  }
+
+  .end-faction-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+  }
+
+  .end-faction-name {
+    font-family: 'Cinzel', serif;
+    font-size: 11px;
+    color: var(--gold-dim);
+    flex: 1;
+  }
+
+  .end-faction-bar {
+    width: 60px;
+    height: 5px;
+    background: rgba(200,164,94,0.15);
+    border-radius: 3px;
+    overflow: hidden;
+  }
+
+  .end-faction-fill {
+    height: 100%;
+    background: var(--gold);
+    border-radius: 3px;
+  }
+
+  .end-faction-pct {
+    font-family: 'Cinzel', serif;
+    font-size: 12px;
+    color: var(--gold-bright);
+    min-width: 32px;
+    text-align: right;
+  }
+
+  .historical-note {
+    font-size: 13px;
+    color: var(--cream-dim);
+    line-height: 1.7;
+    padding: 14px;
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    background: rgba(5,5,20,0.5);
+    text-align: left;
+    margin-bottom: 24px;
+  }
+
+  .historical-note strong {
+    font-family: 'Cinzel', serif;
+    font-size: 10px;
+    letter-spacing: 2px;
+    color: var(--gold-dim);
+    display: block;
+    margin-bottom: 6px;
+  }
+
+  .play-again-btn {
+    font-family: 'Cinzel', serif;
+    font-size: 13px;
+    letter-spacing: 2px;
+    background: transparent;
+    color: var(--gold);
+    border: 1px solid var(--gold);
+    padding: 12px 28px;
+    cursor: pointer;
+    border-radius: 3px;
+    transition: background 0.2s, color 0.2s;
+  }
+
+  .play-again-btn:hover {
+    background: rgba(200,164,94,0.15);
+  }
+
+  /* ALIGNMENT FILL COLORS */
+  .fill-royal { background: linear-gradient(90deg, #1a3a8a, #4a6ad8); }
+  .fill-vergennes { background: linear-gradient(90deg, #1a5a3a, #3a9a5a); }
+  .fill-philosophes { background: linear-gradient(90deg, #5a3a8a, #9a5ad8); }
+  .fill-merchants { background: linear-gradient(90deg, #8a6a1a, var(--gold)); }
+
+  /* SHIFT ANIMATION */
+  @keyframes shiftFlash {
+    0% { opacity: 0; transform: translateY(-10px); }
+    20% { opacity: 1; transform: translateY(0); }
+    80% { opacity: 1; }
+    100% { opacity: 0; transform: translateY(-5px); }
+  }
+
+  .shift-indicator {
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-family: 'Cinzel', serif;
+    font-size: 14px;
+    font-weight: 700;
+    pointer-events: none;
+    animation: shiftFlash 2.5s ease forwards;
+  }
+
+  .shift-pos { color: #7ec87e; }
+  .shift-neg { color: #e87878; }
+
+  /* RESPONSIVE */
+  @media (max-width: 640px) {
+    .factions-grid { grid-template-columns: 1fr; }
+    .main { padding: 12px; gap: 12px; }
+    .header-title h1 { font-size: 20px; }
+    .argument-controls { grid-template-columns: 1fr; }
+    .end-alignments { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<!-- OPENING GAMBIT OVERLAY -->
+<div class="gambit-overlay" id="gambitOverlay">
+  <div class="gambit-panel">
+    <h2>Mission to Paris</h2>
+    <p class="intro">You are Benjamin Franklin, 72 years old, America's most famous diplomat.<br>The Revolution depends on you.</p>
+    <div class="scene">
+      It is late January 1778. General Washington's army is starving at Valley Forge.
+      The Continental Congress has dispatched you to Versailles with a single mandate:
+      secure French recognition and a formal military alliance before Britain reinforces.
+      You have four audiences to make your case.
+    </div>
+    <div class="gambit-label">Choose your opening diplomatic approach</div>
+    <div class="gambit-options" id="gambitOptions">
+      <button class="gambit-btn" onclick="selectGambit('The Enlightenment Appeal', 'You open by invoking the shared ideals of liberty, natural rights, and the rights of man — framing America as the living proof of philosophe theory.')">
+        <span class="gambit-title">The Enlightenment Appeal</span>
+        Invoke shared ideals of liberty and the rights of man. America is the philosophes' republic made real.
+      </button>
+      <button class="gambit-btn" onclick="selectGambit('The Strategic Argument', 'You lead with cold geopolitics: Britain weakened in America means France strengthened in Europe. The alliance is France\'s best chance to reverse 1763.')">
+        <span class="gambit-title">The Strategic Argument</span>
+        Cold geopolitics: Britain weakened in America means France ascendant in Europe.
+      </button>
+      <button class="gambit-btn" onclick="selectGambit('The Commercial Opportunity', 'You open with trade: American ports, contracts, and commercial terms that make the alliance financially irresistible.')">
+        <span class="gambit-title">The Commercial Opportunity</span>
+        Lead with trade routes, commercial access, and the financial prize of American partnership.
+      </button>
+      <button class="gambit-btn" onclick="selectGambit('The Wounded Ally Plea', 'You speak plainly of Valley Forge, of soldiers with no shoes in the snow, and ask France whether it can watch liberty die within sight of rescue.')">
+        <span class="gambit-title">The Wounded Ally</span>
+        Speak plainly of Valley Forge. Ask France if it can watch liberty die within sight of rescue.
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- LOADING OVERLAY -->
+<div class="loading-overlay" id="loadingOverlay">
+  <div class="quill-spinner">🪶</div>
+  <div class="loading-text">Awaiting Versailles...</div>
+  <div class="loading-sub" id="loadingSub">Your argument is being considered</div>
+</div>
+
+<!-- WIN SCREEN -->
+<div class="end-overlay win" id="winScreen">
+  <div class="end-panel">
+    <div class="end-fleur">⚜️</div>
+    <div class="end-title">Treaty of Alliance — Signed</div>
+    <div class="end-date">FEBRUARY 6, 1778 · HÔTEL DE COISLIN, PARIS</div>
+    <div class="end-narration" id="winNarration">
+      France enters the war. The Revolution has its lifeline.
+    </div>
+    <div class="end-alignments" id="winAlignments"></div>
+    <div class="historical-note">
+      <strong>Historical Note</strong>
+      The Treaty of Alliance and Treaty of Amity and Commerce were signed February 6, 1778.
+      France recognized American independence and formally entered the war against Britain.
+      The French fleet and 6,000 troops under Rochambeau proved decisive at Yorktown in 1781,
+      forcing Cornwallis's surrender and effectively ending the Revolution.
+      Benjamin Franklin negotiated from Paris until 1785.
+    </div>
+    <button class="play-again-btn" onclick="resetGame()">Play Again</button>
+  </div>
+</div>
+
+<!-- LOSE SCREEN -->
+<div class="end-overlay lose" id="loseScreen">
+  <div class="end-panel">
+    <div class="end-fleur">🕯️</div>
+    <div class="end-title">France Remains Neutral</div>
+    <div class="end-date">FEBRUARY 1778 · VERSAILLES</div>
+    <div class="end-narration" id="loseNarration">
+      The mission has failed. The Revolution must face Britain alone.
+    </div>
+    <div class="end-alignments" id="loseAlignments"></div>
+    <div class="historical-note">
+      <strong>Historical Note</strong>
+      In reality, Franklin succeeded brilliantly — aided by the stunning American victory at Saratoga
+      (October 1777), which convinced Vergennes that America could actually win.
+      Without French intervention, the Continental Army faced insurmountable odds:
+      a superior Royal Navy, professional Hessian troops, and dwindling colonial support.
+      Most historians consider the French Alliance the single most decisive factor in American independence.
+    </div>
+    <button class="play-again-btn" onclick="resetGame()">Try Again</button>
+  </div>
+</div>
+
+<!-- HEADER -->
+<header>
+  <div class="header-inner">
+    <!-- Franklin SVG Portrait -->
+    <svg class="franklin-portrait" viewBox="0 0 72 72" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <!-- Background circle -->
+      <circle cx="36" cy="36" r="35" fill="rgba(200,164,94,0.08)" stroke="rgba(200,164,94,0.3)" stroke-width="1"/>
+      <!-- Body/coat -->
+      <ellipse cx="36" cy="62" rx="22" ry="16" fill="#1a1a40"/>
+      <rect x="22" y="48" width="28" height="18" rx="4" fill="#1a1a40"/>
+      <!-- Cravat/neck -->
+      <rect x="31" y="46" width="10" height="8" rx="2" fill="#e8e0c8"/>
+      <!-- Head -->
+      <ellipse cx="36" cy="35" rx="14" ry="16" fill="#d4a874"/>
+      <!-- Hair on sides (bald on top) -->
+      <path d="M22 38 Q18 42 20 50 Q22 46 24 44 Z" fill="#8a7040"/>
+      <path d="M50 38 Q54 42 52 50 Q50 46 48 44 Z" fill="#8a7040"/>
+      <!-- Glasses -->
+      <circle cx="30" cy="34" r="5" fill="none" stroke="#4a3820" stroke-width="1.5"/>
+      <circle cx="42" cy="34" r="5" fill="none" stroke="#4a3820" stroke-width="1.5"/>
+      <line x1="35" y1="34" x2="37" y2="34" stroke="#4a3820" stroke-width="1.5"/>
+      <line x1="25" y1="34" x2="22" y2="33" stroke="#4a3820" stroke-width="1.5"/>
+      <line x1="47" y1="34" x2="50" y2="33" stroke="#4a3820" stroke-width="1.5"/>
+      <!-- Eyes behind glasses -->
+      <circle cx="30" cy="34" r="2" fill="#2a1a0a"/>
+      <circle cx="42" cy="34" r="2" fill="#2a1a0a"/>
+      <!-- Nose -->
+      <path d="M36 36 Q34 40 33 42 Q36 43 39 42 Q38 40 36 36Z" fill="#b88860"/>
+      <!-- Mouth - slight smile -->
+      <path d="M31 45 Q36 48 41 45" stroke="#6a3820" stroke-width="1.5" fill="none"/>
+      <!-- Cane (left side) -->
+      <line x1="16" y1="70" x2="22" y2="52" stroke="#6a4820" stroke-width="2"/>
+      <path d="M14 70 Q16 68 18 70" stroke="#6a4820" stroke-width="2" fill="none"/>
+      <!-- Gold star/fleur accent -->
+      <text x="52" y="20" font-size="10" fill="rgba(200,164,94,0.6)">⚜</text>
+    </svg>
+
+    <div class="header-title">
+      <div class="subtitle">Summer Into AI 2026 — Week 2</div>
+      <h1>MISSION TO PARIS</h1>
+      <div class="dateline">Benjamin Franklin · Versailles, January–February 1778</div>
+    </div>
+
+    <div class="round-indicator">
+      <div class="round-label">Round</div>
+      <div class="round-num" id="roundNum">1</div>
+      <div class="round-of">of 4</div>
+    </div>
+  </div>
+</header>
+
+<!-- WEIGHTED SCORE BAR -->
+<div class="score-bar">
+  <div class="score-bar-inner">
+    <div class="score-label">Alliance Score</div>
+    <div class="score-track">
+      <div class="score-fill" id="scoreBar" style="width: 0%"></div>
+    </div>
+    <div class="score-value" id="scoreValue">— / 60</div>
+    <div class="threshold-note">≥ 60 to sign the Treaty</div>
+  </div>
+</div>
+
+<!-- MAIN CONTENT -->
+<div class="main">
+
+  <!-- 4 FACTION CARDS -->
+  <div class="factions-grid">
+
+    <!-- King Louis XVI -->
+    <div class="faction-card" id="card-louis">
+      <div class="faction-weight-badge">×40pts</div>
+      <div class="faction-header">
+        <svg class="faction-emblem" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="24" cy="24" r="23" fill="rgba(26,46,110,0.4)" stroke="rgba(200,164,94,0.4)" stroke-width="1"/>
+          <!-- Crown -->
+          <path d="M12 28 L12 20 L18 24 L24 16 L30 24 L36 20 L36 28 Z" fill="#c8a45e" stroke="#8a6e3e" stroke-width="1"/>
+          <rect x="10" y="28" width="28" height="5" rx="1" fill="#c8a45e"/>
+          <!-- Gems on crown -->
+          <circle cx="24" cy="20" r="2" fill="#e87878"/>
+          <circle cx="15" cy="24" r="1.5" fill="#78b8e8"/>
+          <circle cx="33" cy="24" r="1.5" fill="#78b8e8"/>
+          <!-- Fleur de lis below -->
+          <text x="18" y="42" font-size="12" fill="rgba(200,164,94,0.8)">⚜</text>
+        </svg>
+        <div class="faction-info">
+          <div class="faction-name">King Louis XVI</div>
+          <div class="faction-interest">Seeks glory; fears bankruptcy and open war</div>
+        </div>
+      </div>
+      <div class="alignment-row">
+        <div class="alignment-label">ALIGNMENT</div>
+        <div class="alignment-track">
+          <div class="alignment-fill fill-royal" id="fill-louis" style="width: 30%"></div>
+        </div>
+        <div class="alignment-pct" id="pct-louis">30%</div>
+      </div>
+      <div class="faction-voice" id="voice-louis" data-placeholder="The King has not yet spoken..."></div>
+    </div>
+
+    <!-- Vergennes -->
+    <div class="faction-card" id="card-vergennes">
+      <div class="faction-weight-badge">×35pts</div>
+      <div class="faction-header">
+        <svg class="faction-emblem" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="24" cy="24" r="23" fill="rgba(26,90,60,0.4)" stroke="rgba(200,164,94,0.4)" stroke-width="1"/>
+          <!-- Chess piece / rook shape representing strategy -->
+          <rect x="16" y="32" width="16" height="6" rx="1" fill="#5a9a6a"/>
+          <rect x="18" y="22" width="12" height="12" fill="#5a9a6a"/>
+          <path d="M15 22 L16 14 L19 17 L24 14 L29 17 L32 14 L33 22 Z" fill="#5a9a6a" stroke="#3a7a4a" stroke-width="1"/>
+          <!-- Map/globe lines -->
+          <circle cx="24" cy="10" r="3" fill="#3a6a4a" stroke="rgba(200,164,94,0.5)" stroke-width="1"/>
+          <line x1="24" y1="13" x2="24" y2="22" stroke="rgba(200,164,94,0.3)" stroke-width="1"/>
+        </svg>
+        <div class="faction-info">
+          <div class="faction-name">Foreign Minister Vergennes</div>
+          <div class="faction-interest">Wants Britain weakened; purely strategic</div>
+        </div>
+      </div>
+      <div class="alignment-row">
+        <div class="alignment-label">ALIGNMENT</div>
+        <div class="alignment-track">
+          <div class="alignment-fill fill-vergennes" id="fill-vergennes" style="width: 45%"></div>
+        </div>
+        <div class="alignment-pct" id="pct-vergennes">45%</div>
+      </div>
+      <div class="faction-voice" id="voice-vergennes" data-placeholder="The Minister awaits your argument..."></div>
+    </div>
+
+    <!-- Philosophes -->
+    <div class="faction-card" id="card-philosophes">
+      <div class="faction-weight-badge">×15pts</div>
+      <div class="faction-header">
+        <svg class="faction-emblem" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="24" cy="24" r="23" fill="rgba(90,60,140,0.4)" stroke="rgba(200,164,94,0.4)" stroke-width="1"/>
+          <!-- Torch of enlightenment -->
+          <rect x="21" y="28" width="6" height="14" rx="1" fill="#8a6a30"/>
+          <path d="M18 28 Q24 14 30 28 Z" fill="#e8a030" opacity="0.9"/>
+          <path d="M20 28 Q24 18 28 28 Z" fill="#f8e060" opacity="0.8"/>
+          <!-- Stars above flame -->
+          <circle cx="18" cy="12" r="1.5" fill="rgba(200,164,94,0.8)"/>
+          <circle cx="24" cy="8" r="2" fill="rgba(200,164,94,0.9)"/>
+          <circle cx="30" cy="12" r="1.5" fill="rgba(200,164,94,0.8)"/>
+        </svg>
+        <div class="faction-info">
+          <div class="faction-name">Philosophe Circle / Académie</div>
+          <div class="faction-interest">Loves liberty and Enlightenment ideals</div>
+        </div>
+      </div>
+      <div class="alignment-row">
+        <div class="alignment-label">ALIGNMENT</div>
+        <div class="alignment-track">
+          <div class="alignment-fill fill-philosophes" id="fill-philosophes" style="width: 60%"></div>
+        </div>
+        <div class="alignment-pct" id="pct-philosophes">60%</div>
+      </div>
+      <div class="faction-voice" id="voice-philosophes" data-placeholder="The Académie listens with interest..."></div>
+    </div>
+
+    <!-- Merchant Consortium -->
+    <div class="faction-card" id="card-merchants">
+      <div class="faction-weight-badge">×10pts</div>
+      <div class="faction-header">
+        <svg class="faction-emblem" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="24" cy="24" r="23" fill="rgba(100,80,20,0.4)" stroke="rgba(200,164,94,0.4)" stroke-width="1"/>
+          <!-- Ship silhouette -->
+          <path d="M8 34 Q24 30 40 34 L38 38 Q24 36 10 38 Z" fill="#8a6a30"/>
+          <rect x="22" y="20" width="2" height="14" fill="#6a5020"/>
+          <!-- Sails -->
+          <path d="M24 20 L24 28 L14 26 Z" fill="#e8e0c8" opacity="0.8"/>
+          <path d="M24 20 L24 28 L34 26 Z" fill="#e8e0c8" opacity="0.8"/>
+          <!-- Coin / livre symbol -->
+          <circle cx="36" cy="14" r="6" fill="#c8a45e" stroke="#8a6e3e" stroke-width="1"/>
+          <text x="33" y="18" font-size="8" fill="#1a1000" font-weight="bold">₶</text>
+        </svg>
+        <div class="faction-info">
+          <div class="faction-name">Merchant Consortium</div>
+          <div class="faction-interest">Purely financial: trade routes and contracts</div>
+        </div>
+      </div>
+      <div class="alignment-row">
+        <div class="alignment-label">ALIGNMENT</div>
+        <div class="alignment-track">
+          <div class="alignment-fill fill-merchants" id="fill-merchants" style="width: 25%"></div>
+        </div>
+        <div class="alignment-pct" id="pct-merchants">25%</div>
+      </div>
+      <div class="faction-voice" id="voice-merchants" data-placeholder="The Consortium calculates risk..."></div>
+    </div>
+  </div>
+
+  <!-- ARGUMENT PANEL -->
+  <div class="argument-panel">
+    <h2>Deliver Your Address</h2>
+
+    <div class="argument-controls">
+      <div class="faction-select-wrap">
+        <label for="factionSelect">Address your argument to:</label>
+        <select id="factionSelect">
+          <option value="louis">King Louis XVI</option>
+          <option value="vergennes">Foreign Minister Vergennes</option>
+          <option value="philosophes">Philosophe Circle / Académie</option>
+          <option value="merchants">Merchant Consortium</option>
+        </select>
+      </div>
+      <button class="deliver-btn" id="deliverBtn" onclick="deliverArgument()">
+        Deliver Address
+      </button>
+    </div>
+
+    <div class="textarea-wrap">
+      <textarea
+        id="argumentInput"
+        placeholder="Write your diplomatic argument here. Tailor it to the faction's specific interests — what do they care about? What do they fear? What do they want in return?"
+        oninput="updateCharCount()"
+      ></textarea>
+      <div class="char-count" id="charCount">0</div>
+    </div>
+
+    <div class="status-log" id="statusLog">
+      <em style="opacity:0.4; font-size:13px;">Your mission: four factions, four rounds. Persuade each to support the Treaty of Alliance. Choose wisely — the Revolution depends on it.</em>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// ============================================================
+// GAME STATE
+// ============================================================
+const FACTIONS = {
+  louis:       { name: 'King Louis XVI',         weight: 40, start: 30 },
+  vergennes:   { name: 'Foreign Minister Vergennes', weight: 35, start: 45 },
+  philosophes: { name: 'Philosophe Circle',       weight: 15, start: 60 },
+  merchants:   { name: 'Merchant Consortium',     weight: 10, start: 25 }
+};
+
+let alignments = {};
+let round = 1;
+let openingGambit = '';
+let roundLog = [];
+let gameActive = false;
+let addressedFactions = new Set();
+
+function initAlignments() {
+  for (const [k, v] of Object.entries(FACTIONS)) {
+    alignments[k] = v.start;
+  }
+}
+
+// ============================================================
+// COMPUTED SCORE
+// ============================================================
+function computeScore() {
+  // weighted average: sum(alignment * weight) / sum(weights)
+  // weights sum to 100, so: (louis*40 + vergennes*35 + philosophes*15 + merchants*10) / 100
+  const score = (
+    alignments.louis       * FACTIONS.louis.weight +
+    alignments.vergennes   * FACTIONS.vergennes.weight +
+    alignments.philosophes * FACTIONS.philosophes.weight +
+    alignments.merchants   * FACTIONS.merchants.weight
+  ) / 100;
+  return Math.round(score * 10) / 10;
+}
+
+// ============================================================
+// UI UPDATES
+// ============================================================
+function updateAllUI() {
+  // Update faction cards
+  for (const [id] of Object.entries(FACTIONS)) {
+    const pct = Math.round(alignments[id]);
+    document.getElementById('fill-' + id).style.width = pct + '%';
+    document.getElementById('pct-' + id).textContent = pct + '%';
+  }
+
+  // Update score bar (0–100 range, threshold is 60)
+  const score = computeScore();
+  const barPct = Math.min(100, (score / 100) * 100);
+  document.getElementById('scoreBar').style.width = barPct + '%';
+  document.getElementById('scoreValue').textContent = score.toFixed(1) + ' / 60';
+
+  // Color score bar
+  const fill = document.getElementById('scoreBar');
+  if (score >= 60) {
+    fill.style.background = 'linear-gradient(90deg, #3a8a3a, #7ec87e)';
+  } else if (score >= 45) {
+    fill.style.background = 'linear-gradient(90deg, #8a6a1a, #c8a45e)';
+  } else {
+    fill.style.background = 'linear-gradient(90deg, #6a1a1a, #c86060)';
+  }
+
+  // Update round
+  document.getElementById('roundNum').textContent = round;
+
+  // Highlight targeted card
+  const selected = document.getElementById('factionSelect').value;
+  for (const id of Object.keys(FACTIONS)) {
+    const card = document.getElementById('card-' + id);
+    card.classList.remove('selected-target', 'targeted');
+    if (id === selected) card.classList.add('selected-target');
+  }
+}
+
+function updateCharCount() {
+  const len = document.getElementById('argumentInput').value.length;
+  const el = document.getElementById('charCount');
+  el.textContent = len;
+  el.classList.toggle('over', len > 300);
+}
+
+// ============================================================
+// OPENING GAMBIT
+// ============================================================
+function selectGambit(title, description) {
+  openingGambit = description;
+  document.getElementById('gambitOverlay').style.display = 'none';
+  gameActive = true;
+  updateAllUI();
+}
+
+// ============================================================
+// DELIVER ARGUMENT
+// ============================================================
+async function deliverArgument() {
+  if (!gameActive) return;
+
+  const argument = document.getElementById('argumentInput').value.trim();
+  if (!argument) {
+    alert('Please write an argument before delivering your address.');
+    return;
+  }
+
+  const faction = document.getElementById('factionSelect').value;
+  const btn = document.getElementById('deliverBtn');
+  btn.disabled = true;
+
+  // Build prior context summary
+  const priorSummary = roundLog.length > 0
+    ? roundLog.map(e => `Round ${e.round} addressed ${e.factionName}: ${e.whatWorked} But: ${e.whatFailed}`).join(' | ')
+    : '';
+
+  // Show loading
+  const factionName = FACTIONS[faction].name;
+  document.getElementById('loadingSub').textContent = `${factionName} is deliberating...`;
+  document.getElementById('loadingOverlay').classList.add('active');
+
+  try {
+    const response = await fetch('/api/negotiate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        faction,
+        playerArgument: argument,
+        currentAlignment: alignments[faction],
+        roundNum: round,
+        priorRoundSummary: priorSummary,
+        openingGambit
+      })
+    });
+
+    if (!response.ok) {
+      const err = await response.json().catch(() => ({}));
+      throw new Error(err.error || `HTTP ${response.status}`);
+    }
+
+    const data = await response.json();
+
+    // Update alignment
+    const oldAlignment = alignments[faction];
+    alignments[faction] = data.new_alignment;
+    addressedFactions.add(faction);
+
+    // Show faction voice
+    const voiceEl = document.getElementById('voice-' + faction);
+    voiceEl.textContent = '"' + data.faction_voice + '"';
+
+    // Show shift indicator
+    showShiftIndicator(faction, data.alignment_shift);
+
+    // Add to log
+    roundLog.push({
+      round,
+      faction,
+      factionName: data.faction_name,
+      whatWorked: data.what_worked,
+      whatFailed: data.what_failed,
+      counterDemand: data.counter_demand,
+      shift: data.alignment_shift
+    });
+
+    // Update status log
+    appendStatusLog(data, faction, argument, round);
+
+    // Clear input
+    document.getElementById('argumentInput').value = '';
+    updateCharCount();
+
+    // Update UI
+    updateAllUI();
+
+    // Advance round
+    round++;
+    updateAllUI(); // re-render round counter
+
+    // Check end condition
+    if (round > 4) {
+      await endGame();
+      return;
+    }
+
+  } catch (err) {
+    console.error(err);
+    document.getElementById('statusLog').innerHTML +=
+      `<div class="log-entry" style="color:#e87878;">⚠ Error: ${err.message}. Check your API key.</div>`;
+  } finally {
+    document.getElementById('loadingOverlay').classList.remove('active');
+    btn.disabled = false;
+  }
+}
+
+function showShiftIndicator(faction, shift) {
+  const card = document.getElementById('card-' + faction);
+  const el = document.createElement('div');
+  el.className = 'shift-indicator ' + (shift >= 0 ? 'shift-pos' : 'shift-neg');
+  el.textContent = (shift >= 0 ? '+' : '') + shift;
+  card.style.position = 'relative';
+  card.appendChild(el);
+  setTimeout(() => el.remove(), 3000);
+}
+
+function appendStatusLog(data, faction, argument, roundNum) {
+  const log = document.getElementById('statusLog');
+  const entry = document.createElement('div');
+  entry.className = 'log-entry';
+
+  const shiftText = data.alignment_shift >= 0
+    ? `<span style="color:#7ec87e">+${data.alignment_shift}%</span>`
+    : `<span style="color:#e87878">${data.alignment_shift}%</span>`;
+
+  entry.innerHTML = `
+    <div class="log-faction">Round ${roundNum} — ${data.faction_name} ${shiftText}</div>
+    <div class="log-worked">✓ ${data.what_worked}</div>
+    <div class="log-failed">✗ ${data.what_failed}</div>
+    <div class="log-demand">⟶ They want: ${data.counter_demand}</div>
+  `;
+
+  // Clear placeholder on first entry
+  if (log.querySelector('em')) log.innerHTML = '';
+  log.appendChild(entry);
+  log.scrollTop = log.scrollHeight;
+}
+
+// ============================================================
+// END GAME
+// ============================================================
+async function endGame() {
+  const score = computeScore();
+  const won = score >= 60;
+
+  // Build alignment display
+  const alignmentHTML = Object.entries(FACTIONS).map(([id, f]) => `
+    <div class="end-faction-row">
+      <div class="end-faction-name">${f.name}</div>
+      <div class="end-faction-bar">
+        <div class="end-faction-fill" style="width:${Math.round(alignments[id])}%"></div>
+      </div>
+      <div class="end-faction-pct">${Math.round(alignments[id])}%</div>
+    </div>
+  `).join('');
+
+  document.getElementById('winAlignments').innerHTML = alignmentHTML;
+  document.getElementById('loseAlignments').innerHTML = alignmentHTML;
+
+  // Show loading for narration
+  document.getElementById('loadingSub').textContent = won
+    ? 'The signing ceremony is being recorded...'
+    : 'The diplomatic record is being sealed...';
+  document.getElementById('loadingOverlay').classList.add('active');
+
+  try {
+    const narResp = await fetch('/api/signing', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        finalAlignments: alignments,
+        outcome: won ? 'win' : 'lose',
+        playerHistory: roundLog.map(e => `${e.factionName}: ${e.shift > 0 ? '+' : ''}${e.shift}`).join(', ')
+      })
+    });
+
+    if (narResp.ok) {
+      const narData = await narResp.json();
+      if (won) {
+        document.getElementById('winNarration').textContent = narData.narration;
+      } else {
+        document.getElementById('loseNarration').textContent = narData.narration;
+      }
+    }
+  } catch (e) {
+    console.error('signing narration failed:', e);
+  } finally {
+    document.getElementById('loadingOverlay').classList.remove('active');
+  }
+
+  gameActive = false;
+
+  if (won) {
+    document.getElementById('winScreen').classList.add('active');
+  } else {
+    document.getElementById('loseScreen').classList.add('active');
+  }
+}
+
+// ============================================================
+// RESET
+// ============================================================
+function resetGame() {
+  round = 1;
+  openingGambit = '';
+  roundLog = [];
+  gameActive = false;
+  addressedFactions.clear();
+  initAlignments();
+
+  // Clear voices
+  for (const id of Object.keys(FACTIONS)) {
+    document.getElementById('voice-' + id).textContent = '';
+  }
+
+  // Clear log
+  document.getElementById('statusLog').innerHTML =
+    '<em style="opacity:0.4; font-size:13px;">Your mission: four factions, four rounds. Persuade each to support the Treaty of Alliance. Choose wisely — the Revolution depends on it.</em>';
+
+  // Clear input
+  document.getElementById('argumentInput').value = '';
+  updateCharCount();
+
+  // Hide end screens
+  document.getElementById('winScreen').classList.remove('active');
+  document.getElementById('loseScreen').classList.remove('active');
+
+  // Show gambit overlay
+  document.getElementById('gambitOverlay').style.display = 'flex';
+
+  updateAllUI();
+}
+
+// ============================================================
+// FACTION SELECT → HIGHLIGHT CARD
+// ============================================================
+document.getElementById('factionSelect').addEventListener('change', function() {
+  updateAllUI();
+});
+
+// ============================================================
+// INIT
+// ============================================================
+initAlignments();
+updateAllUI();
+</script>
+</body>
+</html>
