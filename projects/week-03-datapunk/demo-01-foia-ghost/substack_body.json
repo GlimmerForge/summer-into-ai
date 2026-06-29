@@ -59,7 +59,7 @@
       "content": [
         {
           "type": "text",
-          "text": "You enter a ZIP code. The app quietly contacts three federal agencies — the Census Bureau, the EPA, and FEMA — and pulls the data they've been sitting on about your neighborhood: median income, poverty rate, the age of your housing stock, every EPA-regulated facility nearby, how many have active violations, and every disaster declaration your county has absorbed in the last five years. Then Claude reads all three datasets together and writes a classified-style intelligence dossier — cross-referencing patterns across agencies that no single agency ever connected for you. The government collected all of this. They just never put it together."
+          "text": "You enter a ZIP code. The app quietly contacts three federal agencies — the Census Bureau, the EPA, and FEMA — and pulls the data they've been sitting on about your neighborhood: median income, poverty rate, the age of your housing stock, every EPA-regulated toxic-release facility nearby (with carcinogen and PFAS counts per facility), and every federal disaster declaration your county has absorbed in the last five years. Then Claude reads all three datasets together and writes a classified-style intelligence dossier — cross-referencing patterns across agencies that no single agency ever connected for you. The government collected all of this. They just never put it together."
         }
       ]
     },
@@ -90,7 +90,7 @@
         },
         {
           "type": "text",
-          "text": " Eric went outward — pulling NASA MMS4 magnetic field data and rendering it in Three.js particles. FOIA Ghost went inward: the same data-punk ethos applied to the ground beneath your feet, using EPA, Census, and FEMA data to surface what the federal government knows about your specific neighborhood"
+          "text": " Eric went outward — pulling NASA MMS4 magnetic field data and rendering it as Three.js particles. FOIA Ghost went inward: the same data-punk ethos applied to the ground beneath your feet, using EPA Toxics Release Inventory, Census ACS, and FEMA OpenFEMA data to surface what the federal government knows about your specific neighborhood"
         }
       ]
     },
@@ -130,7 +130,7 @@
                 },
                 {
                   "type": "text",
-                  "text": " The /api/fetch endpoint calls Census ACS 2022 (income, poverty, housing age, internet access), EPA ECHO (regulated facilities in the ZIP, significant non-compliance flags), and FEMA disaster declarations — all in a single Promise.allSettled call. Each dataset streams into its own terminal panel with a typewriter animation as it arrives."
+                  "text": " The /api/fetch endpoint calls Census ACS 2022 (income, poverty, housing age, internet access), EPA Envirofacts Toxics Release Inventory (regulated facilities, then a per-facility chemical query to count carcinogens and PFAS), and FEMA OpenFEMA (county-level disaster declarations, last 5 years) — all in a single Promise.allSettled call. Each dataset streams into its own terminal panel with a typewriter animation as it arrives."
                 }
               ]
             }
@@ -156,7 +156,7 @@
                 },
                 {
                   "type": "text",
-                  "text": " The /api/analyze endpoint calls Claude Sonnet with thinking: { type: 'enabled', budget_tokens: 5000 } and betas: ['interleaved-thinking-2025-05-14']. Claude's reasoning process — the cross-dataset analysis happening before the dossier is written — streams to a collapsible REASONING section in real time. You watch Claude think before it writes."
+                  "text": " The /api/analyze endpoint calls Claude Sonnet with thinking: { type: 'enabled', budget_tokens: 5000 }. Claude's reasoning process — the cross-dataset analysis happening before the dossier is written — streams to a collapsible REASONING STREAM section in real time. You watch Claude think before it writes."
                 }
               ]
             }
@@ -182,7 +182,7 @@
                 },
                 {
                   "type": "text",
-                  "text": " Claude is given all three datasets simultaneously and instructed to find connections none of the agencies made individually — like when above-average poverty, pre-1960 housing, and nearby EPA violations combine into a lead-paint-plus-exposure pattern that no single dataset shows. The dossier streams section by section: Economic Profile, Environmental Exposure, Disaster Vulnerability, and the Ghost Analysis classified findings."
+                  "text": " Claude is given all three datasets simultaneously and instructed to find connections none of the agencies made individually — like when above-average poverty, pre-1960 housing, and nearby EPA facilities reporting carcinogenic chemicals combine into a pattern that no single dataset reveals. The dossier streams section by section: Economic Profile, Environmental Exposure, Disaster Vulnerability, and the Ghost Analysis classified findings, ending with a color-coded risk level: NOMINAL, ELEVATED, HIGH, or CRITICAL."
                 }
               ]
             }
@@ -234,7 +234,7 @@
               "content": [
                 {
                   "type": "text",
-                  "text": "Watch three terminal panels fill with real Census, EPA, and FEMA data for your area"
+                  "text": "Watch three terminal panels fill with real Census, EPA, and FEMA data — the EPA panel shows facility count, total toxic chemicals, and how many are classified as carcinogens or PFAS"
                 }
               ]
             }
@@ -251,7 +251,24 @@
               "content": [
                 {
                   "type": "text",
-                  "text": "The GHOST ANALYSIS section opens — you can expand REASONING STREAM to watch Claude think through the cross-dataset connections in real time"
+                  "text": "The FEMA panel shows county-level federal disaster declarations (not state-level) for the last 5 years"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "list_item",
+          "content": [
+            {
+              "type": "paragraph",
+              "attrs": {
+                "textAlign": null
+              },
+              "content": [
+                {
+                  "type": "text",
+                  "text": "The GHOST ANALYSIS section opens — expand REASONING STREAM to watch Claude think through the cross-dataset connections in real time"
                 }
               ]
             }
@@ -359,14 +376,14 @@
             {
               "type": "link",
               "attrs": {
-                "href": "https://github.com/GlimmerForge/summer-into-ai/tree/master/projects/week-03-datapunk/demo-01-foia-ghost",
+                "href": "https://github.com/GlimmerForge/summer-into-ai/blob/master/projects/week-03-datapunk/demo-01-foia-ghost/README.md",
                 "target": "_blank",
                 "rel": "noopener noreferrer nofollow",
                 "class": null
               }
             }
           ],
-          "text": "github.com/GlimmerForge/summer-into-ai → demo-01-foia-ghost"
+          "text": "github.com/GlimmerForge/summer-into-ai → demo-01-foia-ghost/README.md"
         }
       ]
     },
