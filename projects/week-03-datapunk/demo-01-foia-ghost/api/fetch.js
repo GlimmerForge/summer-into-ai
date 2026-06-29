@@ -35,9 +35,10 @@ export default async function handler(req, res) {
   // EPA Envirofacts TRI — facilities legally required to report toxic chemical releases
   const epaUrl = `https://data.epa.gov/efservice/tri_facility/ZIP_CODE/${zip}/JSON`;
 
+  const femaFilter = encodeURIComponent(`state eq '${stateAbbr}' and declarationDate gt '${fiveYearsAgoISO}T00:00:00.000z'`);
   const femaUrl =
-    `https://www.fema.gov/api/open/v2/disasterDeclarationsSummaries?state=${stateAbbr}` +
-    `&declarationDate=gt${fiveYearsAgoISO}&$top=50&$orderby=declarationDate%20desc`;
+    `https://www.fema.gov/api/open/v2/DisasterDeclarationsSummaries` +
+    `?$filter=${femaFilter}&$top=100&$orderby=declarationDate%20desc`;
 
   const [censusResult, epaResult, femaResult] = await Promise.allSettled([
     fetch(censusUrl).then(r => {
@@ -109,7 +110,7 @@ export default async function handler(req, res) {
   try {
     if (femaResult.status === 'rejected') throw new Error('fetch failed');
     const raw = femaResult.value;
-    const declarations = raw?.DisasterDeclarationsSummaries ?? [];
+    const declarations = raw?.DisasterDeclarationsSummaries ?? raw?.disasterDeclarationsSummaries ?? [];
     const types = [...new Set(declarations.map(d => d.incidentType).filter(Boolean))];
     const mostRecent = declarations[0]?.declarationDate?.split('T')[0] ?? null;
     fema = {
