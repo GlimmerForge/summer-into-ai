@@ -47,7 +47,9 @@ Tradecraft language:
 
 The dispatch should read as period-authentic cipher — comprehensible to someone with the codebook above, opaque without it. It must be written in 18th-century English style, roughly 120-180 words. Generate a new dispatch about: ${missionType}. Round ${roundNum} of 4. ${contextNote}`;
 
-  const response = await client.messages.create({
+  let response;
+  try {
+    response = await client.messages.create({
     model: 'claude-sonnet-4-6',
     max_tokens: 1024,
     system: systemPrompt,
@@ -93,7 +95,11 @@ The dispatch should read as period-authentic cipher — comprehensible to someon
       }
     ],
     tool_choice: { type: 'any' }
-  });
+    });
+  } catch (err) {
+    console.error('dispatch error:', err);
+    return res.status(500).json({ error: err.message || 'Claude call failed' });
+  }
 
   const toolUse = response.content.find(b => b.type === 'tool_use');
   if (!toolUse) {
