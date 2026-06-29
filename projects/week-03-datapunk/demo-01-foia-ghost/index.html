@@ -1,0 +1,704 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>FOIA GHOST // DATA.PUNK</title>
+<style>
+  :root {
+    --green: #00ff41;
+    --red: #ff3333;
+    --dim: #005500;
+    --dimmer: #003300;
+    --grey: #555;
+    --bg: #050505;
+    --panel-bg: #080808;
+    --border: #00ff4133;
+    --font: 'Courier New', Courier, monospace;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body {
+    background: var(--bg);
+    color: var(--green);
+    font-family: var(--font);
+    font-size: 13px;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* ── Scanlines overlay ──────────────────────────────────── */
+  body::before {
+    content: '';
+    position: fixed; inset: 0;
+    background: repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 2px,
+      rgba(0,255,65,0.015) 2px,
+      rgba(0,255,65,0.015) 4px
+    );
+    pointer-events: none;
+    z-index: 9999;
+  }
+
+  /* ── Layout ─────────────────────────────────────────────── */
+  .container { max-width: 1100px; margin: 0 auto; padding: 20px 16px 60px; }
+
+  /* ── Classification banner ───────────────────────────────── */
+  .banner {
+    text-align: center;
+    padding: 12px;
+    border: 1px solid var(--green);
+    margin-bottom: 6px;
+    letter-spacing: 3px;
+    font-size: 11px;
+    animation: flicker 8s infinite;
+  }
+  .banner-title {
+    font-size: 22px;
+    letter-spacing: 6px;
+    color: var(--green);
+    text-shadow: 0 0 18px #00ff41cc;
+    margin-bottom: 4px;
+  }
+  .banner-sub {
+    color: var(--dim);
+    font-size: 10px;
+    letter-spacing: 2px;
+  }
+  .banner-tagline {
+    margin-top: 8px;
+    color: #aaa;
+    font-size: 11px;
+    letter-spacing: 1px;
+  }
+
+  @keyframes flicker {
+    0%, 97%, 100% { opacity: 1; }
+    98% { opacity: 0.85; }
+    99% { opacity: 1; }
+    99.5% { opacity: 0.9; }
+  }
+
+  /* ── Input section ───────────────────────────────────────── */
+  .input-section {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin: 24px 0 20px;
+    flex-wrap: wrap;
+  }
+  .input-label {
+    color: var(--dim);
+    letter-spacing: 2px;
+    font-size: 12px;
+    white-space: nowrap;
+  }
+  .zip-wrapper {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    border: 1px solid var(--green);
+    background: var(--panel-bg);
+  }
+  .zip-wrapper .prompt { color: var(--green); padding: 8px 6px 8px 10px; }
+  #zip-input {
+    background: transparent;
+    border: none;
+    outline: none;
+    color: var(--green);
+    font-family: var(--font);
+    font-size: 16px;
+    letter-spacing: 4px;
+    width: 100px;
+    caret-color: var(--green);
+    padding: 8px 4px;
+  }
+  .cursor-blink {
+    display: inline-block;
+    width: 9px; height: 16px;
+    background: var(--green);
+    animation: blink 1s step-end infinite;
+    margin-left: 2px;
+    vertical-align: middle;
+  }
+  @keyframes blink { 50% { opacity: 0; } }
+  #transmit-btn {
+    background: transparent;
+    border: 1px solid var(--green);
+    color: var(--green);
+    font-family: var(--font);
+    font-size: 12px;
+    letter-spacing: 3px;
+    padding: 9px 18px;
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s;
+  }
+  #transmit-btn:hover { background: var(--green); color: var(--bg); }
+  #transmit-btn:disabled { opacity: 0.4; cursor: default; }
+
+  .status-line {
+    font-size: 11px;
+    color: var(--dim);
+    letter-spacing: 1px;
+    min-height: 18px;
+    margin-bottom: 18px;
+  }
+
+  /* ── Data panels ─────────────────────────────────────────── */
+  .panels-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    margin-bottom: 24px;
+  }
+  @media (max-width: 700px) { .panels-grid { grid-template-columns: 1fr; } }
+
+  .panel {
+    border: 1px solid var(--border);
+    background: var(--panel-bg);
+    padding: 14px;
+    min-height: 200px;
+    transition: border-color 0.3s;
+  }
+  .panel.online { border-color: var(--green); }
+  .panel.error  { border-color: var(--red); }
+
+  .panel-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+    border-bottom: 1px solid var(--dimmer);
+    padding-bottom: 8px;
+  }
+  .panel-title {
+    font-size: 10px;
+    letter-spacing: 3px;
+    color: var(--dim);
+  }
+  .panel-status {
+    font-size: 10px;
+    letter-spacing: 2px;
+    color: var(--grey);
+  }
+  .panel-status.accessing { color: var(--dim); animation: pulse 1s ease-in-out infinite alternate; }
+  .panel-status.online    { color: var(--green); }
+  .panel-status.error     { color: var(--red); }
+  @keyframes pulse { from { opacity: 0.3; } to { opacity: 1; } }
+
+  .panel-content {
+    font-size: 12px;
+    line-height: 1.7;
+    color: #aaa;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+  .panel-content .val { color: var(--green); font-weight: bold; }
+  .panel-content .warn { color: var(--red); }
+
+  /* ── Analysis section ────────────────────────────────────── */
+  .analysis-section {
+    border: 1px solid var(--border);
+    background: var(--panel-bg);
+    padding: 18px;
+    display: none;
+  }
+  .analysis-section.visible { display: block; }
+
+  .analysis-header {
+    font-size: 10px;
+    letter-spacing: 4px;
+    color: var(--dim);
+    margin-bottom: 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .analysis-title { color: var(--green); font-size: 12px; letter-spacing: 3px; }
+
+  /* reasoning block */
+  .reasoning-block {
+    border: 1px solid var(--dimmer);
+    margin-bottom: 18px;
+    overflow: hidden;
+    transition: max-height 0.3s;
+  }
+  .reasoning-toggle {
+    background: none;
+    border: none;
+    color: var(--dim);
+    font-family: var(--font);
+    font-size: 10px;
+    letter-spacing: 2px;
+    cursor: pointer;
+    padding: 8px 12px;
+    width: 100%;
+    text-align: left;
+    display: flex;
+    justify-content: space-between;
+  }
+  .reasoning-toggle:hover { color: var(--green); }
+  #reasoning-content {
+    padding: 10px 14px 14px;
+    font-size: 11px;
+    color: #555;
+    font-style: italic;
+    line-height: 1.8;
+    white-space: pre-wrap;
+    word-break: break-word;
+    max-height: 220px;
+    overflow-y: auto;
+    border-top: 1px solid var(--dimmer);
+    display: none;
+  }
+  #reasoning-content.open { display: block; }
+
+  #dossier-content {
+    font-size: 13px;
+    line-height: 1.9;
+    color: #ccc;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+
+  /* section headers inside dossier */
+  .dossier-header {
+    color: var(--green);
+    font-size: 11px;
+    letter-spacing: 3px;
+    border-bottom: 1px solid var(--dim);
+    margin: 20px 0 8px;
+    padding-bottom: 4px;
+    display: block;
+  }
+
+  /* risk level badge */
+  .risk-badge {
+    display: inline-block;
+    padding: 4px 14px;
+    border: 1px solid;
+    font-size: 12px;
+    letter-spacing: 3px;
+    margin-top: 18px;
+    font-weight: bold;
+  }
+  .risk-badge.NOMINAL   { border-color: var(--green); color: var(--green); }
+  .risk-badge.ELEVATED  { border-color: #ffaa00; color: #ffaa00; }
+  .risk-badge.HIGH      { border-color: var(--red); color: var(--red); }
+  .risk-badge.CRITICAL  { border-color: var(--red); color: var(--red); animation: risk-blink 0.6s step-end infinite; }
+  @keyframes risk-blink { 50% { opacity: 0.4; } }
+
+  /* initiating message */
+  #initiating-msg {
+    color: var(--dim);
+    font-size: 11px;
+    letter-spacing: 2px;
+    animation: pulse 1s ease-in-out infinite alternate;
+    margin-bottom: 14px;
+  }
+
+  /* ── Footer ──────────────────────────────────────────────── */
+  .footer {
+    text-align: center;
+    color: var(--dimmer);
+    font-size: 10px;
+    letter-spacing: 2px;
+    margin-top: 40px;
+  }
+  .footer a { color: var(--dim); text-decoration: none; }
+  .footer a:hover { color: var(--green); }
+
+  /* scrollbar */
+  ::-webkit-scrollbar { width: 4px; background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--dim); }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <!-- Classification Banner -->
+  <div class="banner">
+    <div class="banner-title">[ FOIA GHOST ]</div>
+    <div class="banner-sub">DATA.PUNK // CLEARANCE: PUBLIC // SOURCE: YOU PAY FOR THIS</div>
+    <div class="banner-tagline">What the federal government knows about your neighborhood.<br>
+    Synthesized by AI. Sourced from EPA, Census Bureau, FEMA.</div>
+  </div>
+
+  <!-- ZIP Input -->
+  <div class="input-section">
+    <span class="input-label">ENTER ZIP CODE:</span>
+    <div class="zip-wrapper">
+      <span class="prompt">&gt;</span>
+      <input id="zip-input" type="text" maxlength="5" placeholder="00000" autocomplete="off" spellcheck="false" />
+      <span class="cursor-blink" id="cursor"></span>
+    </div>
+    <button id="transmit-btn">TRANSMIT</button>
+  </div>
+  <div class="status-line" id="status-line"></div>
+
+  <!-- Three Data Panels -->
+  <div class="panels-grid" id="panels-grid">
+    <div class="panel" id="panel-census">
+      <div class="panel-header">
+        <span class="panel-title">CENSUS DATABASE</span>
+        <span class="panel-status" id="census-status">STANDBY</span>
+      </div>
+      <div class="panel-content" id="census-content">Awaiting coordinates...</div>
+    </div>
+    <div class="panel" id="panel-epa">
+      <div class="panel-header">
+        <span class="panel-title">EPA DATABASE</span>
+        <span class="panel-status" id="epa-status">STANDBY</span>
+      </div>
+      <div class="panel-content" id="epa-content">Awaiting coordinates...</div>
+    </div>
+    <div class="panel" id="panel-fema">
+      <div class="panel-header">
+        <span class="panel-title">FEMA DATABASE</span>
+        <span class="panel-status" id="fema-status">STANDBY</span>
+      </div>
+      <div class="panel-content" id="fema-content">Awaiting coordinates...</div>
+    </div>
+  </div>
+
+  <!-- Analysis Section -->
+  <div class="analysis-section" id="analysis-section">
+    <div class="analysis-header">
+      <span class="analysis-title">// GHOST ANALYSIS</span>
+      <span id="analysis-status-label" style="color:var(--dim);font-size:10px;letter-spacing:2px;">INITIATING</span>
+    </div>
+    <div id="initiating-msg">GHOST ANALYSIS INITIATING... EXTENDED REASONING ENGAGED...</div>
+
+    <!-- Reasoning block -->
+    <div class="reasoning-block" id="reasoning-block">
+      <button class="reasoning-toggle" id="reasoning-toggle" onclick="toggleReasoning()">
+        <span>// REASONING STREAM (CLASSIFIED THOUGHT PROCESS)</span>
+        <span id="toggle-arrow">[ EXPAND ]</span>
+      </button>
+      <div id="reasoning-content"></div>
+    </div>
+
+    <!-- Dossier -->
+    <div id="dossier-content"></div>
+    <div id="risk-badge-container"></div>
+  </div>
+
+  <div class="footer">
+    DATA SOURCES: U.S. CENSUS BUREAU &bull; EPA ECHO &bull; FEMA OPEN DATA &bull; ZIPPOPOTAM.US<br>
+    <a href="https://github.com/GlimmerForge/summer-into-ai" target="_blank" rel="noopener">github.com/GlimmerForge/summer-into-ai</a>
+    &nbsp;&bull;&nbsp; SUMMER INTO AI 2026 // DATA.PUNK
+  </div>
+</div>
+
+<script>
+  // ── Utilities ─────────────────────────────────────────────────────────────
+  function setStatus(msg) {
+    document.getElementById('status-line').textContent = msg;
+  }
+
+  function setPanelStatus(db, state, label) {
+    const el = document.getElementById(`${db}-status`);
+    const panel = document.getElementById(`panel-${db}`);
+    el.className = `panel-status ${state}`;
+    el.textContent = label;
+    panel.className = `panel ${state === 'online' ? 'online' : state === 'error' ? 'error' : ''}`;
+  }
+
+  function setPanelAccessing(db) {
+    setPanelStatus(db, 'accessing', 'ACCESSING...');
+    document.getElementById(`${db}-content`).textContent = '';
+  }
+
+  let typewriterTimers = [];
+  function typewriter(el, text, speed = 18, onDone) {
+    let i = 0;
+    el.innerHTML = '';
+    const t = setInterval(() => {
+      if (i >= text.length) {
+        clearInterval(t);
+        if (onDone) onDone();
+        return;
+      }
+      el.textContent += text[i++];
+      el.scrollTop = el.scrollHeight;
+    }, speed);
+    typewriterTimers.push(t);
+  }
+
+  function clearTypewriters() {
+    typewriterTimers.forEach(clearInterval);
+    typewriterTimers = [];
+  }
+
+  function formatCensus(c) {
+    if (c.error) return `ERROR: ${c.error}`;
+    const inc = c.medianIncome != null
+      ? `$${c.medianIncome.toLocaleString()}` : 'N/A';
+    const incVs = c.medianIncome != null
+      ? ` (NATIONAL: $72,000)` : '';
+    const pov = c.povertyRate != null ? `${c.povertyRate}%` : 'N/A';
+    const inet = c.noInternetRate != null ? `${c.noInternetRate}%` : 'N/A';
+    const yr  = c.medianYearBuilt != null ? c.medianYearBuilt : 'N/A';
+    return [
+      `MEDIAN INCOME......: ${inc}${incVs}`,
+      `POVERTY RATE.......: ${pov}  [NATL: 11.5%]`,
+      `NO INTERNET........: ${inet} of households`,
+      `MEDIAN YEAR BUILT..: ${yr}`,
+    ].join('\n');
+  }
+
+  function formatEpa(e) {
+    if (e.error) return `EPA DATA UNAVAILABLE\nPROCEEDING WITH PARTIAL ANALYSIS`;
+    const lines = [
+      `REGULATED FACILITIES: ${e.totalFacilities}`,
+      `ACTIVE VIOLATIONS...: ${e.violations}`,
+    ];
+    if (e.topFacilities.length > 0) {
+      lines.push('', 'KNOWN FACILITIES:');
+      e.topFacilities.forEach(f => lines.push(`  - ${f}`));
+    } else {
+      lines.push('', 'NO FACILITIES ON RECORD');
+    }
+    return lines.join('\n');
+  }
+
+  function formatFema(f) {
+    if (f.error) return `FEMA DATA UNAVAILABLE\nPROCEEDING WITH PARTIAL ANALYSIS`;
+    const lines = [
+      `STATE.............: ${f.stateName}`,
+      `DISASTERS (5 YR)..: ${f.disasterCount}`,
+    ];
+    if (f.types.length > 0) {
+      lines.push('', 'INCIDENT TYPES:');
+      f.types.slice(0, 8).forEach(t => lines.push(`  - ${t.toUpperCase()}`));
+    }
+    if (f.mostRecent) lines.push('', `MOST RECENT: ${f.mostRecent}`);
+    return lines.join('\n');
+  }
+
+  // ── Panel display ──────────────────────────────────────────────────────────
+  function fillPanel(db, data, formatter) {
+    const text = formatter(data);
+    const contentEl = document.getElementById(`${db}-content`);
+    const hasError = !!data.error;
+    setPanelStatus(db, hasError ? 'error' : 'online', hasError ? 'PARTIAL' : 'ONLINE');
+    typewriter(contentEl, text, 14);
+  }
+
+  // ── Dossier rendering ──────────────────────────────────────────────────────
+  let dossierText = '';
+  let reasoningText = '';
+  let riskFound = false;
+
+  function renderDossier() {
+    const el = document.getElementById('dossier-content');
+    // Replace [HEADER] with styled spans and render the rest
+    const lines = dossierText.split('\n');
+    let html = '';
+    for (const line of lines) {
+      const headerMatch = line.match(/^\[(.+?)\]\s*$/);
+      if (headerMatch) {
+        html += `<span class="dossier-header">[ ${headerMatch[1]} ]</span>\n`;
+      } else {
+        html += escapeHtml(line) + '\n';
+      }
+    }
+    el.innerHTML = html;
+
+    // Risk badge
+    if (!riskFound) {
+      const riskMatch = dossierText.match(/OVERALL RISK LEVEL:\s*(NOMINAL|ELEVATED|HIGH|CRITICAL)/i);
+      if (riskMatch) {
+        riskFound = true;
+        const level = riskMatch[1].toUpperCase();
+        const container = document.getElementById('risk-badge-container');
+        container.innerHTML = `<div class="risk-badge ${level}">RISK LEVEL: ${level}</div>`;
+      }
+    }
+  }
+
+  function escapeHtml(str) {
+    return str
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;');
+  }
+
+  // ── SSE stream handler ────────────────────────────────────────────────────
+  async function startAnalysis(data) {
+    const section = document.getElementById('analysis-section');
+    section.classList.add('visible');
+    document.getElementById('initiating-msg').style.display = 'block';
+    document.getElementById('analysis-status-label').textContent = 'STREAMING';
+    dossierText = '';
+    reasoningText = '';
+    riskFound = false;
+    document.getElementById('dossier-content').innerHTML = '';
+    document.getElementById('reasoning-content').textContent = '';
+    document.getElementById('risk-badge-container').innerHTML = '';
+
+    let resp;
+    try {
+      resp = await fetch('/api/analyze', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
+    } catch (e) {
+      document.getElementById('initiating-msg').textContent = `ERROR: ${e.message}`;
+      return;
+    }
+
+    if (!resp.ok) {
+      document.getElementById('initiating-msg').textContent = `SERVER ERROR: ${resp.status}`;
+      return;
+    }
+
+    document.getElementById('initiating-msg').style.display = 'none';
+
+    const reader = resp.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = '';
+    let eventType = 'text';
+    let firstText = true;
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split('\n');
+      buffer = lines.pop(); // keep incomplete line
+
+      for (const line of lines) {
+        if (line.startsWith('event: ')) {
+          eventType = line.slice(7).trim();
+        } else if (line.startsWith('data: ')) {
+          const rawData = line.slice(6);
+          if (!rawData || rawData === '{}') continue;
+          let parsed;
+          try { parsed = JSON.parse(rawData); } catch (_) { continue; }
+
+          if (eventType === 'thinking' && parsed.text) {
+            reasoningText += parsed.text;
+            const rc = document.getElementById('reasoning-content');
+            rc.textContent = reasoningText;
+            rc.scrollTop = rc.scrollHeight;
+
+          } else if (eventType === 'text' && parsed.text) {
+            if (firstText) {
+              firstText = false;
+              document.getElementById('analysis-status-label').textContent = 'LIVE';
+            }
+            dossierText += parsed.text;
+            renderDossier();
+            const dc = document.getElementById('dossier-content');
+            dc.scrollTop = dc.scrollHeight;
+
+          } else if (eventType === 'error' && parsed.error) {
+            document.getElementById('initiating-msg').style.display = 'block';
+            document.getElementById('initiating-msg').textContent = `ERROR: ${parsed.error}`;
+
+          } else if (eventType === 'done') {
+            document.getElementById('analysis-status-label').textContent = 'COMPLETE';
+            setStatus('DOSSIER COMPLETE.');
+          }
+        }
+      }
+    }
+
+    document.getElementById('analysis-status-label').textContent = 'COMPLETE';
+    setStatus('TRANSMISSION COMPLETE. DOSSIER FILED.');
+  }
+
+  // ── Main fetch flow ───────────────────────────────────────────────────────
+  async function run(zip) {
+    clearTypewriters();
+    document.getElementById('transmit-btn').disabled = true;
+    document.getElementById('zip-input').disabled = true;
+    document.getElementById('analysis-section').classList.remove('visible');
+    document.getElementById('risk-badge-container').innerHTML = '';
+
+    // Set all panels to ACCESSING
+    ['census', 'epa', 'fema'].forEach(db => {
+      setPanelAccessing(db);
+      document.getElementById(`${db}-content`).textContent = 'ACCESSING...';
+    });
+
+    setStatus(`TRANSMITTING // QUERYING FEDERAL DATABASES FOR ZIP ${zip}...`);
+
+    let data;
+    try {
+      const resp = await fetch(`/api/fetch?zip=${encodeURIComponent(zip)}`);
+      if (!resp.ok) {
+        const err = await resp.json().catch(() => ({}));
+        setStatus(`ERROR: ${err.error ?? resp.statusText}`);
+        ['census', 'epa', 'fema'].forEach(db => setPanelStatus(db, 'error', 'ERROR'));
+        document.getElementById('transmit-btn').disabled = false;
+        document.getElementById('zip-input').disabled = false;
+        return;
+      }
+      data = await resp.json();
+    } catch (e) {
+      setStatus(`CONNECTION ERROR: ${e.message}`);
+      ['census', 'epa', 'fema'].forEach(db => setPanelStatus(db, 'error', 'ERROR'));
+      document.getElementById('transmit-btn').disabled = false;
+      document.getElementById('zip-input').disabled = false;
+      return;
+    }
+
+    setStatus(`SIGNAL ACQUIRED // ${data.city}, ${data.state} // DECRYPTING...`);
+
+    // Fill panels
+    fillPanel('census', data.census, formatCensus);
+    fillPanel('epa', data.epa, formatEpa);
+    fillPanel('fema', data.fema, formatFema);
+
+    // Wait a moment for typewriter effect to start, then begin analysis
+    setTimeout(() => {
+      setStatus(`DATA ACQUIRED // ENGAGING GHOST ANALYSIS...`);
+      startAnalysis(data);
+    }, 600);
+
+    document.getElementById('transmit-btn').disabled = false;
+    document.getElementById('zip-input').disabled = false;
+  }
+
+  // ── Event listeners ───────────────────────────────────────────────────────
+  document.getElementById('transmit-btn').addEventListener('click', () => {
+    const zip = document.getElementById('zip-input').value.trim();
+    if (!/^\d{5}$/.test(zip)) {
+      setStatus('INVALID INPUT // ZIP CODE MUST BE 5 DIGITS');
+      return;
+    }
+    run(zip);
+  });
+
+  document.getElementById('zip-input').addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') document.getElementById('transmit-btn').click();
+  });
+
+  // Hide cursor blink when input is focused (input has its own caret)
+  document.getElementById('zip-input').addEventListener('focus', () => {
+    document.getElementById('cursor').style.display = 'none';
+  });
+  document.getElementById('zip-input').addEventListener('blur', () => {
+    document.getElementById('cursor').style.display = '';
+  });
+
+  // ── Reasoning toggle ──────────────────────────────────────────────────────
+  function toggleReasoning() {
+    const rc = document.getElementById('reasoning-content');
+    const arrow = document.getElementById('toggle-arrow');
+    if (rc.classList.toggle('open')) {
+      arrow.textContent = '[ COLLAPSE ]';
+      rc.scrollTop = rc.scrollHeight;
+    } else {
+      arrow.textContent = '[ EXPAND ]';
+    }
+  }
+</script>
+</body>
+</html>
