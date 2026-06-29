@@ -93,7 +93,6 @@ export default async function handler(req, res) {
       model: 'claude-sonnet-4-6',
       max_tokens: 8000,
       thinking: { type: 'enabled', budget_tokens: 5000 },
-      betas: ['interleaved-thinking-2025-05-14'],
       stream: true,
       system: SYSTEM_PROMPT,
       messages: [{ role: 'user', content: userMessage }],
