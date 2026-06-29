@@ -1,0 +1,75 @@
+{"type":"doc","content":[
+  {"type":"paragraph","attrs":{"textAlign":null},"content":[
+    {"type":"text","text":"Week 2 of "},
+    {"type":"text","marks":[{"type":"link","attrs":{"href":"https://advisoryhour.substack.com","target":"_blank","rel":"noopener noreferrer nofollow","class":null}}],"text":"Summer into AI 2026"},
+    {"type":"text","text":" hosted by "},
+    {"type":"text","marks":[{"type":"link","attrs":{"href":"https://advisoryhour.substack.com","target":"_blank","rel":"noopener noreferrer nofollow","class":null}}],"text":"@advisoryhour"},
+    {"type":"text","text":" — theme: Red, White & Boom."}
+  ]},
+  {"type":"paragraph","attrs":{"textAlign":null},"content":[
+    {"type":"text","marks":[{"type":"strong"}],"text":"The Broadcast"},
+    {"type":"text","text":" is a fully AI-generated audio radio drama staged in a miniature colonial theater. Pick a scene — The Signing (July 4, 1776), The Ride (April 18, 1775), or The Winter (Valley Forge) — and Claude writes a complete 13–16 line script using structured tool output, each line cast to a specific historical figure with its own ElevenLabs voice. Then the curtains open, the full cast assembles on stage, and you watch animated founding fathers perform the drama live: bouncing, gesturing, stepping forward into the spotlight as their lines play. All voice audio is pre-fetched in parallel so there are no gaps — once the show starts, it runs uninterrupted with a scene-appropriate ambient drone underneath."}
+  ]},
+  {"type":"heading","attrs":{"textAlign":null,"level":2},"content":[
+    {"type":"text","text":"How the AI works"}
+  ]},
+  {"type":"bullet_list","content":[
+    {"type":"list_item","content":[{"type":"paragraph","attrs":{"textAlign":null},"content":[
+      {"type":"text","marks":[{"type":"strong"}],"text":"Script generation"},
+      {"type":"text","text":" — Claude ("},
+      {"type":"text","marks":[{"type":"link","attrs":{"href":"https://claude.ai","target":"_blank","rel":"noopener noreferrer nofollow","class":null}}],"text":"claude-sonnet-4-6"},
+      {"type":"text","text":") uses tool calling with a "},
+      {"type":"text","marks":[{"type":"strong"}],"text":"write_radio_drama"},
+      {"type":"text","text":" tool to return structured output: title, setting description, and an array of lines each tagged with characterKey, voiceId, dialogue text, and pause duration. Period language, real historical tension, no exposition."}
+    ]}]},
+    {"type":"list_item","content":[{"type":"paragraph","attrs":{"textAlign":null},"content":[
+      {"type":"text","marks":[{"type":"strong"}],"text":"Parallel voice synthesis"},
+      {"type":"text","text":" — after the script generates, all voice lines are fetched from ElevenLabs ("},
+      {"type":"text","marks":[{"type":"strong"}],"text":"eleven_turbo_v2_5"},
+      {"type":"text","text":") simultaneously. Each historical character has a dedicated voice ID: Hancock gets one voice, Franklin another, Washington another. The pre-fetch means the performance plays with no loading gaps."}
+    ]}]},
+    {"type":"list_item","content":[{"type":"paragraph","attrs":{"textAlign":null},"content":[
+      {"type":"text","marks":[{"type":"strong"}],"text":"Procedural theater"},
+      {"type":"text","text":" — the full cast from the script is extracted and rendered on stage simultaneously: the active speaker steps forward at full size, the others hold position in the wings as dimmed background figures. Three distinct speaking animation styles (decisive lean, passionate sway, emphatic bounce) are assigned per character. Scene-specific ambient sound — a tense minor chord for the Signing, an urgent tremolo for the Ride, a bleak drone for Valley Forge — is generated entirely with the Web Audio API, no audio files."}
+    ]}]}
+  ]},
+  {"type":"heading","attrs":{"textAlign":null,"level":2},"content":[
+    {"type":"text","text":"How to play"}
+  ]},
+  {"type":"bullet_list","content":[
+    {"type":"list_item","content":[{"type":"paragraph","attrs":{"textAlign":null},"content":[
+      {"type":"text","text":"Choose one of three scenes from the selection screen"}
+    ]}]},
+    {"type":"list_item","content":[{"type":"paragraph","attrs":{"textAlign":null},"content":[
+      {"type":"text","text":"Click "},
+      {"type":"text","marks":[{"type":"strong"}],"text":"Go On Air"},
+      {"type":"text","text":" — Claude writes the script, then all voices pre-load while the title card shows"}
+    ]}]},
+    {"type":"list_item","content":[{"type":"paragraph","attrs":{"textAlign":null},"content":[
+      {"type":"text","text":"Curtains open, the cast assembles, and the drama plays start to finish with no interruption"}
+    ]}]},
+    {"type":"list_item","content":[{"type":"paragraph","attrs":{"textAlign":null},"content":[
+      {"type":"text","text":"Each scene is unique — the script is written fresh every time, so re-running the same scene gives a different drama"}
+    ]}]}
+  ]},
+  {"type":"heading","attrs":{"textAlign":null,"level":2},"content":[
+    {"type":"text","text":"Where to play"}
+  ]},
+  {"type":"paragraph","attrs":{"textAlign":null},"content":[
+    {"type":"text","marks":[{"type":"strong"}],"text":"Demo: "},
+    {"type":"text","marks":[{"type":"link","attrs":{"href":"https://demo-09-the-broadcast.vercel.app","target":"_blank","rel":"noopener noreferrer nofollow","class":null}}],"text":"demo-09-the-broadcast.vercel.app"}
+  ]},
+  {"type":"paragraph","attrs":{"textAlign":null},"content":[
+    {"type":"text","marks":[{"type":"strong"}],"text":"Code & README: "},
+    {"type":"text","marks":[{"type":"link","attrs":{"href":"https://github.com/GlimmerForge/summer-into-ai/blob/master/projects/week-02-red-white-boom/demo-09-the-broadcast/README.md","target":"_blank","rel":"noopener noreferrer nofollow","class":null}}],"text":"github.com/GlimmerForge/summer-into-ai → demo-09-the-broadcast/README.md"}
+  ]},
+  {"type":"horizontal_rule"},
+  {"type":"paragraph","attrs":{"textAlign":null},"content":[
+    {"type":"text","text":"Interesting to compare this week’s approaches to the Revolution theme. Eric’s "},
+    {"type":"text","marks":[{"type":"link","attrs":{"href":"https://advisoryhour.substack.com/p/summer-into-ai-week2-independence","target":"_blank","rel":"noopener noreferrer nofollow","class":null}}],"text":"Independence Town"},
+    {"type":"text","text":" went fully visual — an isometric city-builder where you construct a town and launch fireworks. The Broadcast goes the opposite direction: pure audio, no interface to speak of, just curtains opening on a performance. Two very different takes on what “AI-powered” means for the same historical moment."}
+  ]},
+  {"type":"paragraph","attrs":{"textAlign":null},"content":[
+    {"type":"text","marks":[{"type":"em"}],"text":"Summer into AI 2026 · Theme 2: Red, White & Boom"}
+  ]}
+]}
