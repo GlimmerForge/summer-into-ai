@@ -48,23 +48,30 @@ function buildUserMessage(data) {
   lines.push('', 'EPA TOXIC RELEASE INVENTORY DATA:');
   if (epa.error) {
     lines.push(`- ERROR: ${epa.error}`);
+  } else if (epa.totalFacilities === 0) {
+    lines.push(`- No TRI-reporting facilities in this ZIP (residential or light-industry area)`);
   } else {
     lines.push(`- Active TRI facilities (legally required to report toxic chemical releases): ${epa.totalFacilities}`);
     if (epa.topFacilities.length > 0)
-      lines.push(`- Facility names include: ${epa.topFacilities.join(', ')}`);
-    if (epa.totalFacilities === 0)
-      lines.push(`- No TRI-reporting facilities found in this ZIP (may indicate residential area or very light industry)`);
+      lines.push(`- Facility names: ${epa.topFacilities.join(', ')}`);
+    if (epa.totalChemicals > 0)
+      lines.push(`- Distinct toxic chemicals reported across these facilities: ${epa.totalChemicals}`);
+    if (epa.carcinogenCount > 0)
+      lines.push(`- Of those, classified as known or suspected carcinogens: ${epa.carcinogenCount}`);
+    if (epa.pfasCount > 0)
+      lines.push(`- PFAS ("forever chemicals") reported: ${epa.pfasCount}`);
   }
 
-  lines.push('', `FEMA DATA (${fema.stateName}, last 5 years):`);
+  const femaScope = fema.countyLevel ? `${fema.county} County, ${fema.stateName}` : `${fema.stateName} (state-level — county not resolved)`;
+  lines.push('', `FEMA DISASTER DECLARATIONS — ${femaScope}, last 5 years:`);
   if (fema.error) {
     lines.push(`- ERROR: ${fema.error}`);
   } else {
-    lines.push(`- Disaster declarations: ${fema.disasterCount}`);
+    lines.push(`- Federal disaster declarations: ${fema.disasterCount}`);
     if (fema.types.length > 0)
-      lines.push(`- Types: ${fema.types.join(', ')}`);
+      lines.push(`- Disaster types: ${fema.types.join(', ')}`);
     if (fema.mostRecent)
-      lines.push(`- Most recent: ${fema.mostRecent}`);
+      lines.push(`- Most recent declaration: ${fema.mostRecent}`);
   }
 
   return lines.join('\n');

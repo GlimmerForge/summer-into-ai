@@ -384,10 +384,17 @@
     <!-- Dossier -->
     <div id="dossier-content"></div>
     <div id="risk-badge-container"></div>
+    <p id="disclaimer" style="display:none;margin-top:20px;font-size:10px;color:#444;letter-spacing:1px;line-height:1.6;">
+      DATA SOURCES: Census Bureau ACS 2022 (income, poverty, internet, housing age) &bull;
+      EPA Toxics Release Inventory — facilities legally required to report releases of 600+ listed chemicals &bull;
+      FEMA OpenFEMA API — county-level federal disaster declarations, last 5 years.
+      Carcinogen and PFAS classifications per EPA TRI chemical registry.
+      AI analysis is Claude&rsquo;s synthesis of public federal data and does not constitute legal or health advice.
+    </p>
   </div>
 
   <div class="footer">
-    DATA SOURCES: U.S. CENSUS BUREAU &bull; EPA ECHO &bull; FEMA OPEN DATA &bull; ZIPPOPOTAM.US<br>
+    DATA SOURCES: U.S. CENSUS BUREAU ACS 2022 &bull; EPA TOXICS RELEASE INVENTORY &bull; FEMA OPENFEMA API<br>
     <a href="https://github.com/GlimmerForge/summer-into-ai" target="_blank" rel="noopener">github.com/GlimmerForge/summer-into-ai</a>
     &nbsp;&bull;&nbsp; SUMMER INTO AI 2026 // DATA.PUNK
   </div>
@@ -452,23 +459,35 @@
 
   function formatEpa(e) {
     if (e.error) return `EPA DATA UNAVAILABLE\nPROCEEDING WITH PARTIAL ANALYSIS`;
+    if (e.totalFacilities === 0) {
+      return `TRI FACILITIES......: 0\nNO REGULATED REPORTERS IN THIS ZIP\n(RESIDENTIAL / LIGHT-INDUSTRY AREA)`;
+    }
     const lines = [
-      `REGULATED FACILITIES: ${e.totalFacilities}`,
-      `ACTIVE VIOLATIONS...: ${e.violations}`,
+      `TRI FACILITIES......: ${e.totalFacilities}`,
     ];
+    if (e.totalChemicals > 0) {
+      lines.push(`TOXIC CHEMICALS.....: ${e.totalChemicals}`);
+    }
+    if (e.carcinogenCount > 0) {
+      lines.push(`CARCINOGENS.........: ${e.carcinogenCount}`);
+    }
+    if (e.pfasCount > 0) {
+      lines.push(`PFAS (FOREVER CHEM).: ${e.pfasCount}`);
+    }
     if (e.topFacilities.length > 0) {
       lines.push('', 'KNOWN FACILITIES:');
       e.topFacilities.forEach(f => lines.push(`  - ${f}`));
-    } else {
-      lines.push('', 'NO FACILITIES ON RECORD');
     }
     return lines.join('\n');
   }
 
   function formatFema(f) {
     if (f.error) return `FEMA DATA UNAVAILABLE\nPROCEEDING WITH PARTIAL ANALYSIS`;
+    const scope = f.countyLevel
+      ? `${f.county} COUNTY`
+      : f.stateName.toUpperCase() + ' (STATE)';
     const lines = [
-      `STATE.............: ${f.stateName}`,
+      `SCOPE.............: ${scope}`,
       `DISASTERS (5 YR)..: ${f.disasterCount}`,
     ];
     if (f.types.length > 0) {
@@ -539,6 +558,7 @@
     document.getElementById('dossier-content').innerHTML = '';
     document.getElementById('reasoning-content').textContent = '';
     document.getElementById('risk-badge-container').innerHTML = '';
+    document.getElementById('disclaimer').style.display = 'none';
 
     let resp;
     try {
@@ -610,6 +630,7 @@
     }
 
     document.getElementById('analysis-status-label').textContent = 'COMPLETE';
+    document.getElementById('disclaimer').style.display = 'block';
     setStatus('TRANSMISSION COMPLETE. DOSSIER FILED.');
   }
 

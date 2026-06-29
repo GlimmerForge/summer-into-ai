@@ -22,7 +22,7 @@ export default async function handler(req, res) {
     }
   } catch (_) { /* fall through with defaults */ }
 
-  // ── 2. Parallel fetch: Census + EPA + FEMA ───────────────────────────────
+  // ── 2. Parallel fetch: Census + EPA TRI + Nominatim county ───────────────
   const fiveYearsAgo = new Date();
   fiveYearsAgo.setFullYear(fiveYearsAgo.getFullYear() - 5);
   const fiveYearsAgoISO = fiveYearsAgo.toISOString().split('T')[0];
@@ -32,15 +32,11 @@ export default async function handler(req, res) {
     `https://api.census.gov/data/2022/acs/acs5?get=B19013_001E,B17001_002E,B17001_001E,` +
     `B28002_013E,B28002_001E,B25035_001E,NAME&for=zip%20code%20tabulation%20area:${zip}${censusKey}`;
 
-  // EPA Envirofacts TRI — facilities legally required to report toxic chemical releases
   const epaUrl = `https://data.epa.gov/efservice/tri_facility/ZIP_CODE/${zip}/JSON`;
 
-  const femaFilter = encodeURIComponent(`state eq '${stateAbbr}' and declarationDate gt '${fiveYearsAgoISO}T00:00:00.000z'`);
-  const femaUrl =
-    `https://www.fema.gov/api/open/v2/DisasterDeclarationsSummaries` +
-    `?$filter=${femaFilter}&$top=100&$orderby=declarationDate%20desc`;
+  const nominatimUrl = `https://nominatim.openstreetmap.org/search?postalcode=${zip}&country=US&format=json&addressdetails=1&limit=1`;
 
-  const [censusResult, epaResult, femaResult] = await Promise.allSettled([
+  const [censusResult, epaResult, nominatimResult] = await Promise.allSettled([
     fetch(censusUrl).then(r => {
       if (!r.ok || !r.headers.get('content-type')?.includes('json')) {
         throw new Error(`Census HTTP ${r.status} — check CENSUS_API_KEY env var`);
@@ -48,7 +44,7 @@ export default async function handler(req, res) {
       return r.json();
     }),
     fetch(epaUrl, { headers: { 'User-Agent': 'FOIA-Ghost/1.0' } }).then(r => r.json()),
-    fetch(femaUrl).then(r => r.json()),
+    fetch(nominatimUrl, { headers: { 'User-Agent': 'FOIA-Ghost/1.0' } }).then(r => r.json()),
   ]);
 
   // ── 3. Parse Census ───────────────────────────────────────────────────────
@@ -73,54 +69,100 @@ export default async function handler(req, res) {
     census = {
       medianIncome: income === NULL_VAL ? null : income,
       povertyRate: (povTotal > 0 && povCount !== NULL_VAL)
-        ? Math.round((povCount / povTotal) * 1000) / 10
-        : null,
+        ? Math.round((povCount / povTotal) * 1000) / 10 : null,
       noInternetRate: (noIntTotal > 0 && noIntCount !== NULL_VAL)
-        ? Math.round((noIntCount / noIntTotal) * 1000) / 10
-        : null,
+        ? Math.round((noIntCount / noIntTotal) * 1000) / 10 : null,
       medianYearBuilt: yearBuilt === NULL_VAL ? null : yearBuilt,
       nationalMedianIncome: 72000,
     };
-  } catch (e) {
-    census = { error: 'No Census data available for this ZIP', medianIncome: null, povertyRate: null, noInternetRate: null, medianYearBuilt: null, nationalMedianIncome: 72000 };
+  } catch (_) {
+    census = { error: 'No Census data for this ZIP', medianIncome: null, povertyRate: null, noInternetRate: null, medianYearBuilt: null, nationalMedianIncome: 72000 };
   }
 
-  // ── 4. Parse EPA TRI (Toxics Release Inventory) ───────────────────────────
+  // ── 4. Parse EPA TRI + fetch carcinogen/PFAS counts per facility ──────────
   let epa;
   try {
     if (epaResult.status === 'rejected') throw new Error('fetch failed');
     const raw = epaResult.value;
-    // TRI returns a flat array of facility objects (or an error object)
     if (!Array.isArray(raw)) throw new Error('unexpected shape');
     const active = raw.filter(f => f.fac_closed_ind !== '1');
-    const topFacilities = active.slice(0, 5).map(f => f.facility_name).filter(Boolean);
+
+    // Get county from TRI data if available (primary county source)
+    const triCounty = active[0]?.county_name ?? null; // e.g. "HARRIS"
+
+    // Fetch carcinogen/PFAS chemical info for each active facility (up to 5)
+    const chemResults = await Promise.allSettled(
+      active.slice(0, 5).map(f =>
+        fetch(`https://data.epa.gov/efservice/tri_chem_info/TRI_FACILITY_ID/${f.tri_facility_id}/JSON`, {
+          headers: { 'User-Agent': 'FOIA-Ghost/1.0' }
+        }).then(r => r.json())
+      )
+    );
+
+    let carcinogenCount = 0, pfasCount = 0, totalChemicals = 0;
+    for (const cr of chemResults) {
+      if (cr.status === 'fulfilled' && Array.isArray(cr.value)) {
+        totalChemicals += cr.value.length;
+        carcinogenCount += cr.value.filter(c => c.carc_ind === 'YES').length;
+        pfasCount += cr.value.filter(c => c.pfas_ind === 'YES').length;
+      }
+    }
+
     epa = {
       totalFacilities: active.length,
-      violations: 0, // TRI doesn't have violation flags; count is the signal
-      topFacilities,
-      label: 'Toxic Release Inventory facilities (federally required reporters)',
+      topFacilities: active.slice(0, 5).map(f => f.facility_name).filter(Boolean),
+      totalChemicals,
+      carcinogenCount,
+      pfasCount,
+      triCounty,
       error: null,
     };
   } catch (_) {
-    epa = { error: 'EPA data unavailable', totalFacilities: 0, violations: 0, topFacilities: [], label: '' };
+    epa = { error: 'EPA data unavailable', totalFacilities: 0, topFacilities: [], totalChemicals: 0, carcinogenCount: 0, pfasCount: 0, triCounty: null };
   }
 
-  // ── 5. Parse FEMA ─────────────────────────────────────────────────────────
+  // ── 5. Resolve county for FEMA filter ────────────────────────────────────
+  // Priority: TRI county_name → Nominatim → fall back to state-level
+  let county = null, countyLevel = false;
+  if (epa.triCounty) {
+    // TRI returns e.g. "HARRIS" — FEMA expects "Harris (County)"
+    county = epa.triCounty.charAt(0) + epa.triCounty.slice(1).toLowerCase();
+  } else if (nominatimResult.status === 'fulfilled') {
+    const raw = nominatimResult.value?.[0]?.address?.county ?? '';
+    county = raw.replace(/\s+(county|parish|borough|municipality)$/i, '').trim() || null;
+  }
+
+  // ── 6. Fetch FEMA (county-level if possible, state-level fallback) ────────
   let fema;
   try {
-    if (femaResult.status === 'rejected') throw new Error('fetch failed');
-    const raw = femaResult.value;
-    const declarations = raw?.DisasterDeclarationsSummaries ?? raw?.disasterDeclarationsSummaries ?? [];
+    let femaUrl, femaFilter;
+    if (county) {
+      const femaCounty = `${county} (County)`;
+      femaFilter = encodeURIComponent(
+        `state eq '${stateAbbr}' and designatedArea eq '${femaCounty}' and declarationDate gt '${fiveYearsAgoISO}T00:00:00.000z'`
+      );
+      countyLevel = true;
+    } else {
+      femaFilter = encodeURIComponent(
+        `state eq '${stateAbbr}' and declarationDate gt '${fiveYearsAgoISO}T00:00:00.000z'`
+      );
+    }
+    femaUrl = `https://www.fema.gov/api/open/v2/DisasterDeclarationsSummaries?$filter=${femaFilter}&$top=100&$orderby=declarationDate%20desc`;
+
+    const femaResp = await fetch(femaUrl);
+    const raw = await femaResp.json();
+    const declarations = raw?.DisasterDeclarationsSummaries ?? [];
     const types = [...new Set(declarations.map(d => d.incidentType).filter(Boolean))];
-    const mostRecent = declarations[0]?.declarationDate?.split('T')[0] ?? null;
     fema = {
       disasterCount: declarations.length,
       types,
-      mostRecent,
+      mostRecent: declarations[0]?.declarationDate?.split('T')[0] ?? null,
       stateName,
+      county: countyLevel ? county : null,
+      countyLevel,
     };
   } catch (_) {
-    fema = { error: 'FEMA data unavailable', disasterCount: 0, types: [], mostRecent: null, stateName };
+    fema = { error: 'FEMA data unavailable', disasterCount: 0, types: [], mostRecent: null, stateName, county: null, countyLevel: false };
   }
 
   return res.status(200).json({ zip, city, state: stateAbbr, census, epa, fema });
