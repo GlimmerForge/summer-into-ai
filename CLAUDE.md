@@ -201,8 +201,27 @@ What **fails** ("AI slop"): single text generation with no effect on game state;
 
 ---
 
+**Check 4b — AI tool diversity (Pushing Boundaries / Comfortable / Repetitive)**
+Claude + one structured tool call is the floor, not the ceiling. Before settling on a concept, ask: is there a second AI system that would make this dramatically better? Available keys: `ANTHROPIC_API_KEY`, `ELEVENLABS_API_KEY`. But don't default to ElevenLabs just because it's available — only add it if voice genuinely changes the experience.
+
+AI tools and techniques worth considering (pick the one that fits, don't stack them all):
+- **Claude extended thinking** — for puzzles or evaluations where deliberate multi-step reasoning is part of the experience
+- **Claude multi-turn conversation with memory** — maintain state across a session so the AI genuinely remembers and adapts
+- **Streaming SSE** — real-time tension; the AI typing on screen feels alive in ways a static response never does
+- **Claude vision** — accept a user-uploaded image as input (photo of a handwritten note, a map, a drawing) and react to it
+- **Web search / real-time data** — pull live data (stock prices, weather, news) and have Claude reason about it in context
+- **Image generation** (DALL-E via OpenAI or similar if key is available) — generate a visual the player reacts to
+- **Whisper / speech input** — let the player speak their answer instead of typing
+- **Multi-model pipeline** — Claude generates content, a second model (ElevenLabs, image gen) transforms it; the output of one feeds the input of the next
+
+The bar: at least one AI call should feel like something you couldn't have done two years ago. If the whole demo could have been built with GPT-3 in 2022, push harder.
+
+---
+
 **Check 5 — Memorability (Memorable / Generic / Forgettable)**
 Would someone describe this demo to a friend a week later? Could it be in a "coolest AI projects" roundup? The combination of theme + mechanic + AI integration should feel like something no one has done before. If the pitch sounds like a school project ("learn about the Revolution with AI!"), it fails. If it sounds like something you'd screenshot and share, it passes.
+
+The highest bar: would a non-technical person who doesn't care about AI find this fun or surprising on its own merits? If yes, it's a winner. If the only impressive thing is "wow the AI did that," it's not memorable enough.
 
 ---
 
