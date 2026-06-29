@@ -1,5 +1,7 @@
 {
   "outputDirectory": ".",
+  "buildCommand": "echo build",
+  "installCommand": "npm install",
   "functions": { "api/*.js": { "maxDuration": 60 } },
   "ignoreCommand": "exit 0"
 }
