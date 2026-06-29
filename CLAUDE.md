@@ -37,7 +37,18 @@ For each new demo, first check if it has a Vercel project entry in `vercel-proje
 ```bash
 gh workflow run deploy.yml -f DEMO_KEY=true
 ```
-If no entry exists, tell the user to import it in the Vercel dashboard (set Root Directory, add env vars), then add the project ID to `vercel-projects.json` and redeploy.
+If no entry exists, create the project via the Vercel API (no GitHub link — prevents auto-deploy overwrites), add it to `vercel-projects.json`, then deploy locally:
+```bash
+cd projects/week-NN/demo-NN && VERCEL_PROJECT_ID=prj_xxx VERCEL_ORG_ID=team_xxx npx vercel deploy --prod --yes
+```
+
+**Shared env vars — manual step required after API project creation:**
+Projects created via API do NOT automatically inherit the team's shared env vars (`ANTHROPIC_API_KEY`, `ELEVENLABS_API_KEY`). After creating each project:
+1. Go to vercel.com/jake-straits-projects/[project-name]/settings/environment-variables
+2. Click **Add** → select the shared `ANTHROPIC_API_KEY` (and `ELEVENLABS_API_KEY` if used)
+3. Redeploy after linking
+
+Also add to `deploy.yml` inputs and run section so the project can be redeployed via GitHub Actions in the future.
 
 Wait for the workflow to complete:
 ```bash
