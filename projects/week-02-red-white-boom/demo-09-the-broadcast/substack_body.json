@@ -10,6 +10,11 @@
     {"type":"text","marks":[{"type":"strong"}],"text":"The Broadcast"},
     {"type":"text","text":" is a fully AI-generated audio radio drama staged in a miniature colonial theater. Pick a scene — The Signing (July 4, 1776), The Ride (April 18, 1775), or The Winter (Valley Forge) — and Claude writes a complete 13–16 line script using structured tool output, each line cast to a specific historical figure with its own ElevenLabs voice. Then the curtains open, the full cast assembles on stage, and you watch animated founding fathers perform the drama live: bouncing, gesturing, stepping forward into the spotlight as their lines play. All voice audio is pre-fetched in parallel so there are no gaps — once the show starts, it runs uninterrupted with a scene-appropriate ambient drone underneath."}
   ]},
+  {"type":"paragraph","attrs":{"textAlign":null},"content":[
+    {"type":"text","text":"Worth noting alongside this: Eric's "},
+    {"type":"text","marks":[{"type":"link","attrs":{"href":"https://advisoryhour.substack.com/p/summer-into-ai-week2-independence","target":"_blank","rel":"noopener noreferrer nofollow","class":null}}],"text":"Independence Town"},
+    {"type":"text","text":" took the Revolution theme in the opposite direction — an isometric city-builder where you construct a colonial town and launch fireworks. Two very different reads on what “AI-powered Revolution” can mean."}
+  ]},
   {"type":"heading","attrs":{"textAlign":null,"level":2},"content":[
     {"type":"text","text":"How the AI works"}
   ]},
@@ -57,18 +62,13 @@
   ]},
   {"type":"paragraph","attrs":{"textAlign":null},"content":[
     {"type":"text","marks":[{"type":"strong"}],"text":"Demo: "},
-    {"type":"text","marks":[{"type":"link","attrs":{"href":"https://demo-09-the-broadcast.vercel.app","target":"_blank","rel":"noopener noreferrer nofollow","class":null}}],"text":"demo-09-the-broadcast.vercel.app"}
+    {"type":"text","marks":[{"type":"link","attrs":{"href":"https://demo-09-the-broadcast-jake-straits-projects.vercel.app","target":"_blank","rel":"noopener noreferrer nofollow","class":null}}],"text":"demo-09-the-broadcast-jake-straits-projects.vercel.app"}
   ]},
   {"type":"paragraph","attrs":{"textAlign":null},"content":[
     {"type":"text","marks":[{"type":"strong"}],"text":"Code & README: "},
     {"type":"text","marks":[{"type":"link","attrs":{"href":"https://github.com/GlimmerForge/summer-into-ai/blob/master/projects/week-02-red-white-boom/demo-09-the-broadcast/README.md","target":"_blank","rel":"noopener noreferrer nofollow","class":null}}],"text":"github.com/GlimmerForge/summer-into-ai → demo-09-the-broadcast/README.md"}
   ]},
   {"type":"horizontal_rule"},
-  {"type":"paragraph","attrs":{"textAlign":null},"content":[
-    {"type":"text","text":"Interesting to compare this week’s approaches to the Revolution theme. Eric’s "},
-    {"type":"text","marks":[{"type":"link","attrs":{"href":"https://advisoryhour.substack.com/p/summer-into-ai-week2-independence","target":"_blank","rel":"noopener noreferrer nofollow","class":null}}],"text":"Independence Town"},
-    {"type":"text","text":" went fully visual — an isometric city-builder where you construct a town and launch fireworks. The Broadcast goes the opposite direction: pure audio, no interface to speak of, just curtains opening on a performance. Two very different takes on what “AI-powered” means for the same historical moment."}
-  ]},
   {"type":"paragraph","attrs":{"textAlign":null},"content":[
     {"type":"text","marks":[{"type":"em"}],"text":"Summer into AI 2026 · Theme 2: Red, White & Boom"}
   ]}

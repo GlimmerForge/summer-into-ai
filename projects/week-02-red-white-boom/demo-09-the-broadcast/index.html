@@ -603,16 +603,26 @@ async function startBroadcast() {
   showTitleCard(selectedScene, script);
   await delay(400);
 
-  // Pre-fetch all audio in parallel while title card shows
+  // Pre-fetch audio with max 5 concurrent requests (ElevenLabs concurrent limit)
   let loaded = 0;
-  const audioBuffers = await Promise.all(
-    script.lines.map(async (line) => {
-      const buf = await fetchAudioBuffer(line);
-      loaded++;
-      statusEl.textContent = `Casting the production… ${loaded} / ${script.lines.length}`;
-      return buf;
-    })
-  );
+  async function pooled(items, fn, concurrency = 5) {
+    const results = new Array(items.length);
+    let i = 0;
+    async function worker() {
+      while (i < items.length) {
+        const idx = i++;
+        results[idx] = await fn(items[idx]);
+      }
+    }
+    await Promise.all(Array.from({ length: Math.min(concurrency, items.length) }, worker));
+    return results;
+  }
+  const audioBuffers = await pooled(script.lines, async (line) => {
+    const buf = await fetchAudioBuffer(line);
+    loaded++;
+    statusEl.textContent = `Casting the production… ${loaded} / ${script.lines.length}`;
+    return buf;
+  });
 
   statusEl.textContent = '';
   statusEl.style.display = 'none';

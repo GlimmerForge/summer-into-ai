@@ -2,7 +2,12 @@
  * tools/substack/screenshot.mjs
  * Take three Playwright screenshots of any demo for Substack publishing.
  *
- * Usage:
+ * Usage (self-serve — starts/stops vercel dev automatically):
+ *   node tools/substack/screenshot.mjs \
+ *     --demo-dir projects/week-02/demo-09-the-broadcast \
+ *     --out projects/week-02/demo-09-the-broadcast/public/assets
+ *
+ * Usage (bring your own server):
  *   node tools/substack/screenshot.mjs \
  *     --port 3001 \
  *     --out projects/week-02/demo-12/public/assets \
@@ -21,7 +26,8 @@
 
 import { chromium } from 'playwright';
 import { mkdirSync } from 'fs';
-import { join } from 'path';
+import { join, resolve } from 'path';
+import { spawn } from 'child_process';
 
 // Parse CLI args
 const args = Object.fromEntries(
@@ -32,13 +38,50 @@ const args = Object.fromEntries(
     }, [])
 );
 
-const PORT        = args.port || 3001;
-const OUT         = args.out  || 'public/assets';
+const DEMO_DIR    = args['demo-dir'] ? resolve(args['demo-dir']) : null;
+const PORT        = parseInt(args.port || (DEMO_DIR ? '13579' : '3001'), 10);
+const OUT         = args.out  || (DEMO_DIR ? join(DEMO_DIR, 'public/assets') : 'public/assets');
 const HERO_IMAGE  = args['hero-image']    || 'https://images.metmuseum.org/CRDImages/ad/original/DP215410.jpg';
 const OUTCOME_IMG = args['outcome-image'] || 'https://images.metmuseum.org/CRDImages/dp/original/DP876947.jpg';
 const BASE        = `http://localhost:${PORT}`;
 
 mkdirSync(OUT, { recursive: true });
+
+// ── Self-serve mode: start vercel dev, wait until ready, then screenshot ───
+let devServer = null;
+if (DEMO_DIR) {
+  console.log(`Starting vercel dev in ${DEMO_DIR} on port ${PORT}...`);
+  devServer = spawn('npx', ['vercel', 'dev', '--yes', '--listen', String(PORT)], {
+    cwd: DEMO_DIR,
+    stdio: ['ignore', 'pipe', 'pipe'],
+    shell: true,
+  });
+
+  // Wait for the "Ready!" line (or a timeout)
+  await new Promise((ok, fail) => {
+    const timeout = setTimeout(() => fail(new Error('vercel dev timed out after 30s')), 30000);
+    function check(chunk) {
+      const text = chunk.toString();
+      process.stderr.write(text);
+      if (/ready|listening|started/i.test(text)) {
+        clearTimeout(timeout);
+        devServer.stdout.off('data', check);
+        devServer.stderr.off('data', check);
+        ok();
+      }
+    }
+    devServer.stdout.on('data', check);
+    devServer.stderr.on('data', check);
+    devServer.on('error', fail);
+    devServer.on('exit', code => {
+      clearTimeout(timeout);
+      if (code !== 0 && code !== null) fail(new Error(`vercel dev exited with code ${code}`));
+    });
+  });
+  console.log(`Server ready on port ${PORT}.\n`);
+  // Extra pause for API routes to initialize
+  await new Promise(r => setTimeout(r, 2000));
+}
 
 const browser = await chromium.launch({ headless: true });
 const page = await browser.newPage();
@@ -135,4 +178,10 @@ console.log('Screenshot: gameplay-2.png');
 await page.screenshot({ path: join(OUT, 'gameplay-2.png') });
 
 await browser.close();
-console.log(`Done. Screenshots saved to: ${OUT}`);
+
+if (devServer) {
+  devServer.kill();
+  console.log('Server stopped.');
+}
+
+console.log(`\nDone. Screenshots saved to: ${OUT}`);

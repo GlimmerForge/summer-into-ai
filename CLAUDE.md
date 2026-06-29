@@ -11,6 +11,128 @@ Competition repo for the Summer Into AI challenge. Each week has a theme; partic
 
 ---
 
+## One-Shot Ship Workflow
+
+When the user says **"1-shot week N"**, **"ship week N, 2 demos"**, or similar, run this entire pipeline in one pass. The goal: user reviews a deployed demo + a ready-to-publish Substack draft. Nothing manual for them to do.
+
+### Phase 1 — Competitor research (before generating ideas)
+
+Run `find-competitors.mjs` to check known competitor publications:
+```bash
+node tools/find-competitors.mjs --week N --pubs SLUG1,SLUG2
+```
+Also use **WebSearch** with `"summer into ai 2026 week N" site:substack.com` to find newer posts not yet in the pub list. Read the resulting posts and build a competitor coverage map. Any concept a competitor has published is off-limits.
+
+### Phase 2 — Generate + build (follow the full Demo Generation Workflow below)
+
+Run the Demo Generation Workflow (Steps 1–8). Build all approved demos in parallel worktrees. Merge all branches into master immediately after agents finish:
+```bash
+git merge demo-branch-1 demo-branch-2
+git push origin master
+```
+
+### Phase 3 — Deploy
+
+For each new demo, first check if it has a Vercel project entry in `vercel-projects.json`. If yes, trigger GitHub Actions:
+```bash
+gh workflow run deploy.yml -f DEMO_KEY=true
+```
+If no entry exists, tell the user to import it in the Vercel dashboard (set Root Directory, add env vars), then add the project ID to `vercel-projects.json` and redeploy.
+
+Wait for the workflow to complete:
+```bash
+gh run watch $(gh run list --workflow=deploy.yml --limit=1 --json databaseId -q '.[0].databaseId')
+```
+
+### Phase 4 — Resolve the live URL
+
+After deploy succeeds, get the actual production URL (never guess):
+```bash
+node tools/get-vercel-url.mjs --demo projects/week-NN-slug/demo-NN-slug
+```
+Use this URL everywhere — in the Substack body, in the README, in the report to the user.
+
+### Phase 5 — Screenshots
+
+Use the self-serve flag (starts/stops vercel dev automatically):
+```bash
+node tools/substack/screenshot.mjs \
+  --demo-dir projects/week-NN-slug/demo-NN-slug \
+  --out projects/week-NN-slug/demo-NN-slug/public/assets
+```
+If the demo has custom screenshot requirements, use a custom script (see demo-09 for an example).
+
+### Phase 6 — Upload images
+
+```bash
+node tools/substack/upload-images.mjs \
+  --dir projects/week-NN-slug/demo-NN-slug/public/assets \
+  --out /tmp/image_urls.json
+```
+
+### Phase 7 — Write the Substack body
+
+Use `write-substack-body.mjs` — never write Tiptap JSON by hand (quote corruption).
+
+1. Write a config file to `/tmp/body-config.json`:
+```json
+{
+  "weekNum": N,
+  "weekTheme": "Theme Name",
+  "title": "Demo Title",
+  "intro": "...",
+  "competitor": { "name": "...", "url": "...", "comparison": "took a different approach..." },
+  "howAiWorks": [
+    [{ "bold": true, "text": "Feature" }, { "text": " — explanation..." }]
+  ],
+  "howToPlay": ["Step one", [{ "text": "Click " }, { "bold": true, "text": "Button" }, { "text": " — then..." }]],
+  "demoUrl": "https://ACTUAL_URL_FROM_STEP_4",
+  "codeUrl": "https://github.com/GlimmerForge/summer-into-ai/blob/master/projects/.../README.md",
+  "codeLabel": "github.com/GlimmerForge/summer-into-ai → demo-NN-slug/README.md"
+}
+```
+
+2. Generate the body JSON:
+```bash
+node tools/write-substack-body.mjs \
+  --config /tmp/body-config.json \
+  --out projects/week-NN-slug/demo-NN-slug/substack_body.json
+```
+
+### Phase 8 — Validate links
+
+```bash
+node tools/validate-links.mjs \
+  --body projects/week-NN-slug/demo-NN-slug/substack_body.json
+```
+Fix any failures before continuing. The live demo URL and GitHub URL should both return 200.
+
+### Phase 9 — Create draft
+
+```bash
+node tools/substack/create-draft.mjs \
+  --body projects/week-NN-slug/demo-NN-slug/substack_body.json \
+  --images /tmp/image_urls.json \
+  --title "Summer into AI 2026: Demo Title" \
+  --subtitle "One sentence hook."
+```
+
+### Phase 10 — Commit + push + report
+
+```bash
+git add projects/week-NN-slug/demo-NN-slug/
+git commit -m "demo-NN: add substack body, assets, README"
+git push origin master
+```
+
+Report to user:
+- Live demo URL
+- Substack draft URL (https://jakestrait5.substack.com/publish/post/ID)
+- Env vars needed in Vercel project settings
+- Any warnings from link validation
+
+---
+
 ## Demo Generation Workflow
 
 When the user says anything like:
