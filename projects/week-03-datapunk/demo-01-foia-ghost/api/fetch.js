@@ -27,9 +27,10 @@ export default async function handler(req, res) {
   fiveYearsAgo.setFullYear(fiveYearsAgo.getFullYear() - 5);
   const fiveYearsAgoISO = fiveYearsAgo.toISOString().split('T')[0];
 
+  const censusKey = process.env.CENSUS_API_KEY ? `&key=${process.env.CENSUS_API_KEY}` : '';
   const censusUrl =
     `https://api.census.gov/data/2022/acs/acs5?get=B19013_001E,B17001_002E,B17001_001E,` +
-    `B28002_013E,B28002_001E,B25035_001E,NAME&for=zip%20code%20tabulation%20area:${zip}`;
+    `B28002_013E,B28002_001E,B25035_001E,NAME&for=zip%20code%20tabulation%20area:${zip}${censusKey}`;
 
   const epaUrl =
     `https://echodata.epa.gov/echo/echo_rest_services.get_facilities?output=JSON` +
@@ -40,7 +41,12 @@ export default async function handler(req, res) {
     `&declarationDate=gt${fiveYearsAgoISO}&$top=50&$orderby=declarationDate%20desc`;
 
   const [censusResult, epaResult, femaResult] = await Promise.allSettled([
-    fetch(censusUrl).then(r => r.json()),
+    fetch(censusUrl).then(r => {
+      if (!r.ok || !r.headers.get('content-type')?.includes('json')) {
+        throw new Error(`Census HTTP ${r.status} — check CENSUS_API_KEY env var`);
+      }
+      return r.json();
+    }),
     fetch(epaUrl, { headers: { 'User-Agent': 'FOIA-Ghost/1.0' } }).then(r => r.json()),
     fetch(femaUrl).then(r => r.json()),
   ]);
