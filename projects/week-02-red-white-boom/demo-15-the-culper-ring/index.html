@@ -1,0 +1,1155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>The Culper Ring — Intelligence Network 1780</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Special+Elite&family=Crimson+Text:ital,wght@0,400;0,600;1,400&display=swap');
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0d0a07;
+      --bg2: #13100c;
+      --parchment: #f4e8c1;
+      --parchment-dark: #e8d49a;
+      --parchment-shadow: #c9a96e;
+      --ink: #1a120a;
+      --green: #2d4a2d;
+      --green-light: #3d6b3d;
+      --green-bright: #5a9a5a;
+      --red: #8b1a1a;
+      --red-light: #c0392b;
+      --gold: #c9a620;
+      --gold-light: #e8c84a;
+      --text-dim: #8a7a6a;
+      --text-mid: #c4b49a;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--parchment);
+      font-family: 'Crimson Text', serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ── HEADER ── */
+    header {
+      background: #080604;
+      border-bottom: 2px solid var(--green);
+      padding: 14px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+    }
+
+    .header-seal {
+      width: 52px;
+      height: 52px;
+      flex-shrink: 0;
+    }
+
+    .header-title {
+      text-align: center;
+      flex: 1;
+    }
+
+    .header-title h1 {
+      font-family: 'Special Elite', monospace;
+      font-size: clamp(0.9rem, 2.5vw, 1.35rem);
+      letter-spacing: 0.18em;
+      color: var(--gold-light);
+      text-transform: uppercase;
+    }
+
+    .header-title .subtitle {
+      font-size: 0.75rem;
+      letter-spacing: 0.22em;
+      color: var(--text-dim);
+      margin-top: 2px;
+      text-transform: uppercase;
+    }
+
+    .header-status {
+      font-family: 'Special Elite', monospace;
+      font-size: 0.65rem;
+      letter-spacing: 0.08em;
+      color: var(--green-bright);
+      text-align: right;
+      line-height: 1.7;
+    }
+
+    /* ── SCREENS ── */
+    .screen { display: none; flex-direction: column; flex: 1; }
+    .screen.active { display: flex; }
+
+    /* ── START SCREEN ── */
+    #screen-start {
+      align-items: center;
+      justify-content: center;
+      padding: 40px 24px;
+    }
+
+    .start-seal {
+      margin-bottom: 28px;
+    }
+
+    .start-card {
+      background: var(--bg2);
+      border: 1px solid var(--green);
+      border-radius: 2px;
+      max-width: 560px;
+      width: 100%;
+      padding: 36px 40px;
+      text-align: center;
+    }
+
+    .start-card h2 {
+      font-family: 'Special Elite', monospace;
+      font-size: 1.5rem;
+      letter-spacing: 0.12em;
+      color: var(--gold-light);
+      text-transform: uppercase;
+      margin-bottom: 8px;
+    }
+
+    .start-card .year {
+      font-size: 0.8rem;
+      letter-spacing: 0.2em;
+      color: var(--text-dim);
+      margin-bottom: 24px;
+      text-transform: uppercase;
+    }
+
+    .start-card p {
+      color: var(--text-mid);
+      font-size: 1.05rem;
+      line-height: 1.7;
+      margin-bottom: 16px;
+    }
+
+    .start-card .codename {
+      display: inline-block;
+      background: var(--green);
+      color: var(--gold-light);
+      font-family: 'Special Elite', monospace;
+      font-size: 0.9rem;
+      letter-spacing: 0.15em;
+      padding: 6px 20px;
+      border-radius: 2px;
+      margin-bottom: 28px;
+    }
+
+    .btn-primary {
+      background: var(--green);
+      color: var(--parchment);
+      border: 1px solid var(--green-bright);
+      font-family: 'Special Elite', monospace;
+      font-size: 1rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      padding: 14px 36px;
+      cursor: pointer;
+      border-radius: 2px;
+      transition: all 0.2s;
+    }
+
+    .btn-primary:hover {
+      background: var(--green-light);
+      color: var(--gold-light);
+    }
+
+    /* ── GAME SCREEN ── */
+    #screen-game {
+      flex-direction: row;
+      min-height: 0;
+      flex: 1;
+    }
+
+    /* Sidebar codebook */
+    .codebook {
+      width: 220px;
+      min-width: 220px;
+      background: #0a0804;
+      border-right: 1px solid var(--green);
+      padding: 20px 16px;
+      overflow-y: auto;
+      flex-shrink: 0;
+    }
+
+    .codebook h3 {
+      font-family: 'Special Elite', monospace;
+      font-size: 0.7rem;
+      letter-spacing: 0.18em;
+      color: var(--gold);
+      text-transform: uppercase;
+      border-bottom: 1px solid var(--green);
+      padding-bottom: 6px;
+      margin-bottom: 12px;
+    }
+
+    .codebook-section {
+      margin-bottom: 18px;
+    }
+
+    .codebook-section h4 {
+      font-family: 'Special Elite', monospace;
+      font-size: 0.62rem;
+      letter-spacing: 0.14em;
+      color: var(--green-bright);
+      text-transform: uppercase;
+      margin-bottom: 8px;
+    }
+
+    .code-entry {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 7px;
+      font-size: 0.82rem;
+      line-height: 1.4;
+    }
+
+    .code-key {
+      color: var(--gold-light);
+      font-family: 'Special Elite', monospace;
+      font-size: 0.75rem;
+      min-width: 48px;
+      flex-shrink: 0;
+    }
+
+    .code-val {
+      color: var(--text-mid);
+      font-style: italic;
+    }
+
+    .codebook-divider {
+      border: none;
+      border-top: 1px solid #1e1a15;
+      margin: 14px 0;
+    }
+
+    /* Main game area */
+    .game-main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow-y: auto;
+      padding: 24px 28px;
+      gap: 20px;
+    }
+
+    /* Round indicator */
+    .round-indicator {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .round-pips {
+      display: flex;
+      gap: 8px;
+    }
+
+    .pip {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      border: 1px solid var(--green);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Special Elite', monospace;
+      font-size: 0.7rem;
+      color: var(--text-dim);
+    }
+
+    .pip.done-success { background: var(--green); color: var(--parchment); border-color: var(--green-bright); }
+    .pip.done-fail { background: var(--red); color: var(--parchment); border-color: var(--red-light); }
+    .pip.current { border-color: var(--gold); color: var(--gold-light); }
+
+    .round-label {
+      font-family: 'Special Elite', monospace;
+      font-size: 0.7rem;
+      letter-spacing: 0.12em;
+      color: var(--text-dim);
+      text-transform: uppercase;
+    }
+
+    .network-status {
+      margin-left: auto;
+      font-family: 'Special Elite', monospace;
+      font-size: 0.65rem;
+      letter-spacing: 0.1em;
+      padding: 4px 12px;
+      border-radius: 2px;
+      text-transform: uppercase;
+    }
+
+    .network-status.active { background: #1a2e1a; color: var(--green-bright); border: 1px solid var(--green); }
+    .network-status.compromised { background: #2e1a1a; color: var(--red-light); border: 1px solid var(--red); }
+    .network-status.captured { background: #3a0a0a; color: #ff6666; border: 1px solid #ff3333; }
+
+    /* Dispatch parchment */
+    .dispatch-card {
+      background: var(--parchment);
+      border-radius: 2px;
+      padding: 28px 32px;
+      position: relative;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.6), inset 0 0 40px rgba(180,140,60,0.15);
+      /* parchment texture */
+      background-image:
+        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='400'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='400' height='400' filter='url(%23n)' opacity='0.08'/%3E%3C/svg%3E"),
+        linear-gradient(135deg, #f9eed4 0%, #f4e8c1 40%, #eedd9a 100%);
+      background-repeat: repeat, no-repeat;
+      background-size: 200px 200px, 100% 100%;
+    }
+
+    .dispatch-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 16px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid var(--parchment-shadow);
+    }
+
+    .dispatch-label {
+      font-family: 'Special Elite', monospace;
+      font-size: 0.65rem;
+      letter-spacing: 0.2em;
+      color: var(--parchment-shadow);
+      text-transform: uppercase;
+    }
+
+    .dispatch-date {
+      font-family: 'Special Elite', monospace;
+      font-size: 0.7rem;
+      color: var(--parchment-shadow);
+    }
+
+    .dispatch-text {
+      color: var(--ink);
+      font-size: 1.05rem;
+      line-height: 1.85;
+      font-style: italic;
+    }
+
+    .dispatch-footer {
+      margin-top: 14px;
+      padding-top: 10px;
+      border-top: 1px solid var(--parchment-shadow);
+      font-family: 'Special Elite', monospace;
+      font-size: 0.62rem;
+      letter-spacing: 0.12em;
+      color: var(--parchment-shadow);
+      text-transform: uppercase;
+    }
+
+    .historical-context {
+      background: #0f0c09;
+      border-left: 3px solid var(--gold);
+      padding: 10px 16px;
+      font-size: 0.85rem;
+      color: var(--text-dim);
+      font-style: italic;
+      border-radius: 0 2px 2px 0;
+    }
+
+    /* Decision panel */
+    .decision-panel h3 {
+      font-family: 'Special Elite', monospace;
+      font-size: 0.72rem;
+      letter-spacing: 0.18em;
+      color: var(--gold);
+      text-transform: uppercase;
+      margin-bottom: 14px;
+    }
+
+    .options-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .option-btn {
+      background: var(--bg2);
+      border: 1px solid #2a2218;
+      border-radius: 2px;
+      padding: 14px 18px;
+      cursor: pointer;
+      display: flex;
+      gap: 14px;
+      align-items: flex-start;
+      transition: all 0.2s;
+      text-align: left;
+    }
+
+    .option-btn:hover:not(:disabled) {
+      border-color: var(--green-bright);
+      background: #141008;
+    }
+
+    .option-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    .option-id {
+      font-family: 'Special Elite', monospace;
+      font-size: 1.2rem;
+      color: var(--gold-light);
+      min-width: 24px;
+      line-height: 1;
+    }
+
+    .option-content {}
+
+    .option-label {
+      font-family: 'Special Elite', monospace;
+      font-size: 0.82rem;
+      color: var(--parchment);
+      margin-bottom: 4px;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+
+    .option-desc {
+      font-size: 0.88rem;
+      color: var(--text-mid);
+      line-height: 1.5;
+    }
+
+    /* Outcome panel */
+    .outcome-panel {
+      border-radius: 2px;
+      padding: 22px 26px;
+    }
+
+    .outcome-panel.success {
+      background: #0d1f0d;
+      border: 1px solid var(--green);
+    }
+
+    .outcome-panel.failure {
+      background: #1f0d0d;
+      border: 1px solid var(--red);
+    }
+
+    .outcome-verdict {
+      font-family: 'Special Elite', monospace;
+      font-size: 0.75rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      margin-bottom: 12px;
+    }
+
+    .outcome-panel.success .outcome-verdict { color: var(--green-bright); }
+    .outcome-panel.failure .outcome-verdict { color: var(--red-light); }
+
+    .outcome-narrative {
+      font-size: 1rem;
+      line-height: 1.7;
+      color: var(--text-mid);
+      margin-bottom: 12px;
+    }
+
+    .outcome-intel {
+      background: rgba(0,0,0,0.3);
+      border-left: 2px solid var(--gold);
+      padding: 8px 14px;
+      font-size: 0.88rem;
+      color: var(--text-dim);
+      margin-bottom: 12px;
+    }
+
+    .outcome-intel strong {
+      color: var(--gold);
+      font-family: 'Special Elite', monospace;
+      font-size: 0.72rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      display: block;
+      margin-bottom: 4px;
+    }
+
+    .outcome-debrief {
+      font-size: 0.88rem;
+      color: var(--text-dim);
+      font-style: italic;
+      border-top: 1px solid rgba(255,255,255,0.08);
+      padding-top: 10px;
+    }
+
+    .translation-reveal {
+      background: #0a0f0a;
+      border: 1px dashed var(--green);
+      border-radius: 2px;
+      padding: 14px 18px;
+    }
+
+    .translation-reveal h4 {
+      font-family: 'Special Elite', monospace;
+      font-size: 0.65rem;
+      letter-spacing: 0.16em;
+      color: var(--green-bright);
+      text-transform: uppercase;
+      margin-bottom: 8px;
+    }
+
+    .translation-reveal p {
+      font-size: 0.9rem;
+      color: var(--text-mid);
+      line-height: 1.65;
+      font-style: italic;
+    }
+
+    .btn-next {
+      align-self: flex-end;
+      background: transparent;
+      border: 1px solid var(--gold);
+      color: var(--gold-light);
+      font-family: 'Special Elite', monospace;
+      font-size: 0.78rem;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      padding: 10px 28px;
+      cursor: pointer;
+      border-radius: 2px;
+      transition: all 0.2s;
+    }
+
+    .btn-next:hover { background: var(--gold); color: var(--ink); }
+
+    /* Loading */
+    .loading {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 24px;
+      color: var(--text-dim);
+      font-family: 'Special Elite', monospace;
+      font-size: 0.8rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+    }
+
+    .loading-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--green-bright);
+      animation: pulse 1.2s ease-in-out infinite;
+    }
+
+    .loading-dot:nth-child(2) { animation-delay: 0.2s; }
+    .loading-dot:nth-child(3) { animation-delay: 0.4s; }
+
+    @keyframes pulse {
+      0%, 80%, 100% { opacity: 0.2; transform: scale(0.8); }
+      40% { opacity: 1; transform: scale(1); }
+    }
+
+    /* END SCREEN */
+    #screen-end {
+      align-items: center;
+      justify-content: center;
+      padding: 40px 24px;
+    }
+
+    .end-card {
+      background: var(--bg2);
+      border-radius: 2px;
+      max-width: 600px;
+      width: 100%;
+      padding: 42px 46px;
+      text-align: center;
+    }
+
+    .end-card.win { border: 1px solid var(--gold); }
+    .end-card.lose { border: 1px solid var(--red); }
+
+    .end-title {
+      font-family: 'Special Elite', monospace;
+      font-size: clamp(1.1rem, 3vw, 1.7rem);
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      margin-bottom: 8px;
+    }
+
+    .end-card.win .end-title { color: var(--gold-light); }
+    .end-card.lose .end-title { color: var(--red-light); }
+
+    .end-date {
+      font-size: 0.8rem;
+      letter-spacing: 0.2em;
+      color: var(--text-dim);
+      margin-bottom: 24px;
+      text-transform: uppercase;
+    }
+
+    .end-narrative {
+      font-size: 1.05rem;
+      line-height: 1.75;
+      color: var(--text-mid);
+      margin-bottom: 24px;
+    }
+
+    .end-score {
+      display: flex;
+      justify-content: center;
+      gap: 8px;
+      margin-bottom: 28px;
+    }
+
+    .score-pip {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Special Elite', monospace;
+      font-size: 1rem;
+    }
+
+    .score-pip.s { background: var(--green); color: var(--parchment); }
+    .score-pip.f { background: var(--red); color: var(--parchment); }
+
+    .end-historical {
+      background: #0a0804;
+      border-left: 3px solid var(--gold);
+      border-radius: 0 2px 2px 0;
+      padding: 14px 18px;
+      text-align: left;
+      margin-bottom: 28px;
+    }
+
+    .end-historical h4 {
+      font-family: 'Special Elite', monospace;
+      font-size: 0.65rem;
+      letter-spacing: 0.14em;
+      color: var(--gold);
+      text-transform: uppercase;
+      margin-bottom: 6px;
+    }
+
+    .end-historical p {
+      font-size: 0.9rem;
+      color: var(--text-dim);
+      line-height: 1.65;
+      font-style: italic;
+    }
+
+    .btn-restart {
+      background: transparent;
+      border: 1px solid var(--text-dim);
+      color: var(--text-dim);
+      font-family: 'Special Elite', monospace;
+      font-size: 0.78rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      padding: 10px 28px;
+      cursor: pointer;
+      border-radius: 2px;
+      transition: all 0.2s;
+    }
+
+    .btn-restart:hover { border-color: var(--parchment); color: var(--parchment); }
+
+    /* Utility */
+    .hidden { display: none !important; }
+
+    @media (max-width: 640px) {
+      .codebook { display: none; }
+      #screen-game { flex-direction: column; }
+      .game-main { padding: 16px; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header>
+  <svg class="header-seal" viewBox="0 0 52 52" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <circle cx="26" cy="26" r="24" stroke="#2d4a2d" stroke-width="1.5"/>
+    <circle cx="26" cy="26" r="20" stroke="#2d4a2d" stroke-width="0.5"/>
+    <!-- Eagle simplified -->
+    <text x="26" y="23" text-anchor="middle" fill="#c9a620" font-size="14" font-family="serif">&#x1F985;</text>
+    <text x="26" y="36" text-anchor="middle" fill="#5a9a5a" font-size="5" font-family="monospace" letter-spacing="1">711</text>
+  </svg>
+
+  <div class="header-title">
+    <h1>The Culper Ring</h1>
+    <div class="subtitle">Intelligence Network &bull; 1780 &bull; Long Island</div>
+  </div>
+
+  <div class="header-status" id="header-status">
+    DISPATCHES: 0/4<br>
+    NETWORK: ACTIVE<br>
+    INTELLIGENCE: —
+  </div>
+</header>
+
+<!-- START SCREEN -->
+<div class="screen active" id="screen-start">
+  <div class="start-card">
+    <svg class="start-seal" width="80" height="80" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="40" cy="40" r="38" stroke="#2d4a2d" stroke-width="1.5"/>
+      <circle cx="40" cy="40" r="32" stroke="#2d4a2d" stroke-width="0.5"/>
+      <text x="40" y="37" text-anchor="middle" fill="#c9a620" font-size="24" font-family="serif">&#x1F985;</text>
+      <text x="40" y="55" text-anchor="middle" fill="#5a9a5a" font-size="8" font-family="monospace" letter-spacing="2">7 1 1</text>
+    </svg>
+    <h2>AGENT 711</h2>
+    <div class="year">New York Theatre of Operations &bull; 1778–1781</div>
+    <p>
+      Four intercepted dispatches have arrived via the usual route — Setauket to Oyster Bay to the whaleboat. Each is written under the medicine. Only you hold the counterpart.
+    </p>
+    <p>
+      Decode each dispatch using your codebook. Make the operational call. The right intelligence at the right moment built the foundation for Yorktown.
+    </p>
+    <div class="codename">YOUR CODENAME: 711</div>
+    <br>
+    <button class="btn-primary" id="btn-start">Begin Debrief</button>
+  </div>
+</div>
+
+<!-- GAME SCREEN -->
+<div class="screen" id="screen-game">
+  <!-- CODEBOOK SIDEBAR -->
+  <aside class="codebook">
+    <h3>Codebook</h3>
+
+    <div class="codebook-section">
+      <h4>Cover Names</h4>
+      <div class="code-entry">
+        <span class="code-key">711</span>
+        <span class="code-val">Washington</span>
+      </div>
+      <div class="code-entry">
+        <span class="code-key">C——r</span>
+        <span class="code-val">Woodhull (Culper)</span>
+      </div>
+      <div class="code-entry">
+        <span class="code-key">C——r Jr.</span>
+        <span class="code-val">Townsend (Culper Jr.)</span>
+      </div>
+      <div class="code-entry">
+        <span class="code-key">John Bolton</span>
+        <span class="code-val">Tallmadge</span>
+      </div>
+      <div class="code-entry">
+        <span class="code-key">the Friend</span>
+        <span class="code-val">loyalist informant</span>
+      </div>
+      <div class="code-entry">
+        <span class="code-key">the Farmer</span>
+        <span class="code-val">British officer</span>
+      </div>
+    </div>
+
+    <hr class="codebook-divider">
+
+    <div class="codebook-section">
+      <h4>Location Codes</h4>
+      <div class="code-entry">
+        <span class="code-key">10</span>
+        <span class="code-val">New York City</span>
+      </div>
+      <div class="code-entry">
+        <span class="code-key">20</span>
+        <span class="code-val">Setauket</span>
+      </div>
+      <div class="code-entry">
+        <span class="code-key">30</span>
+        <span class="code-val">Oyster Bay</span>
+      </div>
+    </div>
+
+    <hr class="codebook-divider">
+
+    <div class="codebook-section">
+      <h4>Tradecraft</h4>
+      <div class="code-entry">
+        <span class="code-key">the medicine</span>
+        <span class="code-val">invisible ink</span>
+      </div>
+      <div class="code-entry">
+        <span class="code-key">the counterpart</span>
+        <span class="code-val">ink reagent</span>
+      </div>
+      <div class="code-entry">
+        <span class="code-key">wool / flock</span>
+        <span class="code-val">soldiers/troops</span>
+      </div>
+      <div class="code-entry">
+        <span class="code-key">the usual route</span>
+        <span class="code-val">NYC→20→30→whaleboat</span>
+      </div>
+      <div class="code-entry">
+        <span class="code-key">the mill</span>
+        <span class="code-val">strategic landmark</span>
+      </div>
+    </div>
+  </aside>
+
+  <!-- MAIN GAME AREA -->
+  <main class="game-main" id="game-main">
+
+    <!-- Round indicator -->
+    <div class="round-indicator">
+      <div class="round-pips" id="round-pips">
+        <div class="pip current" id="pip-1">1</div>
+        <div class="pip" id="pip-2">2</div>
+        <div class="pip" id="pip-3">3</div>
+        <div class="pip" id="pip-4">4</div>
+      </div>
+      <span class="round-label" id="round-label">Dispatch 1 of 4</span>
+      <div class="network-status active" id="network-status-badge">Network Active</div>
+    </div>
+
+    <!-- Loading state -->
+    <div class="loading" id="loading-dispatch">
+      <div class="loading-dot"></div>
+      <div class="loading-dot"></div>
+      <div class="loading-dot"></div>
+      Intercepting transmission...
+    </div>
+
+    <!-- Dispatch card (hidden until loaded) -->
+    <div class="dispatch-card hidden" id="dispatch-card">
+      <div class="dispatch-header">
+        <span class="dispatch-label">Intercepted Dispatch</span>
+        <span class="dispatch-date" id="dispatch-date">—</span>
+      </div>
+      <div class="dispatch-text" id="dispatch-text"></div>
+      <div class="dispatch-footer">
+        — Transmitted via the usual route. Apply the counterpart before reading to a second party.
+      </div>
+    </div>
+
+    <!-- Historical context -->
+    <div class="historical-context hidden" id="historical-context"></div>
+
+    <!-- Decision panel -->
+    <div class="decision-panel hidden" id="decision-panel">
+      <h3>Your Operational Decision</h3>
+      <div class="options-grid" id="options-grid"></div>
+    </div>
+
+    <!-- Loading evaluate -->
+    <div class="loading hidden" id="loading-evaluate">
+      <div class="loading-dot"></div>
+      <div class="loading-dot"></div>
+      <div class="loading-dot"></div>
+      Analyzing decision...
+    </div>
+
+    <!-- Outcome panel -->
+    <div class="hidden" id="outcome-section">
+      <!-- Translation reveal -->
+      <div class="translation-reveal" id="translation-reveal" style="margin-bottom:16px;">
+        <h4>Dispatch Decoded — What it Actually Said</h4>
+        <p id="translation-text"></p>
+      </div>
+
+      <div class="outcome-panel" id="outcome-panel">
+        <div class="outcome-verdict" id="outcome-verdict"></div>
+        <div class="outcome-narrative" id="outcome-narrative"></div>
+        <div class="outcome-intel">
+          <strong>Intelligence Status</strong>
+          <span id="outcome-intel-text"></span>
+        </div>
+        <div class="outcome-debrief" id="outcome-debrief"></div>
+      </div>
+
+      <button class="btn-next hidden" id="btn-next">Next Dispatch &rarr;</button>
+    </div>
+
+  </main>
+</div>
+
+<!-- END SCREEN -->
+<div class="screen" id="screen-end">
+  <div class="end-card" id="end-card">
+    <div class="end-title" id="end-title"></div>
+    <div class="end-date" id="end-date"></div>
+    <div class="end-score" id="end-score"></div>
+    <div class="end-narrative" id="end-narrative"></div>
+    <div class="end-historical">
+      <h4>Historical Record</h4>
+      <p id="end-historical-text"></p>
+    </div>
+    <button class="btn-restart" id="btn-restart">Run Again from the Top</button>
+  </div>
+</div>
+
+<script>
+  // ── STATE ──
+  const state = {
+    round: 1,
+    scores: [],         // array of booleans
+    networkStatus: 'active',
+    lastOutcome: null,
+    currentDispatch: null,
+  };
+
+  const TOTAL_ROUNDS = 4;
+
+  // random dates for dispatches
+  const DISPATCH_DATES = [
+    '14 August 1780', '3 November 1780', '9 February 1781', '12 July 1781'
+  ];
+
+  // ── ELEMENT REFS ──
+  const $ = id => document.getElementById(id);
+
+  function showScreen(id) {
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    $(id).classList.add('active');
+  }
+
+  function updateHeaderStatus() {
+    const correct = state.scores.filter(Boolean).length;
+    const netLabel = state.networkStatus === 'active' ? 'ACTIVE'
+                   : state.networkStatus === 'compromised' ? 'COMPROMISED'
+                   : 'CAPTURED';
+    const intelLabel = correct === 0 ? '—'
+                     : correct <= 1 ? 'FRAGMENTARY'
+                     : correct <= 2 ? 'ACCUMULATING'
+                     : correct <= 3 ? 'SUBSTANTIAL'
+                     : 'DECISIVE';
+    $('header-status').innerHTML =
+      `DISPATCHES: ${state.scores.length}/${TOTAL_ROUNDS}<br>NETWORK: ${netLabel}<br>INTELLIGENCE: ${intelLabel}`;
+  }
+
+  function updateRoundUI() {
+    $('round-label').textContent = `Dispatch ${state.round} of ${TOTAL_ROUNDS}`;
+
+    for (let i = 1; i <= TOTAL_ROUNDS; i++) {
+      const pip = $(`pip-${i}`);
+      pip.className = 'pip';
+      if (i < state.round) {
+        const outcome = state.scores[i - 1];
+        pip.classList.add(outcome ? 'done-success' : 'done-fail');
+        pip.textContent = outcome ? '✓' : '✗';
+      } else if (i === state.round) {
+        pip.classList.add('current');
+        pip.textContent = i;
+      } else {
+        pip.textContent = i;
+      }
+    }
+
+    const badge = $('network-status-badge');
+    badge.className = `network-status ${state.networkStatus}`;
+    badge.textContent = state.networkStatus === 'active' ? 'Network Active'
+                      : state.networkStatus === 'compromised' ? 'Network Compromised'
+                      : 'Network Captured';
+  }
+
+  // ── FETCH DISPATCH ──
+  async function loadDispatch() {
+    // Show loading, hide others
+    $('loading-dispatch').classList.remove('hidden');
+    $('dispatch-card').classList.add('hidden');
+    $('historical-context').classList.add('hidden');
+    $('decision-panel').classList.add('hidden');
+    $('loading-evaluate').classList.add('hidden');
+    $('outcome-section').classList.add('hidden');
+    $('btn-next').classList.add('hidden');
+
+    updateRoundUI();
+    updateHeaderStatus();
+
+    try {
+      const resp = await fetch('/api/dispatch', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          roundNum: state.round,
+          previousOutcome: state.lastOutcome
+        })
+      });
+
+      if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+      const data = await resp.json();
+      state.currentDispatch = data;
+
+      $('dispatch-date').textContent = DISPATCH_DATES[state.round - 1] || '1780';
+      $('dispatch-text').textContent = data.dispatchText;
+      $('historical-context').textContent = data.historical_context;
+
+      // Build options
+      const grid = $('options-grid');
+      grid.innerHTML = '';
+      data.options.forEach(opt => {
+        const btn = document.createElement('button');
+        btn.className = 'option-btn';
+        btn.dataset.id = opt.id;
+        btn.innerHTML = `
+          <span class="option-id">${opt.id}</span>
+          <div class="option-content">
+            <div class="option-label">${escapeHtml(opt.label)}</div>
+            <div class="option-desc">${escapeHtml(opt.description)}</div>
+          </div>`;
+        btn.addEventListener('click', () => selectOption(opt));
+        grid.appendChild(btn);
+      });
+
+      $('loading-dispatch').classList.add('hidden');
+      $('dispatch-card').classList.remove('hidden');
+      $('historical-context').classList.remove('hidden');
+      $('decision-panel').classList.remove('hidden');
+
+    } catch (err) {
+      $('loading-dispatch').innerHTML = `<span style="color:#c0392b">Error loading dispatch. Check console.</span>`;
+      console.error(err);
+    }
+  }
+
+  // ── HANDLE OPTION SELECTION ──
+  async function selectOption(chosen) {
+    // Disable all buttons
+    document.querySelectorAll('.option-btn').forEach(b => b.disabled = true);
+
+    $('loading-evaluate').classList.remove('hidden');
+
+    const d = state.currentDispatch;
+
+    try {
+      const correct = d.options.find(o => o.id === d.correctOptionId);
+
+      const resp = await fetch('/api/evaluate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          dispatchText: d.dispatchText,
+          translation: d.translation,
+          chosenOptionId: chosen.id,
+          correctOptionId: d.correctOptionId,
+          roundNum: state.round,
+          chosenLabel: chosen.label,
+          chosenDescription: chosen.description,
+          correctLabel: correct ? correct.label : chosen.label
+        })
+      });
+
+      if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+      const result = await resp.json();
+
+      // Update state
+      state.scores.push(result.success);
+      state.networkStatus = result.spy_status;
+      state.lastOutcome = result.outcome_narrative;
+
+      // Show outcome
+      $('loading-evaluate').classList.add('hidden');
+
+      $('translation-text').textContent = d.translation;
+
+      const panel = $('outcome-panel');
+      panel.className = `outcome-panel ${result.success ? 'success' : 'failure'}`;
+      $('outcome-verdict').textContent = result.success ? '— Mission Successful —' : '— Decision Error —';
+      $('outcome-narrative').textContent = result.outcome_narrative;
+      $('outcome-intel-text').textContent = result.intelligence_gained;
+      $('outcome-debrief').textContent = result.debrief;
+
+      $('outcome-section').classList.remove('hidden');
+
+      // Show next button or end
+      const btn = $('btn-next');
+      if (state.round < TOTAL_ROUNDS) {
+        btn.textContent = `Next Dispatch →`;
+        btn.classList.remove('hidden');
+      } else {
+        btn.textContent = 'Receive Final Debrief →';
+        btn.classList.remove('hidden');
+      }
+
+      updateRoundUI();
+      updateHeaderStatus();
+
+    } catch (err) {
+      $('loading-evaluate').innerHTML = `<span style="color:#c0392b">Error evaluating decision.</span>`;
+      console.error(err);
+    }
+  }
+
+  // ── NEXT ROUND OR END ──
+  function advanceRound() {
+    if (state.round >= TOTAL_ROUNDS) {
+      showEndScreen();
+    } else {
+      state.round++;
+      loadDispatch();
+    }
+  }
+
+  // ── END SCREEN ──
+  function showEndScreen() {
+    const correct = state.scores.filter(Boolean).length;
+    const won = correct >= 3;
+
+    const card = $('end-card');
+    card.className = `end-card ${won ? 'win' : 'lose'}`;
+
+    $('end-title').textContent = won
+      ? 'YORKTOWN — OCTOBER 19, 1781'
+      : 'THE NETWORK IS COMPROMISED';
+
+    $('end-date').textContent = won
+      ? 'The intelligence held. Cornwallis surrenders.'
+      : `${correct} of 4 dispatches correctly actioned — the chain fractured`;
+
+    // Score pips
+    const scoreEl = $('end-score');
+    scoreEl.innerHTML = '';
+    state.scores.forEach(s => {
+      const pip = document.createElement('div');
+      pip.className = `score-pip ${s ? 's' : 'f'}`;
+      pip.textContent = s ? '✓' : '✗';
+      scoreEl.appendChild(pip);
+    });
+
+    $('end-narrative').textContent = won
+      ? `Your ${correct} correct operational decisions kept the Culper network intact and the intelligence flowing to Washington's headquarters. The picture assembled across those four dispatches gave the Continental Army the strategic clarity it needed to execute the Yorktown campaign. Cornwallis never saw it coming.`
+      : `With only ${correct} correct decisions, critical intelligence was delayed, misdirected, or lost entirely. The British came close to uncovering the ring — and Washington went into the final campaign half-blind. The war continued longer than it had to.`;
+
+    $('end-historical-text').textContent =
+      'The Culper Ring operated continuously from 1778 to 1783 and was never broken by British intelligence. Robert Townsend (C——r Jr.) kept his role secret for 38 years after the war. Washington\'s codename "711" was assigned from a standard numerical substitution cipher. The network\'s intelligence was instrumental in exposing Benedict Arnold\'s treason in 1780.';
+
+    showScreen('screen-end');
+  }
+
+  // ── HELPERS ──
+  function escapeHtml(str) {
+    return str
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+  }
+
+  // ── BOOT ──
+  $('btn-start').addEventListener('click', () => {
+    showScreen('screen-game');
+    loadDispatch();
+  });
+
+  $('btn-next').addEventListener('click', advanceRound);
+
+  $('btn-restart').addEventListener('click', () => {
+    state.round = 1;
+    state.scores = [];
+    state.networkStatus = 'active';
+    state.lastOutcome = null;
+    state.currentDispatch = null;
+    updateHeaderStatus();
+    showScreen('screen-start');
+  });
+
+  updateHeaderStatus();
+</script>
+</body>
+</html>
