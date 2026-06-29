@@ -59,6 +59,18 @@ on:
         description: 'week-02 / the-broadcast'
         type: boolean
         default: false
+      w02-the-french-alliance:
+        description: 'week-02 / the-french-alliance'
+        type: boolean
+        default: false
+      w02-the-culper-ring:
+        description: 'week-02 / the-culper-ring'
+        type: boolean
+        default: false
+      w02-the-boston-defense:
+        description: 'week-02 / the-boston-defense'
+        type: boolean
+        default: false
 
 jobs:
   deploy:
@@ -92,6 +104,9 @@ jobs:
             [ "${{ github.event.inputs.w02-liberty-fireworks }}" = "true" ] && CHANGED="$CHANGED\nprojects/week-02-red-white-boom/demo-13-liberty-fireworks"
             [ "${{ github.event.inputs.w02-the-convention }}"   = "true" ] && CHANGED="$CHANGED\nprojects/week-02-red-white-boom/demo-08-the-convention"
             [ "${{ github.event.inputs.w02-the-broadcast }}"   = "true" ] && CHANGED="$CHANGED\nprojects/week-02-red-white-boom/demo-09-the-broadcast"
+            [ "${{ github.event.inputs.w02-the-french-alliance }}" = "true" ] && CHANGED="$CHANGED\nprojects/week-02-red-white-boom/demo-14-the-french-alliance"
+            [ "${{ github.event.inputs.w02-the-culper-ring }}" = "true" ] && CHANGED="$CHANGED\nprojects/week-02-red-white-boom/demo-15-the-culper-ring"
+            [ "${{ github.event.inputs.w02-the-boston-defense }}" = "true" ] && CHANGED="$CHANGED\nprojects/week-02-red-white-boom/demo-16-the-boston-defense"
 
           elif [ "${{ github.event.before }}" = "0000000000000000000000000000000000000000" ]; then
             CHANGED=$(find projects -mindepth 2 -maxdepth 2 -type d -name 'demo-*' | sort)

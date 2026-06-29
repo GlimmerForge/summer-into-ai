@@ -54,5 +54,17 @@
   "projects/week-02-red-white-boom/demo-09-the-broadcast": {
     "projectId": "prj_O2werGx68u2eSuLsibV7vbMBmdCi",
     "orgId": "team_D79TvyBcfHAyncBLxxnY1foW"
+  },
+  "projects/week-02-red-white-boom/demo-14-the-french-alliance": {
+    "projectId": "prj_pXMxtvSivQATA7Np6x1L7phjyim8",
+    "orgId": "team_D79TvyBcfHAyncBLxxnY1foW"
+  },
+  "projects/week-02-red-white-boom/demo-15-the-culper-ring": {
+    "projectId": "prj_LqoZkI73INcolG0YiHOhcZ5YTtpi",
+    "orgId": "team_D79TvyBcfHAyncBLxxnY1foW"
+  },
+  "projects/week-02-red-white-boom/demo-16-the-boston-defense": {
+    "projectId": "prj_3Wxfzz0eRDvmNna1BXqG3FrKGWA7",
+    "orgId": "team_D79TvyBcfHAyncBLxxnY1foW"
   }
 }
