@@ -65,7 +65,8 @@ Generate a realistic operational outcome: what happened as a result of this deci
         }
       }
     ],
-    tool_choice: { type: 'any' }
+    tool_choice: { type: 'any' },
+    messages: [{ role: 'user', content: 'Evaluate the decision and generate the outcome now.' }]
   });
 
   const toolUse = response.content.find(b => b.type === 'tool_use');
