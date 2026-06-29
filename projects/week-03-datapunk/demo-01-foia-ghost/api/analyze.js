@@ -20,7 +20,9 @@ End with a line: OVERALL RISK LEVEL: [NOMINAL / ELEVATED / HIGH / CRITICAL]
 
 Be specific with the numbers. Be honest about what the data suggests. This is about transparency, not alarm — but don't soften uncomfortable findings.
 
-National baseline for comparison: median household income $72,000, poverty rate 11.5%, housing median year 1980.`;
+National baseline for comparison: median household income $72,000, poverty rate 11.5%, housing median year 1980.
+
+FORMATTING RULES: Plain text only. No markdown. No asterisks, no bold (**), no italics (*), no bullet dashes, no hyphens as list markers. Use numbers (1. 2. 3.) if you need lists. Write in clear prose sentences.`;
 
 function buildUserMessage(data) {
   const { zip, city, state, census, epa, fema } = data;
