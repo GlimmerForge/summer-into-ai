@@ -43,14 +43,15 @@ function buildUserMessage(data) {
       lines.push(`- Median year structure built: ${census.medianYearBuilt}`);
   }
 
-  lines.push('', 'EPA DATA:');
+  lines.push('', 'EPA TOXIC RELEASE INVENTORY DATA:');
   if (epa.error) {
     lines.push(`- ERROR: ${epa.error}`);
   } else {
-    lines.push(`- Regulated facilities within ZIP: ${epa.totalFacilities}`);
-    lines.push(`- Active violations (significant non-compliance): ${epa.violations}`);
+    lines.push(`- Active TRI facilities (legally required to report toxic chemical releases): ${epa.totalFacilities}`);
     if (epa.topFacilities.length > 0)
       lines.push(`- Facility names include: ${epa.topFacilities.join(', ')}`);
+    if (epa.totalFacilities === 0)
+      lines.push(`- No TRI-reporting facilities found in this ZIP (may indicate residential area or very light industry)`);
   }
 
   lines.push('', `FEMA DATA (${fema.stateName}, last 5 years):`);

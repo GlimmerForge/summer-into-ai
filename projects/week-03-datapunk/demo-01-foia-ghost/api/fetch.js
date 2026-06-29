@@ -32,9 +32,8 @@ export default async function handler(req, res) {
     `https://api.census.gov/data/2022/acs/acs5?get=B19013_001E,B17001_002E,B17001_001E,` +
     `B28002_013E,B28002_001E,B25035_001E,NAME&for=zip%20code%20tabulation%20area:${zip}${censusKey}`;
 
-  const epaUrl =
-    `https://echodata.epa.gov/echo/echo_rest_services.get_facilities?output=JSON` +
-    `&p_zip=${zip}&p_act=Y&responseset=100`;
+  // EPA Envirofacts TRI — facilities legally required to report toxic chemical releases
+  const epaUrl = `https://data.epa.gov/efservice/tri_facility/ZIP_CODE/${zip}/JSON`;
 
   const femaUrl =
     `https://www.fema.gov/api/open/v2/disasterDeclarationsSummaries?state=${stateAbbr}` +
@@ -85,25 +84,24 @@ export default async function handler(req, res) {
     census = { error: 'No Census data available for this ZIP', medianIncome: null, povertyRate: null, noInternetRate: null, medianYearBuilt: null, nationalMedianIncome: 72000 };
   }
 
-  // ── 4. Parse EPA ──────────────────────────────────────────────────────────
+  // ── 4. Parse EPA TRI (Toxics Release Inventory) ───────────────────────────
   let epa;
   try {
     if (epaResult.status === 'rejected') throw new Error('fetch failed');
     const raw = epaResult.value;
-    const facilities = raw?.Results?.Results ?? [];
-    if (!Array.isArray(facilities)) throw new Error('unexpected shape');
-    const violations = facilities.filter(
-      f => f.CWPSNCFlag === 'Y' || f.CAACurrentHpvFlag === 'Y'
-    ).length;
-    const topFacilities = facilities.slice(0, 5).map(f => f.FacName ?? 'Unknown').filter(Boolean);
+    // TRI returns a flat array of facility objects (or an error object)
+    if (!Array.isArray(raw)) throw new Error('unexpected shape');
+    const active = raw.filter(f => f.fac_closed_ind !== '1');
+    const topFacilities = active.slice(0, 5).map(f => f.facility_name).filter(Boolean);
     epa = {
-      totalFacilities: facilities.length,
-      violations,
+      totalFacilities: active.length,
+      violations: 0, // TRI doesn't have violation flags; count is the signal
       topFacilities,
+      label: 'Toxic Release Inventory facilities (federally required reporters)',
       error: null,
     };
   } catch (_) {
-    epa = { error: 'EPA data unavailable', totalFacilities: 0, violations: 0, topFacilities: [] };
+    epa = { error: 'EPA data unavailable', totalFacilities: 0, violations: 0, topFacilities: [], label: '' };
   }
 
   // ── 5. Parse FEMA ─────────────────────────────────────────────────────────
