@@ -1,0 +1,415 @@
+{
+  "type": "doc",
+  "content": [
+    {
+      "type": "paragraph",
+      "attrs": {
+        "textAlign": null
+      },
+      "content": [
+        {
+          "type": "text",
+          "text": "Week 2 of "
+        },
+        {
+          "type": "text",
+          "marks": [
+            {
+              "type": "link",
+              "attrs": {
+                "href": "https://advisoryhour.substack.com",
+                "target": "_blank",
+                "rel": "noopener noreferrer nofollow",
+                "class": null
+              }
+            }
+          ],
+          "text": "Summer into AI 2026"
+        },
+        {
+          "type": "text",
+          "text": " hosted by "
+        },
+        {
+          "type": "text",
+          "marks": [
+            {
+              "type": "link",
+              "attrs": {
+                "href": "https://advisoryhour.substack.com",
+                "target": "_blank",
+                "rel": "noopener noreferrer nofollow",
+                "class": null
+              }
+            }
+          ],
+          "text": "@advisoryhour"
+        },
+        {
+          "type": "text",
+          "text": " — theme: Red, White & Boom."
+        }
+      ]
+    },
+    {
+      "type": "paragraph",
+      "attrs": {
+        "textAlign": null
+      },
+      "content": [
+        {
+          "type": "text",
+          "text": "New York City, 1778. You are Agent 355 — handler for America's most successful spy ring. Each round, a cipher dispatch arrives from the field: Abraham Woodhull (C——r) in Setauket, Robert Townsend (C——r Jr.) in Manhattan, Austin Roe on horseback between them. Claude generates the dispatch in authentic Culper tradecraft: numbered locations, coded names, invisible-ink shorthand. You must read the cipher, choose your response from three options, and relay the intelligence to General Washington (Agent 711) before it goes stale."
+        }
+      ]
+    },
+    {
+      "type": "paragraph",
+      "attrs": {
+        "textAlign": null
+      },
+      "content": [
+        {
+          "type": "text",
+          "text": "Worth noting alongside this: "
+        },
+        {
+          "type": "text",
+          "marks": [
+            {
+              "type": "link",
+              "attrs": {
+                "href": "https://advisoryhour.substack.com",
+                "target": "_blank",
+                "rel": "noopener noreferrer nofollow",
+                "class": null
+              }
+            }
+          ],
+          "text": "The Patriot Gazette by another Week 2 entrant"
+        },
+        {
+          "type": "text",
+          "text": " where that demo generates propaganda you read, this one generates intelligence you must decode and act on — the AI is the enemy as much as the tool"
+        }
+      ]
+    },
+    {
+      "type": "heading",
+      "attrs": {
+        "textAlign": null,
+        "level": 2
+      },
+      "content": [
+        {
+          "type": "text",
+          "text": "How the AI works"
+        }
+      ]
+    },
+    {
+      "type": "bullet_list",
+      "content": [
+        {
+          "type": "list_item",
+          "content": [
+            {
+              "type": "paragraph",
+              "attrs": {
+                "textAlign": null
+              },
+              "content": [
+                {
+                  "type": "text",
+                  "text": "Two Claude endpoints drive the loop. The "
+                },
+                {
+                  "type": "text",
+                  "marks": [
+                    {
+                      "type": "strong"
+                    }
+                  ],
+                  "text": "dispatch endpoint"
+                },
+                {
+                  "type": "text",
+                  "text": " generates each cipher message using the "
+                },
+                {
+                  "type": "text",
+                  "marks": [
+                    {
+                      "type": "strong"
+                    }
+                  ],
+                  "text": "generate_dispatch tool"
+                },
+                {
+                  "type": "text",
+                  "text": ": Claude produces a dispatch in period Culper tradecraft, its plain-English translation (shown only after you decide), three plausible response options, the correct option ID, and a historical context note."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "list_item",
+          "content": [
+            {
+              "type": "paragraph",
+              "attrs": {
+                "textAlign": null
+              },
+              "content": [
+                {
+                  "type": "text",
+                  "text": "The "
+                },
+                {
+                  "type": "text",
+                  "marks": [
+                    {
+                      "type": "strong"
+                    }
+                  ],
+                  "text": "evaluate endpoint"
+                },
+                {
+                  "type": "text",
+                  "text": " assesses your decision using the "
+                },
+                {
+                  "type": "text",
+                  "marks": [
+                    {
+                      "type": "strong"
+                    }
+                  ],
+                  "text": "evaluate_decision tool"
+                },
+                {
+                  "type": "text",
+                  "text": ": it returns success/failure, an outcome narrative, intelligence gained for Washington's campaign, whether your spy's cover status is still "
+                },
+                {
+                  "type": "text",
+                  "marks": [
+                    {
+                      "type": "strong"
+                    }
+                  ],
+                  "text": "active"
+                },
+                {
+                  "type": "text",
+                  "text": ", compromised, or captured, and a historical debrief on what the coded phrases actually meant."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "list_item",
+          "content": [
+            {
+              "type": "paragraph",
+              "attrs": {
+                "textAlign": null
+              },
+              "content": [
+                {
+                  "type": "text",
+                  "text": "The codebook is always visible as you play: 711=Washington, C——r=Woodhull, C——r Jr.=Townsend, John Bolton=Tallmadge, 10=NYC, 20=Setauket, 30=Oyster Bay. Reading the cipher correctly — not just picking randomly — is what wins."
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "heading",
+      "attrs": {
+        "textAlign": null,
+        "level": 2
+      },
+      "content": [
+        {
+          "type": "text",
+          "text": "How to play"
+        }
+      ]
+    },
+    {
+      "type": "bullet_list",
+      "content": [
+        {
+          "type": "list_item",
+          "content": [
+            {
+              "type": "paragraph",
+              "attrs": {
+                "textAlign": null
+              },
+              "content": [
+                {
+                  "type": "text",
+                  "text": "Read each cipher dispatch using the permanent codebook sidebar — the correct answer is in the text"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "list_item",
+          "content": [
+            {
+              "type": "paragraph",
+              "attrs": {
+                "textAlign": null
+              },
+              "content": [
+                {
+                  "type": "text",
+                  "text": "Choose from three response options: relay, wait, or act on the intelligence"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "list_item",
+          "content": [
+            {
+              "type": "paragraph",
+              "attrs": {
+                "textAlign": null
+              },
+              "content": [
+                {
+                  "type": "text",
+                  "text": "See the plain-English translation revealed after your decision"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "list_item",
+          "content": [
+            {
+              "type": "paragraph",
+              "attrs": {
+                "textAlign": null
+              },
+              "content": [
+                {
+                  "type": "text",
+                  "text": "Win 3 of 4 dispatches while keeping the network active to complete your mission"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "heading",
+      "attrs": {
+        "textAlign": null,
+        "level": 2
+      },
+      "content": [
+        {
+          "type": "text",
+          "text": "Where to play"
+        }
+      ]
+    },
+    {
+      "type": "paragraph",
+      "attrs": {
+        "textAlign": null
+      },
+      "content": [
+        {
+          "type": "text",
+          "marks": [
+            {
+              "type": "strong"
+            }
+          ],
+          "text": "Demo: "
+        },
+        {
+          "type": "text",
+          "marks": [
+            {
+              "type": "link",
+              "attrs": {
+                "href": "https://demo-15-the-culper-ring.vercel.app",
+                "target": "_blank",
+                "rel": "noopener noreferrer nofollow",
+                "class": null
+              }
+            }
+          ],
+          "text": "demo-15-the-culper-ring.vercel.app"
+        }
+      ]
+    },
+    {
+      "type": "paragraph",
+      "attrs": {
+        "textAlign": null
+      },
+      "content": [
+        {
+          "type": "text",
+          "marks": [
+            {
+              "type": "strong"
+            }
+          ],
+          "text": "Code & README: "
+        },
+        {
+          "type": "text",
+          "marks": [
+            {
+              "type": "link",
+              "attrs": {
+                "href": "https://github.com/GlimmerForge/summer-into-ai/tree/master/projects/week-02-red-white-boom/demo-15-the-culper-ring",
+                "target": "_blank",
+                "rel": "noopener noreferrer nofollow",
+                "class": null
+              }
+            }
+          ],
+          "text": "demo-15-the-culper-ring"
+        }
+      ]
+    },
+    {
+      "type": "horizontal_rule"
+    },
+    {
+      "type": "paragraph",
+      "attrs": {
+        "textAlign": null
+      },
+      "content": [
+        {
+          "type": "text",
+          "marks": [
+            {
+              "type": "em"
+            }
+          ],
+          "text": "Summer into AI 2026 · Theme 2: Red, White & Boom"
+        }
+      ]
+    }
+  ]
+}

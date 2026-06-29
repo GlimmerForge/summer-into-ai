@@ -1,0 +1,402 @@
+{
+  "type": "doc",
+  "content": [
+    {
+      "type": "paragraph",
+      "attrs": {
+        "textAlign": null
+      },
+      "content": [
+        {
+          "type": "text",
+          "text": "Week 2 of "
+        },
+        {
+          "type": "text",
+          "marks": [
+            {
+              "type": "link",
+              "attrs": {
+                "href": "https://advisoryhour.substack.com",
+                "target": "_blank",
+                "rel": "noopener noreferrer nofollow",
+                "class": null
+              }
+            }
+          ],
+          "text": "Summer into AI 2026"
+        },
+        {
+          "type": "text",
+          "text": " hosted by "
+        },
+        {
+          "type": "text",
+          "marks": [
+            {
+              "type": "link",
+              "attrs": {
+                "href": "https://advisoryhour.substack.com",
+                "target": "_blank",
+                "rel": "noopener noreferrer nofollow",
+                "class": null
+              }
+            }
+          ],
+          "text": "@advisoryhour"
+        },
+        {
+          "type": "text",
+          "text": " — theme: Red, White & Boom."
+        }
+      ]
+    },
+    {
+      "type": "paragraph",
+      "attrs": {
+        "textAlign": null
+      },
+      "content": [
+        {
+          "type": "text",
+          "text": "March 5, 1770. Five colonists are dead. Eight British soldiers are in custody. And John Adams — future President, committed patriot — has agreed to defend them. You are his co-counsel. Five witnesses take the stand: Nathan Maverick (the victim's grief-stricken brother), Captain Preston (military, formal), Richard Palmes (moderate merchant bystander), Dr. Benjamin Church (hostile Patriot physician), and Private Montgomery (the frightened young soldier who fired first). Cross-examine each one. Then watch 12 historically-named colonial jurors deliberate in real time."
+        }
+      ]
+    },
+    {
+      "type": "paragraph",
+      "attrs": {
+        "textAlign": null
+      },
+      "content": [
+        {
+          "type": "text",
+          "text": "Worth noting alongside this: "
+        },
+        {
+          "type": "text",
+          "marks": [
+            {
+              "type": "link",
+              "attrs": {
+                "href": "https://advisoryhour.substack.com",
+                "target": "_blank",
+                "rel": "noopener noreferrer nofollow",
+                "class": null
+              }
+            }
+          ],
+          "text": "Sons of Liberty by another Week 2 entrant"
+        },
+        {
+          "type": "text",
+          "text": " where that demo puts you in the streets throwing snowballs, this one puts you in the courtroom defending the soldiers who fired back — same night, opposite side of the moral equation"
+        }
+      ]
+    },
+    {
+      "type": "heading",
+      "attrs": {
+        "textAlign": null,
+        "level": 2
+      },
+      "content": [
+        {
+          "type": "text",
+          "text": "How the AI works"
+        }
+      ]
+    },
+    {
+      "type": "bullet_list",
+      "content": [
+        {
+          "type": "list_item",
+          "content": [
+            {
+              "type": "paragraph",
+              "attrs": {
+                "textAlign": null
+              },
+              "content": [
+                {
+                  "type": "text",
+                  "text": "Three Claude endpoints run the trial. The "
+                },
+                {
+                  "type": "text",
+                  "marks": [
+                    {
+                      "type": "strong"
+                    }
+                  ],
+                  "text": "testify endpoint"
+                },
+                {
+                  "type": "text",
+                  "text": " streams each witness's testimony via SSE — each of the five witnesses has a distinct system prompt personality, and the defense strategy you chose at the start (Self-Defense, Mistaken Command, or Lawful Military Duty) is injected so testimony responds to your legal angle."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "list_item",
+          "content": [
+            {
+              "type": "paragraph",
+              "attrs": {
+                "textAlign": null
+              },
+              "content": [
+                {
+                  "type": "text",
+                  "text": "The "
+                },
+                {
+                  "type": "text",
+                  "marks": [
+                    {
+                      "type": "strong"
+                    }
+                  ],
+                  "text": "crossexamine endpoint"
+                },
+                {
+                  "type": "text",
+                  "text": " uses the "
+                },
+                {
+                  "type": "text",
+                  "marks": [
+                    {
+                      "type": "strong"
+                    }
+                  ],
+                  "text": "evaluate_crossexamination tool"
+                },
+                {
+                  "type": "text",
+                  "text": " to score your question: credibility_shift (−30 to +20), key_point_landed, opportunity_missed, and a witness_reaction in character. Your cross-examination skill directly changes each witness's credibility meter."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "list_item",
+          "content": [
+            {
+              "type": "paragraph",
+              "attrs": {
+                "textAlign": null
+              },
+              "content": [
+                {
+                  "type": "text",
+                  "text": "The "
+                },
+                {
+                  "type": "text",
+                  "marks": [
+                    {
+                      "type": "strong"
+                    }
+                  ],
+                  "text": "jury endpoint"
+                },
+                {
+                  "type": "text",
+                  "text": " receives your defense strategy and all five credibility scores. Claude generates 12 named colonial-era jurors — merchants, coopers, shipwrights, clergy — each with an occupation, a vote, and their reasoning. The verdict scales with how well you cross-examined."
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "heading",
+      "attrs": {
+        "textAlign": null,
+        "level": 2
+      },
+      "content": [
+        {
+          "type": "text",
+          "text": "How to play"
+        }
+      ]
+    },
+    {
+      "type": "bullet_list",
+      "content": [
+        {
+          "type": "list_item",
+          "content": [
+            {
+              "type": "paragraph",
+              "attrs": {
+                "textAlign": null
+              },
+              "content": [
+                {
+                  "type": "text",
+                  "text": "Choose your defense strategy — it shapes every witness's testimony and the jury's frame"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "list_item",
+          "content": [
+            {
+              "type": "paragraph",
+              "attrs": {
+                "textAlign": null
+              },
+              "content": [
+                {
+                  "type": "text",
+                  "text": "Read the streaming testimony, then type your cross-examination question"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "list_item",
+          "content": [
+            {
+              "type": "paragraph",
+              "attrs": {
+                "textAlign": null
+              },
+              "content": [
+                {
+                  "type": "text",
+                  "text": "Your question quality shifts the witness's credibility meter — weak questions backfire"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "list_item",
+          "content": [
+            {
+              "type": "paragraph",
+              "attrs": {
+                "textAlign": null
+              },
+              "content": [
+                {
+                  "type": "text",
+                  "text": "After all 5 witnesses, watch the 12 jurors reveal their votes one by one"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "heading",
+      "attrs": {
+        "textAlign": null,
+        "level": 2
+      },
+      "content": [
+        {
+          "type": "text",
+          "text": "Where to play"
+        }
+      ]
+    },
+    {
+      "type": "paragraph",
+      "attrs": {
+        "textAlign": null
+      },
+      "content": [
+        {
+          "type": "text",
+          "marks": [
+            {
+              "type": "strong"
+            }
+          ],
+          "text": "Demo: "
+        },
+        {
+          "type": "text",
+          "marks": [
+            {
+              "type": "link",
+              "attrs": {
+                "href": "https://demo-16-the-boston-defense.vercel.app",
+                "target": "_blank",
+                "rel": "noopener noreferrer nofollow",
+                "class": null
+              }
+            }
+          ],
+          "text": "demo-16-the-boston-defense.vercel.app"
+        }
+      ]
+    },
+    {
+      "type": "paragraph",
+      "attrs": {
+        "textAlign": null
+      },
+      "content": [
+        {
+          "type": "text",
+          "marks": [
+            {
+              "type": "strong"
+            }
+          ],
+          "text": "Code & README: "
+        },
+        {
+          "type": "text",
+          "marks": [
+            {
+              "type": "link",
+              "attrs": {
+                "href": "https://github.com/GlimmerForge/summer-into-ai/tree/master/projects/week-02-red-white-boom/demo-16-the-boston-defense",
+                "target": "_blank",
+                "rel": "noopener noreferrer nofollow",
+                "class": null
+              }
+            }
+          ],
+          "text": "demo-16-the-boston-defense"
+        }
+      ]
+    },
+    {
+      "type": "horizontal_rule"
+    },
+    {
+      "type": "paragraph",
+      "attrs": {
+        "textAlign": null
+      },
+      "content": [
+        {
+          "type": "text",
+          "marks": [
+            {
+              "type": "em"
+            }
+          ],
+          "text": "Summer into AI 2026 · Theme 2: Red, White & Boom"
+        }
+      ]
+    }
+  ]
+}

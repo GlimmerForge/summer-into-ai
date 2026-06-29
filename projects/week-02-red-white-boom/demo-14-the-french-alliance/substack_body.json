@@ -1,0 +1,376 @@
+{
+  "type": "doc",
+  "content": [
+    {
+      "type": "paragraph",
+      "attrs": {
+        "textAlign": null
+      },
+      "content": [
+        {
+          "type": "text",
+          "text": "Week 2 of "
+        },
+        {
+          "type": "text",
+          "marks": [
+            {
+              "type": "link",
+              "attrs": {
+                "href": "https://advisoryhour.substack.com",
+                "target": "_blank",
+                "rel": "noopener noreferrer nofollow",
+                "class": null
+              }
+            }
+          ],
+          "text": "Summer into AI 2026"
+        },
+        {
+          "type": "text",
+          "text": " hosted by "
+        },
+        {
+          "type": "text",
+          "marks": [
+            {
+              "type": "link",
+              "attrs": {
+                "href": "https://advisoryhour.substack.com",
+                "target": "_blank",
+                "rel": "noopener noreferrer nofollow",
+                "class": null
+              }
+            }
+          ],
+          "text": "@advisoryhour"
+        },
+        {
+          "type": "text",
+          "text": " — theme: Red, White & Boom."
+        }
+      ]
+    },
+    {
+      "type": "paragraph",
+      "attrs": {
+        "textAlign": null
+      },
+      "content": [
+        {
+          "type": "text",
+          "text": "You are Benjamin Franklin, 72 years old, arriving at Versailles in January 1778. The Revolution is failing. Valley Forge is happening right now. Your mission: persuade four factions of the French court — King Louis XVI, Foreign Minister Vergennes, the Philosophes, and the Merchant Consortium — to sign a Treaty of Alliance with America. You have four rounds. Each faction weighs your argument differently. Claude plays all four voices simultaneously."
+        }
+      ]
+    },
+    {
+      "type": "paragraph",
+      "attrs": {
+        "textAlign": null
+      },
+      "content": [
+        {
+          "type": "text",
+          "text": "Worth noting alongside this: "
+        },
+        {
+          "type": "text",
+          "marks": [
+            {
+              "type": "link",
+              "attrs": {
+                "href": "https://advisoryhour.substack.com",
+                "target": "_blank",
+                "rel": "noopener noreferrer nofollow",
+                "class": null
+              }
+            }
+          ],
+          "text": "Independence Engines in Space by Merlin Forge"
+        },
+        {
+          "type": "text",
+          "text": " where that demo puts you in command of a fleet, this one puts you in a salon — no cannons, just rhetoric. The weapon is words, and the target is Vergennes."
+        }
+      ]
+    },
+    {
+      "type": "heading",
+      "attrs": {
+        "textAlign": null,
+        "level": 2
+      },
+      "content": [
+        {
+          "type": "text",
+          "text": "How the AI works"
+        }
+      ]
+    },
+    {
+      "type": "bullet_list",
+      "content": [
+        {
+          "type": "list_item",
+          "content": [
+            {
+              "type": "paragraph",
+              "attrs": {
+                "textAlign": null
+              },
+              "content": [
+                {
+                  "type": "text",
+                  "text": "The demo uses one Claude endpoint per negotiation round. You select a faction to address (Louis XVI, Vergennes, the Philosophes, or the Merchants), choose an opening gambit (Enlightenment Appeal, Strategic Argument, Commercial Opportunity, or the Wounded Ally plea), and write your argument in Franklin's voice."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "list_item",
+          "content": [
+            {
+              "type": "paragraph",
+              "attrs": {
+                "textAlign": null
+              },
+              "content": [
+                {
+                  "type": "text",
+                  "text": "Claude plays all four factions simultaneously using a "
+                },
+                {
+                  "type": "text",
+                  "marks": [
+                    {
+                      "type": "strong"
+                    }
+                  ],
+                  "text": "structured tool output"
+                },
+                {
+                  "type": "text",
+                  "text": " called "
+                },
+                {
+                  "type": "text",
+                  "marks": [
+                    {
+                      "type": "strong"
+                    }
+                  ],
+                  "text": "evaluate_diplomacy"
+                },
+                {
+                  "type": "text",
+                  "text": ". For each faction, Claude returns: alignment_shift (−20 to +30 points), what_worked, what_failed, counter_demand, and faction_voice — an in-character response from each courtier."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "list_item",
+          "content": [
+            {
+              "type": "paragraph",
+              "attrs": {
+                "textAlign": null
+              },
+              "content": [
+                {
+                  "type": "text",
+                  "text": "Win condition: the weighted alliance score (Louis ×40, Vergennes ×35, Philosophes ×15, Merchants ×10) must reach 60 out of 100 across four rounds. Start too low, and France stays neutral. Start strong, and Vergennes' counter-demands get more specific — more interesting."
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "heading",
+      "attrs": {
+        "textAlign": null,
+        "level": 2
+      },
+      "content": [
+        {
+          "type": "text",
+          "text": "How to play"
+        }
+      ]
+    },
+    {
+      "type": "bullet_list",
+      "content": [
+        {
+          "type": "list_item",
+          "content": [
+            {
+              "type": "paragraph",
+              "attrs": {
+                "textAlign": null
+              },
+              "content": [
+                {
+                  "type": "text",
+                  "text": "Pick an opening gambit — it sets your rhetorical frame for all four rounds"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "list_item",
+          "content": [
+            {
+              "type": "paragraph",
+              "attrs": {
+                "textAlign": null
+              },
+              "content": [
+                {
+                  "type": "text",
+                  "text": "Select which faction to address each round — you can't persuade everyone equally"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "list_item",
+          "content": [
+            {
+              "type": "paragraph",
+              "attrs": {
+                "textAlign": null
+              },
+              "content": [
+                {
+                  "type": "text",
+                  "text": "Write Franklin's argument in the text box; Claude evaluates it as each courtier in character"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "list_item",
+          "content": [
+            {
+              "type": "paragraph",
+              "attrs": {
+                "textAlign": null
+              },
+              "content": [
+                {
+                  "type": "text",
+                  "text": "Watch the Alliance Score — reach 60 by Round 4 to sign the Treaty of Alliance"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "heading",
+      "attrs": {
+        "textAlign": null,
+        "level": 2
+      },
+      "content": [
+        {
+          "type": "text",
+          "text": "Where to play"
+        }
+      ]
+    },
+    {
+      "type": "paragraph",
+      "attrs": {
+        "textAlign": null
+      },
+      "content": [
+        {
+          "type": "text",
+          "marks": [
+            {
+              "type": "strong"
+            }
+          ],
+          "text": "Demo: "
+        },
+        {
+          "type": "text",
+          "marks": [
+            {
+              "type": "link",
+              "attrs": {
+                "href": "https://demo-14-the-french-alliance.vercel.app",
+                "target": "_blank",
+                "rel": "noopener noreferrer nofollow",
+                "class": null
+              }
+            }
+          ],
+          "text": "demo-14-the-french-alliance.vercel.app"
+        }
+      ]
+    },
+    {
+      "type": "paragraph",
+      "attrs": {
+        "textAlign": null
+      },
+      "content": [
+        {
+          "type": "text",
+          "marks": [
+            {
+              "type": "strong"
+            }
+          ],
+          "text": "Code & README: "
+        },
+        {
+          "type": "text",
+          "marks": [
+            {
+              "type": "link",
+              "attrs": {
+                "href": "https://github.com/GlimmerForge/summer-into-ai/tree/master/projects/week-02-red-white-boom/demo-14-the-french-alliance",
+                "target": "_blank",
+                "rel": "noopener noreferrer nofollow",
+                "class": null
+              }
+            }
+          ],
+          "text": "demo-14-the-french-alliance"
+        }
+      ]
+    },
+    {
+      "type": "horizontal_rule"
+    },
+    {
+      "type": "paragraph",
+      "attrs": {
+        "textAlign": null
+      },
+      "content": [
+        {
+          "type": "text",
+          "marks": [
+            {
+              "type": "em"
+            }
+          ],
+          "text": "Summer into AI 2026 · Theme 2: Red, White & Boom"
+        }
+      ]
+    }
+  ]
+}
