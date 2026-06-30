@@ -226,6 +226,7 @@
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/topojson-client@3/dist/topojson-client.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/d3-geo@3/dist/d3-geo.min.js"></script>
   <script>
     // ── Canvas setup ──────────────────────────────────────────────────────────
     const canvas = document.getElementById('canvas');
@@ -236,8 +237,9 @@
     let btcChange = 0;
     let btcPrice = 0;
     let tempLabel = '';
-    let landGeo = null;    // merged land MultiPolygon
-    let bordersGeo = null; // country border MultiLineString
+    let landGeo = null;
+    let bordersGeo = null;
+    let d3Proj = null; // initialized lazily once d3-geo loads
 
     const stars = Array.from({ length: 180 }, () => ({
       x: Math.random(), y: Math.random(),
@@ -288,11 +290,11 @@
     });
     canvas.addEventListener('mouseleave', () => { tooltip.style.display = 'none'; });
 
-    // ── Orthographic projection ───────────────────────────────────────────────
+    // ── Manual projection (used for earthquake dots + hover only) ────────────
     function project(lat, lon, cx, cy, R, rotation) {
       const phi    = lat * Math.PI / 180;
       const lambda = lon * Math.PI / 180 - rotation;
-      const phi0   = 15 * Math.PI / 180; // slight tilt toward north
+      const phi0   = 15 * Math.PI / 180;
       const cosC   = Math.sin(phi0) * Math.sin(phi) +
                      Math.cos(phi0) * Math.cos(phi) * Math.cos(lambda);
       if (cosC < 0) return null;
@@ -300,78 +302,6 @@
       const y = cy - R * (Math.cos(phi0) * Math.sin(phi) -
                           Math.sin(phi0) * Math.cos(phi) * Math.cos(lambda));
       return { x, y, depth: cosC };
-    }
-
-    function drawGridLine(pts) {
-      ctx.beginPath();
-      let first = true;
-      pts.forEach(p => {
-        if (!p) { first = true; return; }
-        if (first) { ctx.moveTo(p.x, p.y); first = false; }
-        else ctx.lineTo(p.x, p.y);
-      });
-      ctx.stroke();
-    }
-
-    // Cosine of angular distance between two geographic points.
-    // < 0 means > 90° apart — the edge would cross the back hemisphere.
-    function geoDot([lon1, lat1], [lon2, lat2]) {
-      const r1 = lat1*Math.PI/180, l1 = lon1*Math.PI/180;
-      const r2 = lat2*Math.PI/180, l2 = lon2*Math.PI/180;
-      return Math.sin(r1)*Math.sin(r2) + Math.cos(r1)*Math.cos(r2)*Math.cos(l2-l1);
-    }
-
-    function drawGeoFill(geometry, cx, cy, R) {
-      const polys = geometry.type === 'MultiPolygon' ? geometry.coordinates : [geometry.coordinates];
-      polys.forEach(poly => {
-        if (!poly[0]) return;
-        let pxRun = [], prevC = null;
-        const flush = () => {
-          if (pxRun.length >= 3) {
-            const first = pxRun[0], last = pxRun[pxRun.length - 1];
-            const xs = pxRun.map(p => p.x);
-            const xSpan = Math.max(...xs) - Math.min(...xs);
-            // Pixel distance between run start and end — a large gap means the
-            // closing chord would cut across the ocean face.
-            const closeDist = Math.hypot(first.x - last.x, first.y - last.y);
-            if (xSpan < R * 1.8 && closeDist < R * 0.5) {
-              ctx.beginPath();
-              ctx.moveTo(first.x, first.y);
-              for (let i = 1; i < pxRun.length; i++) ctx.lineTo(pxRun[i].x, pxRun[i].y);
-              ctx.closePath();
-              ctx.fill();
-            }
-          }
-          pxRun = []; prevC = null;
-        };
-        poly[0].forEach(coord => {
-          const [lon, lat] = coord;
-          const p = project(lat, lon, cx, cy, R, globeRotation);
-          if (!p) { flush(); return; }
-          // Break on antimeridian jump or back-hemisphere edge
-          if (prevC && (Math.abs(lon - prevC[0]) > 180 || geoDot(prevC, coord) < 0)) flush();
-          pxRun.push(p); prevC = coord;
-        });
-        flush();
-      });
-    }
-
-    function drawGeoLines(geometry, cx, cy, R) {
-      const lines = geometry.type === 'MultiLineString' ? geometry.coordinates : [geometry.coordinates];
-      lines.forEach(line => {
-        ctx.beginPath();
-        let penDown = false, prevC = null;
-        line.forEach(coord => {
-          const [lon, lat] = coord;
-          const p = project(lat, lon, cx, cy, R, globeRotation);
-          if (!p) { penDown = false; prevC = null; return; }
-          if (prevC && (Math.abs(lon - prevC[0]) > 180 || geoDot(prevC, coord) < 0)) penDown = false;
-          if (!penDown) { ctx.moveTo(p.x, p.y); penDown = true; }
-          else ctx.lineTo(p.x, p.y);
-          prevC = coord;
-        });
-        ctx.stroke();
-      });
     }
 
     // ── Draw loop ─────────────────────────────────────────────────────────────
@@ -422,28 +352,24 @@
       ctx.arc(cx, cy, R, 0, Math.PI * 2);
       ctx.clip();
 
-      // Land masses (landGeo is a FeatureCollection from topojson.feature)
-      if (landGeo) {
-        ctx.fillStyle = '#1b3a24';
-        landGeo.features.forEach(f => f.geometry && drawGeoFill(f.geometry, cx, cy, R));
-        ctx.fillStyle = 'rgba(40,90,55,0.22)';
-        landGeo.features.forEach(f => f.geometry && drawGeoFill(f.geometry, cx, cy, R));
-      } else {
-        // Fallback grid while geography loads
-        ctx.strokeStyle = 'rgba(40,80,160,0.12)';
-        ctx.lineWidth = 0.5;
-        for (let lat = -80; lat <= 80; lat += 30) {
-          const pts = [];
-          for (let lon = -180; lon <= 180; lon += 4) pts.push(project(lat, lon, cx, cy, R, globeRotation));
-          drawGridLine(pts);
-        }
+      // Land + borders via D3-geo (correct hemisphere clipping, zero artifacts)
+      if (!d3Proj && typeof d3 !== 'undefined') {
+        d3Proj = d3.geoOrthographic().clipAngle(90);
       }
-
-      // Country borders (bordersGeo from topojson.mesh() IS the geometry directly)
-      if (bordersGeo) {
-        ctx.strokeStyle = 'rgba(70,160,90,0.3)';
-        ctx.lineWidth = 0.5;
-        drawGeoLines(bordersGeo, cx, cy, R);
+      if (d3Proj) {
+        d3Proj.scale(R).translate([cx, cy]).rotate([globeRotation * 180 / Math.PI, -15]);
+        const geoPath = d3.geoPath(d3Proj, ctx);
+        if (landGeo) {
+          ctx.fillStyle = '#1b3a24';
+          ctx.beginPath(); geoPath(landGeo); ctx.fill();
+          ctx.fillStyle = 'rgba(40,90,55,0.18)';
+          ctx.beginPath(); geoPath(landGeo); ctx.fill();
+        }
+        if (bordersGeo) {
+          ctx.strokeStyle = 'rgba(70,160,90,0.28)';
+          ctx.lineWidth = 0.5;
+          ctx.beginPath(); geoPath(bordersGeo); ctx.stroke();
+        }
       }
 
       // Earthquake dots
