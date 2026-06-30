@@ -697,7 +697,15 @@ async function runAnalysis(spendingData) {
       body: JSON.stringify({ mode: 'initial', spendingData })
     });
   } catch (err) {
-    dossier.textContent = 'Error: ' + err.message;
+    dossier.textContent = 'Network error: ' + err.message;
+    setStatus('// Analysis failed.', 'error');
+    return;
+  }
+
+  if (!resp.ok) {
+    const errText = await resp.text();
+    dossier.textContent = 'Server error (' + resp.status + '): ' + errText.slice(0, 200);
+    setStatus('// Analysis failed.', 'error');
     return;
   }
 

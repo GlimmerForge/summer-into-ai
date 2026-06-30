@@ -45,13 +45,13 @@ async function handleInitialDossier(req, res, body) {
 
   // Slim the payload — top 15 contracts, essential fields only
   const slimAwards = (spendingData.awards ?? []).slice(0, 15).map(a => ({
-    amount: a['Award Amount'],
-    agency: a['Awarding Agency Name'],
-    subagency: a['Awarding Sub Agency Name'],
-    description: (a['Description'] ?? '').slice(0, 120),
-    type: a['Award Type'],
-    start: a['Period of Performance Start Date'],
-    end: a['Period of Performance Current End Date'],
+    amount: a.amount,
+    agency: a.agency,
+    subagency: a.subAgency,
+    description: (a.description ?? '').slice(0, 120),
+    type: a.type,
+    start: a.startDate,
+    end: a.endDate,
   }));
 
   const slim = {
