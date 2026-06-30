@@ -1,0 +1,389 @@
+{
+  "type": "doc",
+  "content": [
+    {
+      "type": "paragraph",
+      "attrs": {
+        "textAlign": null
+      },
+      "content": [
+        {
+          "type": "text",
+          "text": "Week 3 of "
+        },
+        {
+          "type": "text",
+          "marks": [
+            {
+              "type": "link",
+              "attrs": {
+                "href": "https://advisoryhour.substack.com",
+                "target": "_blank",
+                "rel": "noopener noreferrer nofollow",
+                "class": null
+              }
+            }
+          ],
+          "text": "Summer into AI 2026"
+        },
+        {
+          "type": "text",
+          "text": " hosted by "
+        },
+        {
+          "type": "text",
+          "marks": [
+            {
+              "type": "link",
+              "attrs": {
+                "href": "https://advisoryhour.substack.com",
+                "target": "_blank",
+                "rel": "noopener noreferrer nofollow",
+                "class": null
+              }
+            }
+          ],
+          "text": "@advisoryhour"
+        },
+        {
+          "type": "text",
+          "text": " — theme: Data.Punk."
+        }
+      ]
+    },
+    {
+      "type": "paragraph",
+      "attrs": {
+        "textAlign": null
+      },
+      "content": [
+        {
+          "type": "text",
+          "text": "USASpending.gov tracks every federal contract — trillions of dollars of public money, who got it, and for what. The government built the database but never built a way to actually think about it. Federal Money Trail lets you type any company name, pulls their full contract history from USASpending, and deploys Claude with extended thinking to write an intelligence-style spending dossier. Then you can interrogate the AI with follow-up questions indefinitely. It's opposition research on your tax dollars."
+        }
+      ]
+    },
+    {
+      "type": "heading",
+      "attrs": {
+        "textAlign": null,
+        "level": 2
+      },
+      "content": [
+        {
+          "type": "text",
+          "text": "How the AI works"
+        }
+      ]
+    },
+    {
+      "type": "bullet_list",
+      "content": [
+        {
+          "type": "list_item",
+          "content": [
+            {
+              "type": "paragraph",
+              "attrs": {
+                "textAlign": null
+              },
+              "content": [
+                {
+                  "type": "text",
+                  "marks": [
+                    {
+                      "type": "strong"
+                    }
+                  ],
+                  "text": "USASpending.gov live query"
+                },
+                {
+                  "type": "text",
+                  "text": " — The app POSTs to the USASpending Awards API, searching by recipient name across all contract types (A/B/C/D), sorted by dollar amount descending. Returns top 25 contracts with agency, amount, description, and performance period."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "list_item",
+          "content": [
+            {
+              "type": "paragraph",
+              "attrs": {
+                "textAlign": null
+              },
+              "content": [
+                {
+                  "type": "text",
+                  "marks": [
+                    {
+                      "type": "strong"
+                    }
+                  ],
+                  "text": "Extended thinking dossier"
+                },
+                {
+                  "type": "text",
+                  "text": " — Claude claude-sonnet-4-6 with extended thinking (budget: 6,000 tokens) receives the full contract list and reasons through patterns before writing a streaming intelligence briefing with five sections: [CONTRACTOR PROFILE], [TOP CONTRACTS], [AGENCY BREAKDOWN], [WHAT THE CONTRACTS REVEAL], [PATTERNS AND ANOMALIES]."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "list_item",
+          "content": [
+            {
+              "type": "paragraph",
+              "attrs": {
+                "textAlign": null
+              },
+              "content": [
+                {
+                  "type": "text",
+                  "marks": [
+                    {
+                      "type": "strong"
+                    }
+                  ],
+                  "text": "Multi-turn follow-up Q&A"
+                },
+                {
+                  "type": "text",
+                  "text": " — After the dossier completes, a question input appears. Each follow-up hits a separate fast endpoint (no extended thinking) that has full context of the contract data and answers immediately. Questions accumulate in a running log — you can interrogate the data indefinitely."
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "heading",
+      "attrs": {
+        "textAlign": null,
+        "level": 2
+      },
+      "content": [
+        {
+          "type": "text",
+          "text": "How to play"
+        }
+      ]
+    },
+    {
+      "type": "bullet_list",
+      "content": [
+        {
+          "type": "list_item",
+          "content": [
+            {
+              "type": "paragraph",
+              "attrs": {
+                "textAlign": null
+              },
+              "content": [
+                {
+                  "type": "text",
+                  "text": "Type any company name — defense contractors, tech giants, pharma companies, local firms all work"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "list_item",
+          "content": [
+            {
+              "type": "paragraph",
+              "attrs": {
+                "textAlign": null
+              },
+              "content": [
+                {
+                  "type": "text",
+                  "text": "Click "
+                },
+                {
+                  "type": "text",
+                  "marks": [
+                    {
+                      "type": "strong"
+                    }
+                  ],
+                  "text": "Search Contracts"
+                },
+                {
+                  "type": "text",
+                  "text": " — the app queries USASpending.gov and renders the top contracts by dollar amount."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "list_item",
+          "content": [
+            {
+              "type": "paragraph",
+              "attrs": {
+                "textAlign": null
+              },
+              "content": [
+                {
+                  "type": "text",
+                  "text": "Review the summary stats (total obligated, contracts found, agencies) and the contract list"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "list_item",
+          "content": [
+            {
+              "type": "paragraph",
+              "attrs": {
+                "textAlign": null
+              },
+              "content": [
+                {
+                  "type": "text",
+                  "text": "Watch Claude stream a five-section intelligence dossier with extended reasoning — look for the [PATTERNS AND ANOMALIES] section"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "list_item",
+          "content": [
+            {
+              "type": "paragraph",
+              "attrs": {
+                "textAlign": null
+              },
+              "content": [
+                {
+                  "type": "text",
+                  "text": "Use the "
+                },
+                {
+                  "type": "text",
+                  "marks": [
+                    {
+                      "type": "strong"
+                    }
+                  ],
+                  "text": "Follow-Up"
+                },
+                {
+                  "type": "text",
+                  "text": " input to ask anything: \"Which contracts are classified?\" \"Has spending increased?\" \"Who is the contracting officer?\" Claude keeps the full data in context."
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "heading",
+      "attrs": {
+        "textAlign": null,
+        "level": 2
+      },
+      "content": [
+        {
+          "type": "text",
+          "text": "Where to play"
+        }
+      ]
+    },
+    {
+      "type": "paragraph",
+      "attrs": {
+        "textAlign": null
+      },
+      "content": [
+        {
+          "type": "text",
+          "marks": [
+            {
+              "type": "strong"
+            }
+          ],
+          "text": "Demo: "
+        },
+        {
+          "type": "text",
+          "marks": [
+            {
+              "type": "link",
+              "attrs": {
+                "href": "https://demo-03-federal-money.vercel.app",
+                "target": "_blank",
+                "rel": "noopener noreferrer nofollow",
+                "class": null
+              }
+            }
+          ],
+          "text": "demo-03-federal-money.vercel.app"
+        }
+      ]
+    },
+    {
+      "type": "paragraph",
+      "attrs": {
+        "textAlign": null
+      },
+      "content": [
+        {
+          "type": "text",
+          "marks": [
+            {
+              "type": "strong"
+            }
+          ],
+          "text": "Code & README: "
+        },
+        {
+          "type": "text",
+          "marks": [
+            {
+              "type": "link",
+              "attrs": {
+                "href": "https://github.com/GlimmerForge/summer-into-ai/blob/master/projects/week-03-datapunk/demo-03-federal-money/README.md",
+                "target": "_blank",
+                "rel": "noopener noreferrer nofollow",
+                "class": null
+              }
+            }
+          ],
+          "text": "github.com/GlimmerForge/summer-into-ai → demo-03-federal-money/README.md"
+        }
+      ]
+    },
+    {
+      "type": "horizontal_rule"
+    },
+    {
+      "type": "paragraph",
+      "attrs": {
+        "textAlign": null
+      },
+      "content": [
+        {
+          "type": "text",
+          "marks": [
+            {
+              "type": "em"
+            }
+          ],
+          "text": "Summer into AI 2026 · Theme 3: Data.Punk"
+        }
+      ]
+    }
+  ]
+}

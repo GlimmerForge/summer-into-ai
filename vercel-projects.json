@@ -70,5 +70,13 @@
   "projects/week-03-datapunk/demo-01-foia-ghost": {
     "projectId": "prj_gfenLqKkXMshMVlrEERHkd7VMQ3A",
     "orgId": "team_D79TvyBcfHAyncBLxxnY1foW"
+  },
+  "projects/week-03-datapunk/demo-02-side-effect-oracle": {
+    "projectId": "prj_Y9Bvc7Lvh7Rnz0sUXSXjGHayO2YP",
+    "orgId": "team_D79TvyBcfHAyncBLxxnY1foW"
+  },
+  "projects/week-03-datapunk/demo-03-federal-money": {
+    "projectId": "prj_JJfX7nVgijcvs48YuaMNR1kJhUxq",
+    "orgId": "team_D79TvyBcfHAyncBLxxnY1foW"
   }
 }
