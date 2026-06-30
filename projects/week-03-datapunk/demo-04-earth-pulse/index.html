@@ -256,7 +256,8 @@
     fetch('https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json')
       .then(r => r.json())
       .then(world => {
-        landGeo    = topojson.feature(world, world.objects.land);
+        // Use individual countries (not merged land) — smaller polygons, safer to fill
+        landGeo    = topojson.feature(world, world.objects.countries);
         bordersGeo = topojson.mesh(world, world.objects.countries, (a, b) => a !== b);
       });
 
@@ -324,26 +325,29 @@
       const polys = geometry.type === 'MultiPolygon' ? geometry.coordinates : [geometry.coordinates];
       polys.forEach(poly => {
         if (!poly[0]) return;
-        let pxRun = [], cRun = [], prevC = null;
+        let pxRun = [], prevC = null;
         const flush = () => {
           if (pxRun.length >= 3) {
-            // Only close if the closing edge doesn't cross the back hemisphere
-            const canClose = geoDot(cRun[0], cRun[cRun.length - 1]) >= 0;
-            ctx.beginPath();
-            ctx.moveTo(pxRun[0].x, pxRun[0].y);
-            for (let i = 1; i < pxRun.length; i++) ctx.lineTo(pxRun[i].x, pxRun[i].y);
-            if (canClose) ctx.closePath();
-            ctx.fill();
+            // Suppress fills whose projected x-span exceeds the globe diameter —
+            // those are wrap-around artifacts where the closing chord crosses the sphere.
+            const xs = pxRun.map(p => p.x);
+            if (Math.max(...xs) - Math.min(...xs) < R * 1.8) {
+              ctx.beginPath();
+              ctx.moveTo(pxRun[0].x, pxRun[0].y);
+              for (let i = 1; i < pxRun.length; i++) ctx.lineTo(pxRun[i].x, pxRun[i].y);
+              ctx.closePath();
+              ctx.fill();
+            }
           }
-          pxRun = []; cRun = []; prevC = null;
+          pxRun = []; prevC = null;
         };
         poly[0].forEach(coord => {
           const [lon, lat] = coord;
           const p = project(lat, lon, cx, cy, R, globeRotation);
           if (!p) { flush(); return; }
-          // Break run if this edge would cross the back hemisphere
-          if (prevC && geoDot(prevC, coord) < 0) flush();
-          pxRun.push(p); cRun.push(coord); prevC = coord;
+          // Break on antimeridian jump or back-hemisphere edge
+          if (prevC && (Math.abs(lon - prevC[0]) > 180 || geoDot(prevC, coord) < 0)) flush();
+          pxRun.push(p); prevC = coord;
         });
         flush();
       });
@@ -358,7 +362,7 @@
           const [lon, lat] = coord;
           const p = project(lat, lon, cx, cy, R, globeRotation);
           if (!p) { penDown = false; prevC = null; return; }
-          if (prevC && geoDot(prevC, coord) < 0) penDown = false;
+          if (prevC && (Math.abs(lon - prevC[0]) > 180 || geoDot(prevC, coord) < 0)) penDown = false;
           if (!penDown) { ctx.moveTo(p.x, p.y); penDown = true; }
           else ctx.lineTo(p.x, p.y);
           prevC = coord;
