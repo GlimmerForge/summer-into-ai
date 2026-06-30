@@ -13,11 +13,11 @@ Use these exact section headers:
 [WHAT THE CONTRACTS REVEAL]
 [PATTERNS AND ANOMALIES]
 
-In WHAT THE CONTRACTS REVEAL: analyze what the contract descriptions say about the company's actual work for the government. In PATTERNS AND ANOMALIES: note concentration risk, unusual contract sizes, performance period patterns, and anything a watchdog would flag.
+In WHAT THE CONTRACTS REVEAL: analyze what the contract descriptions say about the company's actual work for the government. In PATTERNS AND ANOMALIES: note concentration risk, unusual contract sizes, and anything a watchdog would flag.
 
-End with a summary line: TOTAL FEDERAL OBLIGATION: $X.XX BILLION (or MILLION)
+End with: TOTAL FEDERAL OBLIGATION: $X.XX BILLION (or MILLION)
 
-FORMATTING RULES: Plain text only. No markdown. No asterisks. Use numbers for lists. Be specific — cite actual contract descriptions and dollar amounts from the data.`;
+FORMATTING RULES: Plain text only. No markdown. No asterisks. Use numbers for lists. Be specific but concise — 2-4 sentences per section max. Cite actual dollar amounts from the data.`;
 
 const FOLLOWUP_SYSTEM = `You are a federal spending analyst. The user has questions about a specific company's federal contracts. Answer concisely and directly using the contract data provided. Plain text, no markdown. Be specific — cite dollar amounts and agency names when relevant.`;
 
@@ -74,8 +74,8 @@ ${JSON.stringify(slim, null, 2)}`;
   try {
     const stream = client.messages.stream({
       model: 'claude-sonnet-4-6',
-      max_tokens: 4000,
-      thinking: { type: 'enabled', budget_tokens: 1500 },
+      max_tokens: 2500,
+      thinking: { type: 'enabled', budget_tokens: 1024 },
       system: DOSSIER_SYSTEM,
       messages: [{ role: 'user', content: userMessage }]
     });
