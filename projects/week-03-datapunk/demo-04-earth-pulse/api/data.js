@@ -25,11 +25,13 @@ export default async function handler(req, res) {
 
 async function fetchSeismic() {
   const r = await fetch(
-    'https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_hour.json',
-    { headers: { 'User-Agent': 'EarthPulse/1.0' } }
+    'https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/2.5_day.geojson'
   );
   if (!r.ok) throw new Error(`USGS returned ${r.status}`);
-  const data = await r.json();
+  const text = await r.text();
+  let data;
+  try { data = JSON.parse(text); } catch { throw new Error('USGS non-JSON: ' + text.slice(0, 50)); }
+
   const quakes = data.features || [];
   const count = quakes.length;
   const significant = quakes.filter(q => q.properties.mag >= 3.0);
@@ -50,8 +52,7 @@ async function fetchSeismic() {
 
 async function fetchMarket() {
   const r = await fetch(
-    'https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum&vs_currencies=usd&include_24hr_change=true',
-    { headers: { 'User-Agent': 'EarthPulse/1.0' } }
+    'https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum&vs_currencies=usd&include_24hr_change=true'
   );
   if (!r.ok) throw new Error(`CoinGecko returned ${r.status}`);
   const data = await r.json();
@@ -75,7 +76,7 @@ async function fetchAtmosphere() {
   const results = await Promise.all(
     cities.map(async (city) => {
       const url = `https://api.open-meteo.com/v1/forecast?latitude=${city.lat}&longitude=${city.lon}&current_weather=true`;
-      const r = await fetch(url, { headers: { 'User-Agent': 'EarthPulse/1.0' } });
+      const r = await fetch(url);
       if (!r.ok) return { city: city.name, temp: null };
       const data = await r.json();
       return { city: city.name, temp: data.current_weather?.temperature ?? null };
