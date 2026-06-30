@@ -358,7 +358,7 @@
         d3Proj = d3.geoOrthographic().clipAngle(90);
       }
       if (d3Proj) {
-        d3Proj.scale(R).translate([cx, cy]).rotate([globeRotation * 180 / Math.PI, -15]);
+        d3Proj.scale(R).translate([cx, cy]).rotate([-globeRotation * 180 / Math.PI, -15]);
         const geoPath = d3.geoPath(d3Proj, ctx);
         if (landGeo) {
           ctx.fillStyle = '#1b3a24';
