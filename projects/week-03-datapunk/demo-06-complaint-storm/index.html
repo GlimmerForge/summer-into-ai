@@ -1,0 +1,988 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Complaint Storm — CFPB Consumer Complaint Visualizer</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: #080808;
+      color: #fff;
+      font-family: 'Courier New', Courier, monospace;
+      overflow: hidden;
+      height: 100vh;
+      width: 100vw;
+    }
+
+    /* ── Canvas ──────────────────────────────────────────────── */
+    #stormCanvas {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      z-index: 0;
+    }
+
+    /* ── Phase containers ────────────────────────────────────── */
+    .phase {
+      display: none;
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      z-index: 10;
+    }
+    .phase.active { display: flex; }
+
+    /* ── PHASE 1 — Search ────────────────────────────────────── */
+    #phase1 {
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: rgba(8, 8, 8, 0.82);
+    }
+    .title-main {
+      font-size: clamp(36px, 8vw, 72px);
+      font-weight: 900;
+      letter-spacing: 0.15em;
+      color: #fff;
+      text-shadow: 0 0 40px rgba(255,51,51,0.55), 0 0 80px rgba(255,51,51,0.2);
+      animation: flicker 5s infinite;
+      text-align: center;
+    }
+    .title-sub {
+      margin-top: 10px;
+      color: #666;
+      font-style: italic;
+      font-size: 14px;
+      letter-spacing: 0.08em;
+      text-align: center;
+    }
+    .search-wrap {
+      margin-top: 40px;
+      width: 100%;
+      max-width: 520px;
+      padding: 0 20px;
+    }
+    #companyInput {
+      width: 100%;
+      padding: 14px 18px;
+      background: #0d0d0d;
+      border: 1px solid #FFD700;
+      color: #fff;
+      font-family: 'Courier New', monospace;
+      font-size: 16px;
+      outline: none;
+      letter-spacing: 0.04em;
+    }
+    #companyInput::placeholder { color: #444; }
+    #companyInput:focus { border-color: #FF3333; box-shadow: 0 0 12px rgba(255,51,51,0.3); }
+    #searchBtn {
+      margin-top: 12px;
+      width: 100%;
+      padding: 14px;
+      background: transparent;
+      border: 2px solid #FF3333;
+      color: #FF3333;
+      font-family: 'Courier New', monospace;
+      font-size: 15px;
+      font-weight: bold;
+      letter-spacing: 0.2em;
+      cursor: pointer;
+      text-transform: uppercase;
+      animation: pulse 2s infinite;
+      transition: background 0.2s;
+    }
+    #searchBtn:hover { background: rgba(255,51,51,0.12); }
+    #searchBtn:disabled { opacity: 0.4; cursor: not-allowed; animation: none; }
+    .chips {
+      margin-top: 20px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      justify-content: center;
+    }
+    .chip {
+      display: inline-block;
+      border: 1px solid #333;
+      padding: 6px 14px;
+      cursor: pointer;
+      border-radius: 2px;
+      color: #888;
+      font-size: 12px;
+      letter-spacing: 0.05em;
+      transition: border-color 0.2s, color 0.2s;
+      background: transparent;
+      font-family: 'Courier New', monospace;
+    }
+    .chip:hover { border-color: #FFD700; color: #FFD700; }
+    #errorMsg {
+      margin-top: 16px;
+      color: #FF4444;
+      font-size: 12px;
+      text-align: center;
+      display: none;
+    }
+
+    /* ── PHASE 2 — Storm ─────────────────────────────────────── */
+    #phase2 { flex-direction: column; }
+
+    #statsBar {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      z-index: 25;
+      background: rgba(5, 5, 15, 0.92);
+      padding: 8px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid rgba(255,215,0,0.25);
+      font-size: 11px;
+      letter-spacing: 0.06em;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    #statsCompany { color: #FFD700; font-weight: bold; font-size: 13px; white-space: nowrap; }
+    #statsCenter { color: #aaa; text-align: center; flex: 1; }
+    #statsCenter span { color: #FFD700; }
+    #newSearchLink {
+      color: #888;
+      text-decoration: none;
+      cursor: pointer;
+      white-space: nowrap;
+      font-size: 11px;
+      transition: color 0.2s;
+    }
+    #newSearchLink:hover { color: #FFD700; }
+
+    #legend {
+      position: fixed;
+      top: 46px; left: 0; right: 280px;
+      z-index: 22;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      padding: 6px 14px;
+      background: rgba(5,5,15,0.7);
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+      font-size: 10px;
+    }
+    .legend-item { display: flex; align-items: center; gap: 5px; }
+    .legend-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+
+    #ticker {
+      position: fixed;
+      right: 0; top: 46px; bottom: 80px;
+      width: 280px;
+      z-index: 22;
+      background: rgba(5, 5, 15, 0.92);
+      border-left: 1px solid rgba(255,215,0,0.18);
+      overflow-y: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+    #tickerHeader {
+      padding: 8px 10px;
+      color: #FFD700;
+      font-size: 10px;
+      letter-spacing: 0.12em;
+      border-bottom: 1px solid rgba(255,215,0,0.15);
+      flex-shrink: 0;
+    }
+    #tickerList {
+      flex: 1;
+      overflow: hidden;
+      padding: 8px;
+    }
+    .ticker-item {
+      border-left: 3px solid var(--issue-color, #888);
+      padding: 5px 8px;
+      margin-bottom: 7px;
+      background: rgba(255,255,255,0.025);
+      font-size: 10px;
+      animation: fadeSlideIn 0.4s ease;
+    }
+    .ticker-date { color: #444; font-size: 9px; float: right; }
+    .ticker-issue { color: #ccc; font-weight: bold; font-size: 10px; }
+    .ticker-snippet { color: #555; font-size: 9px; margin-top: 2px; line-height: 1.4; }
+
+    #initiateBtn {
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 25;
+      background: transparent;
+      border: 2px solid #FF3333;
+      color: #FF3333;
+      font-family: 'Courier New', monospace;
+      font-size: 16px;
+      font-weight: bold;
+      padding: 14px 48px;
+      cursor: pointer;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      animation: pulse 2s infinite;
+      transition: background 0.2s;
+    }
+    #initiateBtn:hover { background: rgba(255,51,51,0.12); }
+
+    /* ── PHASE 3 — Duel ──────────────────────────────────────── */
+    #phase3 {
+      flex-direction: column;
+      background: rgba(5, 5, 10, 0.88);
+      z-index: 30;
+      overflow-y: auto;
+      padding: 16px;
+    }
+    #duelHeader {
+      text-align: center;
+      padding: 6px 0 14px;
+      font-size: 11px;
+      letter-spacing: 0.15em;
+      color: #666;
+      flex-shrink: 0;
+    }
+    #duelHeader strong { color: #FFD700; }
+    .duel-columns {
+      display: flex;
+      gap: 16px;
+      flex: 1;
+      min-height: 0;
+    }
+    .duel-col {
+      flex: 1;
+      padding: 16px;
+      background: rgba(0,0,0,0.55);
+      border-radius: 3px;
+      overflow-y: auto;
+      min-height: 300px;
+      max-height: 60vh;
+    }
+    #prosecutionCol { border: 1px solid rgba(255,68,68,0.3); }
+    #defenseCol { border: 1px solid rgba(68,136,255,0.3); }
+    .duel-header {
+      font-size: 15px;
+      font-weight: bold;
+      letter-spacing: 0.12em;
+      margin-bottom: 14px;
+      padding-bottom: 8px;
+      border-bottom: 2px solid currentColor;
+    }
+    #prosecutionHeader { color: #FF4444; }
+    #defenseHeader { color: #4488FF; }
+    .duel-divider {
+      width: 2px;
+      flex-shrink: 0;
+      background: linear-gradient(to bottom, #FF4444, #4488FF);
+      border-radius: 1px;
+      opacity: 0.5;
+      align-self: stretch;
+    }
+    #prosecutionText, #defenseText {
+      font-size: 12px;
+      line-height: 1.9;
+      color: #ccc;
+      white-space: pre-wrap;
+      min-height: 40px;
+    }
+    #verdictSection {
+      margin-top: 16px;
+      padding: 18px 20px;
+      background: rgba(255,204,0,0.06);
+      border: 1px solid #FFCC00;
+      border-radius: 3px;
+      display: none;
+      flex-shrink: 0;
+    }
+    #verdictSection.visible { display: block; }
+    #verdictLabel {
+      color: #FFCC00;
+      font-weight: bold;
+      font-size: 14px;
+      letter-spacing: 0.12em;
+      margin-bottom: 10px;
+    }
+    #verdictText {
+      color: #ddd;
+      font-size: 12px;
+      line-height: 1.9;
+      white-space: pre-wrap;
+    }
+    #resetBtn {
+      margin-top: 14px;
+      align-self: center;
+      background: transparent;
+      border: 1px solid #444;
+      color: #888;
+      font-family: 'Courier New', monospace;
+      font-size: 12px;
+      padding: 10px 32px;
+      cursor: pointer;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      transition: border-color 0.2s, color 0.2s;
+      flex-shrink: 0;
+    }
+    #resetBtn:hover { border-color: #888; color: #ccc; }
+
+    /* ── Animations ──────────────────────────────────────────── */
+    @keyframes flicker {
+      0%, 88%, 94%, 100% { opacity: 1; }
+      90% { opacity: 0.78; }
+      92% { opacity: 0.92; }
+    }
+    @keyframes pulse {
+      0%, 100% { box-shadow: 0 0 18px rgba(255,51,51,0.6); }
+      50% { box-shadow: 0 0 38px rgba(255,51,51,0.9), 0 0 60px rgba(255,51,51,0.3); }
+    }
+    @keyframes fadeSlideIn {
+      from { opacity: 0; transform: translateY(-8px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ── Loading spinner ─────────────────────────────────────── */
+    #loadingOverlay {
+      display: none;
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      z-index: 50;
+      background: rgba(8,8,8,0.75);
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+    #loadingOverlay.active { display: flex; }
+    .spinner {
+      width: 40px; height: 40px;
+      border: 3px solid rgba(255,51,51,0.2);
+      border-top-color: #FF3333;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .loading-text {
+      margin-top: 14px;
+      color: #888;
+      font-size: 12px;
+      letter-spacing: 0.1em;
+    }
+  </style>
+</head>
+<body>
+
+<!-- Background canvas (always rendered) -->
+<canvas id="stormCanvas"></canvas>
+
+<!-- Loading overlay -->
+<div id="loadingOverlay">
+  <div class="spinner"></div>
+  <div class="loading-text" id="loadingText">FETCHING COMPLAINT DATA...</div>
+</div>
+
+<!-- ── PHASE 1: Search ─────────────────────────────────────── -->
+<div id="phase1" class="phase active">
+  <div class="title-main">COMPLAINT STORM</div>
+  <div class="title-sub">What has America been complaining about?</div>
+  <div class="search-wrap">
+    <input id="companyInput" type="text" placeholder="Enter company name..." autocomplete="off" spellcheck="false">
+    <button id="searchBtn">SEARCH THE FEDERAL RECORD</button>
+    <div id="errorMsg"></div>
+    <div class="chips">
+      <button class="chip" data-name="Wells Fargo">Wells Fargo</button>
+      <button class="chip" data-name="JPMorgan Chase">JPMorgan Chase</button>
+      <button class="chip" data-name="Bank of America">Bank of America</button>
+      <button class="chip" data-name="Coinbase">Coinbase</button>
+      <button class="chip" data-name="Equifax">Equifax</button>
+      <button class="chip" data-name="Citibank">Citibank</button>
+      <button class="chip" data-name="Capital One">Capital One</button>
+    </div>
+  </div>
+  <div style="position:absolute;bottom:16px;left:0;right:0;text-align:center;font-size:10px;color:#333;letter-spacing:0.08em;">
+    DATA SOURCE: CFPB CONSUMER COMPLAINT DATABASE &nbsp;|&nbsp; CONSUMERFINANCE.GOV
+  </div>
+</div>
+
+<!-- ── PHASE 2: Storm ─────────────────────────────────────── -->
+<div id="phase2" class="phase">
+  <!-- Stats bar -->
+  <div id="statsBar">
+    <div id="statsCompany">COMPLAINT STORM</div>
+    <div id="statsCenter">
+      <span id="statCount">0</span> COMPLAINTS ON FILE &nbsp;•&nbsp;
+      TOP ISSUE: <span id="statTopIssue">—</span> &nbsp;•&nbsp;
+      RESOLUTION RATE: <span id="statResolution">—</span>%
+    </div>
+    <a id="newSearchLink">← NEW SEARCH</a>
+  </div>
+  <!-- Legend -->
+  <div id="legend"></div>
+  <!-- Complaint ticker -->
+  <div id="ticker">
+    <div id="tickerHeader">LIVE COMPLAINTS</div>
+    <div id="tickerList"></div>
+  </div>
+  <!-- Initiate duel button -->
+  <button id="initiateBtn">⚖ INITIATE DUEL</button>
+</div>
+
+<!-- ── PHASE 3: Duel ──────────────────────────────────────── -->
+<div id="phase3" class="phase">
+  <div id="duelHeader">REAL-TIME AI DUAL PROSECUTION &nbsp;|&nbsp; <strong id="duelCompany"></strong></div>
+  <div class="duel-columns">
+    <div class="duel-col" id="prosecutionCol">
+      <div class="duel-header" id="prosecutionHeader">⚖ THE PROSECUTION</div>
+      <div id="prosecutionText"></div>
+    </div>
+    <div class="duel-divider"></div>
+    <div class="duel-col" id="defenseCol">
+      <div class="duel-header" id="defenseHeader">🛡 THE DEFENSE</div>
+      <div id="defenseText"></div>
+    </div>
+  </div>
+  <div id="verdictSection">
+    <div id="verdictLabel">⚡ VERDICT</div>
+    <div id="verdictText"></div>
+  </div>
+  <button id="resetBtn">↺ RESET</button>
+</div>
+
+<script>
+// ──────────────────────────────────────────────────────────────
+//  Constants & color map
+// ──────────────────────────────────────────────────────────────
+const ISSUE_COLORS = {
+  'fraud':          '#FF3333',
+  'incorrect info': '#FF5533',
+  'billing':        '#FF8800',
+  'communication':  '#FFCC00',
+  'credit card':    '#00CCFF',
+  'credit report':  '#0099FF',
+  'loan':           '#9944FF',
+  'mortgage':       '#BB44FF',
+  'checking':       '#44FF88',
+  'money transfer': '#44FFCC',
+  'debt collect':   '#FF44AA',
+  'default':        '#888888'
+};
+
+const ISSUE_COLOR_FULL = {
+  'Fraud or scam': '#FF3333',
+  'Incorrect information on your report': '#FF5533',
+  'Billing issues': '#FF8800',
+  'Communication tactics': '#FFCC00',
+  'Credit card': '#00CCFF',
+  'Credit reporting': '#0099FF',
+  'Loan': '#9944FF',
+  'Mortgage': '#BB44FF',
+  'Checking or savings account': '#44FF88',
+  'Money transfers': '#44FFCC',
+  'Debt collection': '#FF44AA',
+};
+
+function getIssueColor(issue) {
+  if (!issue) return ISSUE_COLORS.default;
+  const lower = issue.toLowerCase();
+  for (const [key, color] of Object.entries(ISSUE_COLORS)) {
+    if (lower.includes(key)) return color;
+  }
+  return ISSUE_COLORS.default;
+}
+
+function getIssueColorFull(issue) {
+  if (!issue) return ISSUE_COLORS.default;
+  // Exact match first
+  if (ISSUE_COLOR_FULL[issue]) return ISSUE_COLOR_FULL[issue];
+  return getIssueColor(issue);
+}
+
+// ──────────────────────────────────────────────────────────────
+//  Canvas & particle system
+// ──────────────────────────────────────────────────────────────
+const canvas = document.getElementById('stormCanvas');
+const ctx = canvas.getContext('2d');
+let particles = [];
+let demoParticles = [];
+let clusterCenters = [];
+let frameCount = 0;
+let animFrame = null;
+let mouseX = -9999;
+let mouseY = -9999;
+let stormPhase = 'idle'; // 'idle' | 'storm'
+
+function resizeCanvas() {
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+}
+resizeCanvas();
+window.addEventListener('resize', resizeCanvas);
+
+canvas.addEventListener('mousemove', e => {
+  mouseX = e.clientX;
+  mouseY = e.clientY;
+});
+canvas.addEventListener('mouseleave', () => { mouseX = -9999; mouseY = -9999; });
+
+function computeClusterCenters(issues) {
+  const cx = canvas.width / 2;
+  const cy = canvas.height * 0.52;
+  const radius = Math.min(canvas.width, canvas.height) * 0.26;
+  const keys = Object.keys(issues).slice(0, 8);
+  return keys.map((issue, i) => {
+    const angle = (i / keys.length) * Math.PI * 2 - Math.PI / 2;
+    return {
+      issue,
+      x: cx + Math.cos(angle) * radius,
+      y: cy + Math.sin(angle) * radius,
+      color: getIssueColor(issue),
+      count: issues[issue]
+    };
+  });
+}
+
+function createParticle(complaint, center, idx) {
+  const edge = Math.floor(Math.random() * 4);
+  let sx, sy;
+  const w = canvas.width, h = canvas.height;
+  if (edge === 0) { sx = Math.random() * w; sy = -20; }
+  else if (edge === 1) { sx = w + 20; sy = Math.random() * h; }
+  else if (edge === 2) { sx = Math.random() * w; sy = h + 20; }
+  else { sx = -20; sy = Math.random() * h; }
+
+  return {
+    x: sx, y: sy,
+    vx: (center.x - sx) * 0.018 + (Math.random() - 0.5) * 2,
+    vy: (center.y - sy) * 0.018 + (Math.random() - 0.5) * 2,
+    targetX: center.x + (Math.random() - 0.5) * 70,
+    targetY: center.y + (Math.random() - 0.5) * 70,
+    color: center.color,
+    radius: 2.2 + Math.random() * 1.6,
+    issue: complaint.issue,
+    narrative: complaint.narrative || '',
+    date: complaint.date || '',
+    trail: [],
+    spawnDelay: idx * 2
+  };
+}
+
+function createDemoParticle() {
+  const edge = Math.floor(Math.random() * 4);
+  let sx, sy;
+  const w = canvas.width, h = canvas.height;
+  if (edge === 0) { sx = Math.random() * w; sy = -10; }
+  else if (edge === 1) { sx = w + 10; sy = Math.random() * h; }
+  else if (edge === 2) { sx = Math.random() * w; sy = h + 10; }
+  else { sx = -10; sy = Math.random() * h; }
+
+  const cx = canvas.width / 2;
+  const cy = canvas.height / 2;
+  const spread = Math.min(w, h) * 0.35;
+
+  return {
+    x: sx, y: sy,
+    vx: 0, vy: 0,
+    targetX: cx + (Math.random() - 0.5) * spread,
+    targetY: cy + (Math.random() - 0.5) * spread,
+    color: '#333333',
+    radius: 1.5 + Math.random(),
+    trail: [],
+    spawnDelay: Math.floor(Math.random() * 80)
+  };
+}
+
+function initDemoParticles() {
+  demoParticles = Array.from({ length: 55 }, createDemoParticle);
+}
+
+function updateParticle(p) {
+  const dx = p.targetX - p.x;
+  const dy = p.targetY - p.y;
+  p.vx += dx * 0.004;
+  p.vy += dy * 0.004;
+
+  // Cursor repulsion
+  const mdx = p.x - mouseX;
+  const mdy = p.y - mouseY;
+  const mdist = Math.sqrt(mdx * mdx + mdy * mdy);
+  if (mdist < 110 && mdist > 0) {
+    const force = ((110 - mdist) / 110) * 3;
+    p.vx += (mdx / mdist) * force;
+    p.vy += (mdy / mdist) * force;
+  }
+
+  p.vx *= 0.93;
+  p.vy *= 0.93;
+  p.vx += (Math.random() - 0.5) * 0.15;
+  p.vy += (Math.random() - 0.5) * 0.15;
+
+  p.trail.push({ x: p.x, y: p.y });
+  if (p.trail.length > 12) p.trail.shift();
+
+  p.x += p.vx;
+  p.y += p.vy;
+}
+
+function drawParticle(p, opacity = 1) {
+  // Trail
+  for (let i = 0; i < p.trail.length; i++) {
+    const t = p.trail[i];
+    const alpha = (i / p.trail.length) * 0.35 * opacity;
+    const r = p.radius * (i / p.trail.length) * 0.5;
+    if (r < 0.1) continue;
+    ctx.beginPath();
+    ctx.arc(t.x, t.y, r, 0, Math.PI * 2);
+    const hex = Math.floor(alpha * 255).toString(16).padStart(2, '0');
+    ctx.fillStyle = p.color + hex;
+    ctx.fill();
+  }
+
+  // Core
+  ctx.beginPath();
+  ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+  ctx.fillStyle = stormPhase === 'duel' ? p.color + '66' : p.color;
+  ctx.fill();
+
+  // Glow
+  ctx.beginPath();
+  ctx.arc(p.x, p.y, p.radius * 2.8, 0, Math.PI * 2);
+  ctx.fillStyle = p.color + (stormPhase === 'duel' ? '0a' : '22');
+  ctx.fill();
+}
+
+function drawClusterLabels() {
+  for (const c of clusterCenters) {
+    // Cluster ring
+    ctx.beginPath();
+    ctx.arc(c.x, c.y, 38, 0, Math.PI * 2);
+    ctx.strokeStyle = c.color + '44';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+
+    // Label
+    const label = c.issue.length > 22 ? c.issue.slice(0, 20) + '…' : c.issue;
+    ctx.font = 'bold 10px Courier New';
+    ctx.textAlign = 'center';
+    ctx.fillStyle = c.color + 'cc';
+    ctx.fillText(label, c.x, c.y + 56);
+    ctx.fillStyle = c.color + '88';
+    ctx.font = '9px Courier New';
+    ctx.fillText(`(${c.count})`, c.x, c.y + 68);
+  }
+}
+
+function animate() {
+  frameCount++;
+
+  // Fade trail
+  ctx.fillStyle = 'rgba(8, 8, 8, 0.14)';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  if (stormPhase === 'idle') {
+    // Demo particles — drifting ambience
+    for (const p of demoParticles) {
+      if (frameCount < p.spawnDelay) continue;
+      updateParticle(p);
+      drawParticle(p, 0.5);
+
+      // Occasionally retarget
+      if (Math.random() < 0.003) {
+        const w = canvas.width, h = canvas.height;
+        p.targetX = canvas.width * 0.2 + Math.random() * w * 0.6;
+        p.targetY = canvas.height * 0.2 + Math.random() * h * 0.6;
+      }
+    }
+  } else {
+    // Real particles
+    for (const p of particles) {
+      if (frameCount < p.spawnDelay) continue;
+      updateParticle(p);
+      drawParticle(p, stormPhase === 'duel' ? 0.4 : 1);
+    }
+    drawClusterLabels();
+  }
+
+  animFrame = requestAnimationFrame(animate);
+}
+
+// ──────────────────────────────────────────────────────────────
+//  State
+// ──────────────────────────────────────────────────────────────
+let currentData = null;
+let tickerInterval = null;
+let tickerPos = 0;
+
+// ──────────────────────────────────────────────────────────────
+//  Phase management
+// ──────────────────────────────────────────────────────────────
+function showPhase(id) {
+  document.querySelectorAll('.phase').forEach(el => el.classList.remove('active'));
+  if (id) document.getElementById(id).classList.add('active');
+}
+
+// ──────────────────────────────────────────────────────────────
+//  Ticker
+// ──────────────────────────────────────────────────────────────
+function buildTicker(complaints) {
+  const list = document.getElementById('tickerList');
+  list.innerHTML = '';
+  tickerPos = 0;
+
+  // Show up to 60 complaints, prioritize those with narratives
+  const items = [
+    ...complaints.filter(c => c.narrative),
+    ...complaints.filter(c => !c.narrative)
+  ].slice(0, 60);
+
+  for (const c of items) {
+    const el = document.createElement('div');
+    el.className = 'ticker-item';
+    el.style.setProperty('--issue-color', getIssueColor(c.issue));
+    const snippet = c.narrative
+      ? (c.narrative.length > 65 ? c.narrative.slice(0, 62) + '…' : c.narrative)
+      : '(no narrative provided)';
+    el.innerHTML = `
+      <span class="ticker-date">${c.date ? c.date.slice(0, 7) : ''}</span>
+      <div class="ticker-issue">${c.issue || 'Other'}</div>
+      <div class="ticker-snippet">${snippet}</div>
+    `;
+    list.appendChild(el);
+  }
+
+  // Auto-scroll
+  if (tickerInterval) clearInterval(tickerInterval);
+  tickerInterval = setInterval(() => {
+    tickerPos += 1;
+    list.style.transform = `translateY(-${tickerPos}px)`;
+    const maxScroll = list.scrollHeight - document.getElementById('ticker').clientHeight + 80;
+    if (tickerPos >= maxScroll) tickerPos = 0;
+  }, 80);
+}
+
+// ──────────────────────────────────────────────────────────────
+//  Legend
+// ──────────────────────────────────────────────────────────────
+function buildLegend(issueBreakdown) {
+  const legend = document.getElementById('legend');
+  legend.innerHTML = '';
+  const sorted = Object.entries(issueBreakdown)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 10);
+  for (const [issue, count] of sorted) {
+    const item = document.createElement('div');
+    item.className = 'legend-item';
+    item.innerHTML = `
+      <div class="legend-dot" style="background:${getIssueColor(issue)}"></div>
+      <span style="color:#888;font-size:9px">${issue.slice(0, 28)} (${count})</span>
+    `;
+    legend.appendChild(item);
+  }
+}
+
+// ──────────────────────────────────────────────────────────────
+//  Search
+// ──────────────────────────────────────────────────────────────
+async function doSearch(company) {
+  const errorEl = document.getElementById('errorMsg');
+  errorEl.style.display = 'none';
+
+  document.getElementById('loadingOverlay').classList.add('active');
+  document.getElementById('loadingText').textContent = 'QUERYING CFPB DATABASE...';
+
+  try {
+    const res = await fetch('/api/complaints', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ company })
+    });
+    const data = await res.json();
+
+    document.getElementById('loadingOverlay').classList.remove('active');
+
+    if (!data.complaints || data.complaints.length === 0) {
+      errorEl.textContent = data.error || 'No complaints found. Try a known company name.';
+      errorEl.style.display = 'block';
+      return;
+    }
+
+    currentData = data;
+
+    // Update stats bar
+    document.getElementById('statsCompany').textContent = 'COMPLAINT STORM: ' + data.companyName.toUpperCase();
+    document.getElementById('statCount').textContent = data.total.toLocaleString();
+    const topIssue = Object.entries(data.issueBreakdown).sort((a, b) => b[1] - a[1])[0];
+    document.getElementById('statTopIssue').textContent = topIssue ? topIssue[0].slice(0, 30) : '—';
+    document.getElementById('statResolution').textContent = data.resolutionRate;
+    document.getElementById('duelCompany').textContent = data.companyName;
+
+    // Build cluster centers
+    clusterCenters = computeClusterCenters(data.issueBreakdown);
+
+    // Build particles
+    particles = [];
+    let idx = 0;
+    for (const complaint of data.complaints) {
+      const center = clusterCenters.find(c => {
+        const cl = c.issue.toLowerCase();
+        const il = (complaint.issue || '').toLowerCase();
+        return il.includes(cl.split(' ')[0]) || cl.includes((il.split(' ')[0]) || 'x');
+      }) || clusterCenters[idx % (clusterCenters.length || 1)];
+      if (center) {
+        particles.push(createParticle(complaint, center, idx));
+        idx++;
+      }
+    }
+
+    // Build UI
+    buildLegend(data.issueBreakdown);
+    buildTicker(data.complaints);
+
+    stormPhase = 'storm';
+    showPhase('phase2');
+  } catch (err) {
+    document.getElementById('loadingOverlay').classList.remove('active');
+    errorEl.textContent = 'Network error — please try again.';
+    errorEl.style.display = 'block';
+  }
+}
+
+// ──────────────────────────────────────────────────────────────
+//  Duel (SSE)
+// ──────────────────────────────────────────────────────────────
+async function initiateDuel() {
+  stormPhase = 'duel';
+  showPhase('phase3');
+
+  const prosecutionEl = document.getElementById('prosecutionText');
+  const defenseEl = document.getElementById('defenseText');
+  const verdictEl = document.getElementById('verdictText');
+  const verdictSection = document.getElementById('verdictSection');
+
+  prosecutionEl.textContent = '';
+  defenseEl.textContent = '';
+  verdictEl.textContent = '';
+  verdictSection.classList.remove('visible');
+
+  // Track pending typewriter queues
+  const queues = { prosecution: [], defense: [], verdict: [] };
+  const active = { prosecution: false, defense: false, verdict: false };
+  const targets = {
+    prosecution: prosecutionEl,
+    defense: defenseEl,
+    verdict: verdictEl
+  };
+
+  function drainQueue(type) {
+    if (active[type] || queues[type].length === 0) return;
+    active[type] = true;
+    const text = queues[type].shift();
+    let i = 0;
+    const el = targets[type];
+    function tick() {
+      if (i >= text.length) {
+        active[type] = false;
+        drainQueue(type);
+        return;
+      }
+      el.textContent += text[i++];
+      el.scrollTop = el.scrollHeight;
+      setTimeout(tick, 7);
+    }
+    tick();
+  }
+
+  function pushText(type, text) {
+    if (type === 'verdict') {
+      verdictSection.classList.add('visible');
+    }
+    queues[type].push(text);
+    drainQueue(type);
+  }
+
+  try {
+    const response = await fetch('/api/duel', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(currentData)
+    });
+
+    if (!response.ok) {
+      prosecutionEl.textContent = '[Error connecting to duel API]';
+      return;
+    }
+
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let buf = '';
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buf += decoder.decode(value, { stream: true });
+
+      const lines = buf.split('\n');
+      buf = lines.pop();
+
+      for (const line of lines) {
+        if (!line.startsWith('data: ')) continue;
+        try {
+          const ev = JSON.parse(line.slice(6));
+          if (ev.type === 'done') break;
+          if (ev.text && (ev.type === 'prosecution' || ev.type === 'defense' || ev.type === 'verdict')) {
+            pushText(ev.type, ev.text);
+          }
+        } catch (e) { /* ignore parse error */ }
+      }
+    }
+  } catch (err) {
+    prosecutionEl.textContent = '[Connection error: ' + err.message + ']';
+  }
+}
+
+// ──────────────────────────────────────────────────────────────
+//  Event wiring
+// ──────────────────────────────────────────────────────────────
+document.getElementById('searchBtn').addEventListener('click', () => {
+  const val = document.getElementById('companyInput').value.trim();
+  if (val) doSearch(val);
+});
+
+document.getElementById('companyInput').addEventListener('keydown', e => {
+  if (e.key === 'Enter') {
+    const val = e.target.value.trim();
+    if (val) doSearch(val);
+  }
+});
+
+document.querySelectorAll('.chip').forEach(chip => {
+  chip.addEventListener('click', () => {
+    const name = chip.dataset.name;
+    document.getElementById('companyInput').value = name;
+    doSearch(name);
+  });
+});
+
+document.getElementById('newSearchLink').addEventListener('click', () => {
+  stormPhase = 'idle';
+  if (tickerInterval) clearInterval(tickerInterval);
+  showPhase('phase1');
+  document.getElementById('companyInput').value = '';
+  document.getElementById('errorMsg').style.display = 'none';
+});
+
+document.getElementById('initiateBtn').addEventListener('click', initiateDuel);
+
+document.getElementById('resetBtn').addEventListener('click', () => {
+  stormPhase = 'storm';
+  showPhase('phase2');
+});
+
+// ──────────────────────────────────────────────────────────────
+//  Boot
+// ──────────────────────────────────────────────────────────────
+initDemoParticles();
+ctx.fillStyle = '#080808';
+ctx.fillRect(0, 0, canvas.width, canvas.height);
+animate();
+</script>
+</body>
+</html>
