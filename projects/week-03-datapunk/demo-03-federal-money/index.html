@@ -721,8 +721,18 @@ async function runAnalysis(spendingData) {
   let buffer = '';
 
   while (true) {
-    const { done, value } = await reader.read();
-    if (done) break;
+    let chunk;
+    try { chunk = await reader.read(); } catch {
+      if (!isDossierDone) dossier.innerHTML += '\n<span style="color:#ff6644">[Stream closed — try a smaller company or refresh]</span>';
+      break;
+    }
+    const { done, value } = chunk;
+    if (done) {
+      if (!isDossierDone && dossierText.length > 0) {
+        isDossierDone = true; showFollowup(); setStatus('// Analysis complete.', 'ok');
+      }
+      break;
+    }
     buffer += decoder.decode(value, { stream: true });
 
     const parts = buffer.split('\n\n');
