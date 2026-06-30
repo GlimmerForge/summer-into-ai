@@ -75,7 +75,6 @@ ${JSON.stringify(slim, null, 2)}`;
     const stream = client.messages.stream({
       model: 'claude-sonnet-4-6',
       max_tokens: 2500,
-      thinking: { type: 'enabled', budget_tokens: 1024 },
       system: DOSSIER_SYSTEM,
       messages: [{ role: 'user', content: userMessage }]
     });

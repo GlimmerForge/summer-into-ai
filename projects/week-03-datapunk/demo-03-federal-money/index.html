@@ -470,13 +470,6 @@
   <section id="analysis-section">
     <div class="section-header">// Intelligence Analysis</div>
 
-    <div class="thinking-toggle" id="thinking-toggle">
-      <span class="arrow">&#9658;</span>
-      <span>Reasoning Stream</span>
-      <span id="thinking-status" style="color: var(--dim); font-size: 10px;"></span>
-    </div>
-    <div id="thinking-box"></div>
-
     <div id="dossier-output"></div>
   </section>
 
@@ -576,9 +569,6 @@ async function runSearch() {
   hide('followup-section');
   hide('disclaimer');
   document.getElementById('dossier-output').textContent = '';
-  document.getElementById('thinking-box').textContent = '';
-  document.getElementById('thinking-box').classList.remove('visible');
-  document.getElementById('thinking-toggle').classList.remove('open');
   document.getElementById('qa-log').innerHTML = '';
   isDossierDone = false;
 
@@ -697,11 +687,6 @@ async function runAnalysis(spendingData) {
   const dossier = document.getElementById('dossier-output');
   dossier.textContent = '';
 
-  const thinkingBox = document.getElementById('thinking-box');
-  const thinkingStatus = document.getElementById('thinking-status');
-  thinkingBox.textContent = '';
-
-  let thinkingText = '';
   let dossierText = '';
 
   let resp;
@@ -753,18 +738,11 @@ async function runAnalysis(spendingData) {
       let payload;
       try { payload = JSON.parse(dataStr); } catch { continue; }
 
-      if (eventType === 'thinking_start') {
-        thinkingStatus.textContent = '(reasoning…)';
-      } else if (eventType === 'thinking') {
-        thinkingText += payload.text || '';
-        thinkingBox.textContent = thinkingText;
-        thinkingBox.scrollTop = thinkingBox.scrollHeight;
-      } else if (eventType === 'text') {
+      if (eventType === 'text') {
         dossierText += payload.text || '';
         renderDossier(dossier, dossierText);
         dossier.scrollTop = dossier.scrollHeight;
       } else if (eventType === 'done') {
-        thinkingStatus.textContent = thinkingText ? '(done)' : '';
         isDossierDone = true;
         showFollowup();
         document.getElementById('disclaimer').style.display = '';
@@ -776,14 +754,6 @@ async function runAnalysis(spendingData) {
   }
 }
 
-// ─── Thinking Toggle ──────────────────────────────────────────────────────────
-
-document.getElementById('thinking-toggle').addEventListener('click', function () {
-  const box = document.getElementById('thinking-box');
-  const isOpen = box.classList.contains('visible');
-  box.classList.toggle('visible', !isOpen);
-  this.classList.toggle('open', !isOpen);
-});
 
 // ─── Follow-Up Q&A ────────────────────────────────────────────────────────────
 
