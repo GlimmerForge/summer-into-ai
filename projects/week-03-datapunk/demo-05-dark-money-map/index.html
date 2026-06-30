@@ -1,0 +1,1261 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dark Money Map — FEC Network Visualization</title>
+<script src="https://cdn.jsdelivr.net/npm/d3@7/dist/d3.min.js"></script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --gold: #FFD700;
+    --gold-dim: #B8960C;
+    --gold-glow: rgba(255,215,0,0.4);
+    --bg: #050510;
+    --sidebar-bg: #0A0A1A;
+    --border: rgba(255,215,0,0.25);
+    --text: #E8E8F0;
+    --text-dim: #6A6A8A;
+    --red: #FF4444;
+    --blue: #4488FF;
+    --font: 'Courier New', Courier, monospace;
+  }
+
+  html, body {
+    height: 100%;
+    overflow: hidden;
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font);
+  }
+
+  /* ── HEADER ── */
+  #header {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    height: 52px;
+    background: rgba(5,5,16,0.95);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    padding: 0 20px;
+    gap: 20px;
+    z-index: 100;
+    backdrop-filter: blur(8px);
+  }
+  #header h1 {
+    font-size: 1.3rem;
+    letter-spacing: 4px;
+    color: var(--gold);
+    text-shadow: 0 0 18px var(--gold-glow);
+    font-weight: bold;
+    white-space: nowrap;
+  }
+  #header .subtitle {
+    font-size: 0.65rem;
+    color: var(--text-dim);
+    letter-spacing: 1px;
+    border-left: 1px solid var(--border);
+    padding-left: 16px;
+  }
+  #header .classified {
+    margin-left: auto;
+    font-size: 0.6rem;
+    color: var(--red);
+    letter-spacing: 3px;
+    border: 1px solid var(--red);
+    padding: 3px 8px;
+    animation: blink 2s step-end infinite;
+  }
+  @keyframes blink { 50% { opacity: 0.3; } }
+
+  /* ── LAYOUT ── */
+  #app {
+    display: flex;
+    height: 100vh;
+    padding-top: 52px;
+  }
+
+  /* ── GRAPH PANEL ── */
+  #graph-panel {
+    flex: 0 0 70%;
+    position: relative;
+    overflow: hidden;
+    background: var(--bg);
+  }
+  #graph-svg {
+    width: 100%;
+    height: 100%;
+    display: block;
+  }
+  #particle-canvas {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+  }
+
+  /* Loading overlay */
+  #loading-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(5,5,16,0.85);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 50;
+    gap: 20px;
+    display: none;
+  }
+  #loading-overlay.visible { display: flex; }
+  .loading-ring {
+    width: 80px; height: 80px;
+    border-radius: 50%;
+    border: 2px solid transparent;
+    border-top-color: var(--gold);
+    border-right-color: var(--gold);
+    animation: spin 1s linear infinite;
+    box-shadow: 0 0 20px var(--gold-glow);
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .loading-text {
+    font-size: 0.75rem;
+    letter-spacing: 3px;
+    color: var(--gold);
+    text-shadow: 0 0 10px var(--gold-glow);
+    animation: pulse-text 1.5s ease-in-out infinite;
+  }
+  @keyframes pulse-text { 50% { opacity: 0.4; } }
+
+  /* Tooltip */
+  #tooltip {
+    position: fixed;
+    background: rgba(10,10,26,0.95);
+    border: 1px solid var(--gold-dim);
+    padding: 10px 14px;
+    font-size: 0.7rem;
+    line-height: 1.6;
+    pointer-events: none;
+    z-index: 200;
+    max-width: 240px;
+    display: none;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+  }
+  #tooltip.visible { display: block; }
+  #tooltip .tt-name { color: var(--gold); font-weight: bold; font-size: 0.8rem; margin-bottom: 4px; }
+  #tooltip .tt-amount { color: #00FF88; font-size: 0.9rem; font-weight: bold; }
+  #tooltip .tt-detail { color: var(--text-dim); }
+
+  /* ── SIDEBAR ── */
+  #sidebar {
+    flex: 0 0 30%;
+    background: var(--sidebar-bg);
+    border-left: 1px solid var(--gold-dim);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  /* Search section */
+  #search-section {
+    padding: 14px;
+    border-bottom: 1px solid var(--border);
+  }
+  .mode-tabs {
+    display: flex;
+    gap: 0;
+    margin-bottom: 10px;
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    overflow: hidden;
+  }
+  .mode-tab {
+    flex: 1;
+    padding: 6px 10px;
+    text-align: center;
+    font-size: 0.65rem;
+    letter-spacing: 2px;
+    cursor: pointer;
+    color: var(--text-dim);
+    background: transparent;
+    border: none;
+    font-family: var(--font);
+    transition: all 0.2s;
+  }
+  .mode-tab.active {
+    color: var(--gold);
+    background: rgba(255,215,0,0.08);
+    border-bottom: 2px solid var(--gold);
+    text-shadow: 0 0 8px var(--gold-glow);
+  }
+  .mode-tab:hover:not(.active) { color: var(--text); background: rgba(255,255,255,0.03); }
+
+  .search-row {
+    display: flex;
+    gap: 8px;
+  }
+  #search-input {
+    flex: 1;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-family: var(--font);
+    font-size: 0.75rem;
+    padding: 8px 10px;
+    outline: none;
+    letter-spacing: 0.5px;
+    transition: border-color 0.2s;
+  }
+  #search-input:focus { border-color: var(--gold-dim); }
+  #search-input::placeholder { color: var(--text-dim); }
+
+  #search-btn {
+    background: var(--gold);
+    color: #050510;
+    border: none;
+    padding: 8px 14px;
+    font-family: var(--font);
+    font-size: 0.65rem;
+    font-weight: bold;
+    letter-spacing: 2px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  #search-btn:hover { background: #FFF0A0; }
+  #search-btn:active { transform: scale(0.97); }
+
+  /* Stats strip */
+  #stats-strip {
+    display: flex;
+    gap: 0;
+    font-size: 0.6rem;
+    letter-spacing: 1px;
+    border-top: 1px solid var(--border);
+    margin-top: 10px;
+    padding-top: 8px;
+    min-height: 28px;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  .stat-item {
+    flex: 1;
+    text-align: center;
+    padding: 2px 4px;
+  }
+  .stat-label { color: var(--text-dim); display: block; font-size: 0.55rem; }
+  .stat-value { color: var(--gold); font-weight: bold; font-size: 0.7rem; }
+  #status-msg {
+    font-size: 0.6rem;
+    color: var(--text-dim);
+    padding: 2px 0;
+    letter-spacing: 0.5px;
+  }
+  #status-msg.error { color: #FF6666; }
+
+  /* ── ORACLE SECTION ── */
+  #oracle-section {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    overflow: hidden;
+    padding: 12px 14px 0;
+  }
+  .oracle-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 6px;
+  }
+  .oracle-title {
+    font-size: 0.75rem;
+    letter-spacing: 3px;
+    color: var(--gold);
+    text-shadow: 0 0 10px var(--gold-glow);
+    font-weight: bold;
+  }
+  .oracle-dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--gold);
+    box-shadow: 0 0 8px var(--gold);
+    animation: pulse-dot 2s ease-in-out infinite;
+  }
+  @keyframes pulse-dot { 50% { opacity: 0.3; box-shadow: none; } }
+  .oracle-instruction {
+    font-size: 0.6rem;
+    color: var(--text-dim);
+    line-height: 1.5;
+    margin-bottom: 8px;
+    letter-spacing: 0.3px;
+  }
+
+  /* Chips */
+  #chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+    margin-bottom: 10px;
+  }
+  .chip {
+    font-size: 0.58rem;
+    padding: 4px 8px;
+    border: 1px solid var(--border);
+    color: var(--text-dim);
+    cursor: pointer;
+    font-family: var(--font);
+    background: transparent;
+    letter-spacing: 0.5px;
+    transition: all 0.15s;
+    border-radius: 2px;
+  }
+  .chip:hover {
+    border-color: var(--gold-dim);
+    color: var(--gold);
+    background: rgba(255,215,0,0.05);
+  }
+
+  /* Chat messages */
+  #chat-messages {
+    flex: 1;
+    overflow-y: auto;
+    padding-right: 4px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    scrollbar-width: thin;
+    scrollbar-color: var(--border) transparent;
+    min-height: 0;
+  }
+  #chat-messages::-webkit-scrollbar { width: 4px; }
+  #chat-messages::-webkit-scrollbar-track { background: transparent; }
+  #chat-messages::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+  .msg {
+    max-width: 88%;
+    padding: 8px 11px;
+    font-size: 0.68rem;
+    line-height: 1.55;
+    letter-spacing: 0.2px;
+    border-radius: 3px;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+  .msg.user {
+    align-self: flex-end;
+    background: rgba(68,136,255,0.15);
+    border: 1px solid rgba(68,136,255,0.3);
+    color: #AACCFF;
+  }
+  .msg.oracle {
+    align-self: flex-start;
+    background: rgba(255,215,0,0.06);
+    border: 1px solid rgba(255,215,0,0.15);
+    color: var(--text);
+  }
+  .msg.oracle .oracle-label {
+    font-size: 0.55rem;
+    color: var(--gold-dim);
+    letter-spacing: 2px;
+    margin-bottom: 4px;
+    display: block;
+  }
+  .msg.system-note {
+    align-self: center;
+    text-align: center;
+    color: var(--text-dim);
+    font-size: 0.6rem;
+    border: none;
+    background: none;
+    padding: 2px;
+  }
+
+  /* Chat input */
+  #chat-input-area {
+    display: flex;
+    gap: 8px;
+    padding: 10px 0 12px;
+    border-top: 1px solid var(--border);
+    margin-top: 8px;
+    flex-shrink: 0;
+  }
+  #chat-input {
+    flex: 1;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-family: var(--font);
+    font-size: 0.7rem;
+    padding: 8px 10px;
+    resize: none;
+    outline: none;
+    min-height: 60px;
+    max-height: 100px;
+    letter-spacing: 0.3px;
+    line-height: 1.5;
+    transition: border-color 0.2s;
+  }
+  #chat-input:focus { border-color: var(--gold-dim); }
+  #chat-input::placeholder { color: var(--text-dim); }
+  #send-btn {
+    background: transparent;
+    border: 1px solid var(--gold-dim);
+    color: var(--gold);
+    padding: 8px 12px;
+    font-family: var(--font);
+    font-size: 0.65rem;
+    letter-spacing: 2px;
+    cursor: pointer;
+    transition: all 0.2s;
+    align-self: flex-end;
+    min-height: 60px;
+  }
+  #send-btn:hover { background: rgba(255,215,0,0.1); }
+  #send-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  /* ── SVG graph styles ── */
+  .node-label {
+    font-family: var(--font);
+    font-size: 10px;
+    fill: rgba(220,220,230,0.85);
+    pointer-events: none;
+    text-anchor: middle;
+    letter-spacing: 0.3px;
+  }
+  .edge-path {
+    fill: none;
+    transition: opacity 0.3s;
+  }
+  .node-circle, .node-diamond {
+    transition: opacity 0.3s;
+    cursor: pointer;
+  }
+
+  /* Highlight pulse animation */
+  @keyframes highlightPulse {
+    0%, 100% { opacity: 1; }
+    25% { opacity: 0.3; filter: brightness(3); }
+    50% { opacity: 1; filter: brightness(2) drop-shadow(0 0 12px white); }
+    75% { opacity: 0.3; filter: brightness(3); }
+  }
+  .highlighted {
+    animation: highlightPulse 1.2s ease-in-out 3;
+  }
+  .highlight-ring {
+    fill: none;
+    stroke: var(--gold);
+    stroke-width: 2;
+    opacity: 0;
+    pointer-events: none;
+  }
+  .highlight-ring.active {
+    opacity: 1;
+    animation: ringPulse 2s ease-in-out infinite;
+  }
+  @keyframes ringPulse {
+    0%, 100% { r: 24px; opacity: 0.9; stroke-width: 2; }
+    50% { r: 30px; opacity: 0.3; stroke-width: 1; }
+  }
+
+  /* Sector legend */
+  #legend {
+    position: absolute;
+    bottom: 12px;
+    left: 14px;
+    background: rgba(5,5,16,0.85);
+    border: 1px solid var(--border);
+    padding: 10px 14px;
+    font-size: 0.6rem;
+    letter-spacing: 0.5px;
+    line-height: 1.8;
+    backdrop-filter: blur(4px);
+  }
+  #legend .legend-title { color: var(--gold-dim); letter-spacing: 2px; margin-bottom: 5px; font-size: 0.55rem; }
+  .legend-item { display: flex; align-items: center; gap: 6px; color: var(--text-dim); }
+  .legend-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  .legend-diamond {
+    width: 8px; height: 8px;
+    background: var(--gold);
+    transform: rotate(45deg);
+    flex-shrink: 0;
+  }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div id="header">
+  <h1>DARK MONEY MAP</h1>
+  <div class="subtitle">Federal Election Commission data &bull; 2023&ndash;2024 cycle</div>
+  <div class="classified">CLASSIFIED</div>
+</div>
+
+<!-- APP -->
+<div id="app">
+
+  <!-- GRAPH PANEL -->
+  <div id="graph-panel">
+    <svg id="graph-svg">
+      <defs>
+        <filter id="glow-red" x="-50%" y="-50%" width="200%" height="200%">
+          <feDropShadow dx="0" dy="0" stdDeviation="4" flood-color="#FF4444" flood-opacity="0.7"/>
+        </filter>
+        <filter id="glow-blue" x="-50%" y="-50%" width="200%" height="200%">
+          <feDropShadow dx="0" dy="0" stdDeviation="4" flood-color="#4488FF" flood-opacity="0.7"/>
+        </filter>
+        <filter id="glow-grey" x="-50%" y="-50%" width="200%" height="200%">
+          <feDropShadow dx="0" dy="0" stdDeviation="4" flood-color="#888888" flood-opacity="0.5"/>
+        </filter>
+        <filter id="glow-gold" x="-50%" y="-50%" width="200%" height="200%">
+          <feDropShadow dx="0" dy="0" stdDeviation="5" flood-color="#FFD700" flood-opacity="0.8"/>
+        </filter>
+      </defs>
+    </svg>
+    <canvas id="particle-canvas"></canvas>
+
+    <!-- Loading overlay -->
+    <div id="loading-overlay">
+      <div class="loading-ring"></div>
+      <div class="loading-text">RETRIEVING CLASSIFIED RECORDS...</div>
+    </div>
+
+    <!-- Tooltip -->
+    <div id="tooltip">
+      <div class="tt-name" id="tt-name">—</div>
+      <div class="tt-amount" id="tt-amount">—</div>
+      <div class="tt-detail" id="tt-occ">—</div>
+      <div class="tt-detail" id="tt-emp">—</div>
+      <div class="tt-detail" id="tt-date">—</div>
+    </div>
+
+    <!-- Legend -->
+    <div id="legend">
+      <div class="legend-title">NODE TYPES</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#FF4444"></div> Republican</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#4488FF"></div> Democrat</div>
+      <div class="legend-item"><div class="legend-diamond"></div> PAC / Committee</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#FFD700"></div> Finance donor</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#FF8C00"></div> Energy donor</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#00CED1"></div> Tech donor</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#9370DB"></div> Law donor</div>
+    </div>
+  </div>
+
+  <!-- SIDEBAR -->
+  <div id="sidebar">
+    <div id="search-section">
+      <div class="mode-tabs">
+        <button class="mode-tab active" id="tab-candidate" onclick="setMode('candidate')">CANDIDATE</button>
+        <button class="mode-tab" id="tab-donor" onclick="setMode('donor')">DONOR</button>
+      </div>
+      <div class="search-row">
+        <input type="text" id="search-input" placeholder="Search name..." value="Joe Biden">
+        <button id="search-btn" onclick="doSearch()">SEARCH</button>
+      </div>
+      <div id="stats-strip">
+        <div id="status-msg">Loading initial data...</div>
+      </div>
+    </div>
+
+    <div id="oracle-section">
+      <div class="oracle-header">
+        <div class="oracle-dot"></div>
+        <div class="oracle-title">THE ORACLE</div>
+      </div>
+      <div class="oracle-instruction">Ask about the network above. The Oracle will highlight relevant donors as it answers.</div>
+
+      <div id="chips">
+        <button class="chip" onclick="askChip(this)">Who gives the most?</button>
+        <button class="chip" onclick="askChip(this)">Any bipartisan donors?</button>
+        <button class="chip" onclick="askChip(this)">Top industries?</button>
+        <button class="chip" onclick="askChip(this)">Biggest single gift?</button>
+        <button class="chip" onclick="askChip(this)">Follow the money</button>
+      </div>
+
+      <div id="chat-messages">
+        <div class="msg system-note">Network loading... search to explore connections.</div>
+      </div>
+
+      <div id="chat-input-area">
+        <textarea id="chat-input" placeholder="Ask The Oracle anything about this network...&#10;(Enter to send, Shift+Enter for newline)"></textarea>
+        <button id="send-btn" onclick="sendChat()">SEND</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════════
+let currentMode = 'candidate';
+let networkData = null;         // { nodes, edges, meta }
+let chatMessages = [];          // [{role, content}] for the API
+let simulation = null;
+let svgNodes = null;
+let svgEdges = null;
+let animationId = null;
+let particleEdges = [];         // top 30 edges for particle animation
+let edgeBezierMap = new Map();  // edgeKey → {x1,y1,cpx,cpy,x2,y2}
+let isStreaming = false;
+
+// Node position lookup (updated by simulation)
+const nodePos = new Map(); // id → {x, y}
+
+// ═══════════════════════════════════════════════
+// HELPERS
+// ═══════════════════════════════════════════════
+function fmt(n) {
+  if (!n) return '$0';
+  if (n >= 1_000_000) return `$${(n/1_000_000).toFixed(1)}M`;
+  if (n >= 1_000) return `$${Math.round(n).toLocaleString()}`;
+  return `$${Math.round(n)}`;
+}
+
+function sectorColor(sector) {
+  const map = {
+    Finance: '#FFD700',
+    Energy: '#FF8C00',
+    Tech: '#00CED1',
+    Law: '#9370DB',
+    Retired: '#80A080',
+    'Real Estate': '#CD853F',
+    Health: '#FF69B4',
+    Education: '#7EC8E3',
+    Other: '#AAAAAA'
+  };
+  return map[sector] || '#AAAAAA';
+}
+
+function partyColor(party) {
+  if (!party) return '#888888';
+  const p = party.toUpperCase();
+  if (p === 'REP' || p === 'R') return '#FF4444';
+  if (p === 'DEM' || p === 'D') return '#4488FF';
+  return '#888888';
+}
+
+function partyFilter(party) {
+  if (!party) return 'url(#glow-grey)';
+  const p = party.toUpperCase();
+  if (p === 'REP' || p === 'R') return 'url(#glow-red)';
+  if (p === 'DEM' || p === 'D') return 'url(#glow-blue)';
+  return 'url(#glow-grey)';
+}
+
+// Bezier point at t on quadratic curve
+function bezierPoint(x1, y1, cpx, cpy, x2, y2, t) {
+  const mt = 1 - t;
+  return {
+    x: mt*mt*x1 + 2*mt*t*cpx + t*t*x2,
+    y: mt*mt*y1 + 2*mt*t*cpy + t*t*y2
+  };
+}
+
+// ═══════════════════════════════════════════════
+// SEARCH / FETCH
+// ═══════════════════════════════════════════════
+function setMode(mode) {
+  currentMode = mode;
+  document.getElementById('tab-candidate').classList.toggle('active', mode === 'candidate');
+  document.getElementById('tab-donor').classList.toggle('active', mode === 'donor');
+  document.getElementById('search-input').placeholder = mode === 'candidate' ? 'e.g. Biden, Trump, Pelosi...' : 'e.g. Koch, Soros, Blackstone...';
+}
+
+function doSearch() {
+  const q = document.getElementById('search-input').value.trim();
+  if (!q) return;
+  fetchNetwork(q, currentMode);
+}
+
+document.getElementById('search-input').addEventListener('keydown', e => {
+  if (e.key === 'Enter') doSearch();
+});
+
+async function fetchNetwork(query, mode) {
+  showLoading(true);
+  setStatus('Querying FEC database...', false);
+
+  try {
+    const res = await fetch('/api/fec', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ query, mode })
+    });
+
+    if (res.status === 429) {
+      const d = await res.json();
+      setStatus(d.error || 'Rate limit reached.', true);
+      showLoading(false);
+      return;
+    }
+
+    const data = await res.json();
+    showLoading(false);
+
+    if (data.meta?.error) {
+      setStatus(data.meta.error, true);
+      return;
+    }
+    if (!data.nodes || data.nodes.length === 0) {
+      setStatus(`No results found for '${query}'. Try 'Biden', 'Trump', 'Koch', 'Pelosi'.`, true);
+      return;
+    }
+
+    networkData = data;
+    renderGraph(data);
+    updateStats(data.meta);
+    setStatus(`${data.nodes.length} nodes · ${data.edges.length} connections loaded`, false);
+
+    // Reset chat when new network loads
+    chatMessages = [];
+    const chatBox = document.getElementById('chat-messages');
+    chatBox.innerHTML = '';
+    appendSystemNote(`Network loaded: ${data.meta?.candidateName || query} · Ask The Oracle to reveal hidden patterns.`);
+
+  } catch (err) {
+    showLoading(false);
+    setStatus('Connection error. Check network.', true);
+    console.error(err);
+  }
+}
+
+// ═══════════════════════════════════════════════
+// STATS
+// ═══════════════════════════════════════════════
+function updateStats(meta) {
+  if (!meta) return;
+  document.getElementById('stats-strip').innerHTML = `
+    <div class="stat-item">
+      <span class="stat-label">TOTAL RAISED</span>
+      <span class="stat-value">${meta.totalRaisedFormatted || fmt(meta.totalRaised)}</span>
+    </div>
+    <div class="stat-item">
+      <span class="stat-label">DONORS</span>
+      <span class="stat-value">${meta.donorCount || '—'}</span>
+    </div>
+    <div class="stat-item">
+      <span class="stat-label">TOP SECTOR</span>
+      <span class="stat-value">${meta.topSector || '—'}</span>
+    </div>
+  `;
+}
+
+function setStatus(msg, isError) {
+  const el = document.getElementById('status-msg');
+  el.textContent = msg;
+  el.className = isError ? 'error' : '';
+}
+
+function showLoading(show) {
+  document.getElementById('loading-overlay').classList.toggle('visible', show);
+}
+
+// ═══════════════════════════════════════════════
+// GRAPH RENDERING (D3 force simulation)
+// ═══════════════════════════════════════════════
+function renderGraph(data) {
+  const { nodes, edges } = data;
+
+  // Cancel previous simulation
+  if (simulation) simulation.stop();
+  if (animationId) cancelAnimationFrame(animationId);
+
+  const svg = d3.select('#graph-svg');
+  svg.selectAll('*').remove();
+
+  // Re-add defs (lost on selectAll clear)
+  const defs = svg.append('defs');
+  [
+    ['glow-red', '#FF4444', 0.7],
+    ['glow-blue', '#4488FF', 0.7],
+    ['glow-grey', '#888888', 0.5],
+    ['glow-gold', '#FFD700', 0.8]
+  ].forEach(([id, color, opacity]) => {
+    defs.append('filter')
+      .attr('id', id)
+      .attr('x', '-50%').attr('y', '-50%')
+      .attr('width', '200%').attr('height', '200%')
+      .append('feDropShadow')
+      .attr('dx', 0).attr('dy', 0)
+      .attr('stdDeviation', 4)
+      .attr('flood-color', color)
+      .attr('flood-opacity', opacity);
+  });
+
+  const panel = document.getElementById('graph-panel');
+  const W = panel.clientWidth;
+  const H = panel.clientHeight;
+
+  const canvas = document.getElementById('particle-canvas');
+  canvas.width = W;
+  canvas.height = H;
+
+  // Assign initial positions
+  nodes.forEach((n, i) => {
+    const angle = (i / nodes.length) * 2 * Math.PI;
+    const r = Math.min(W, H) * 0.3;
+    n.x = W/2 + (n.type === 'candidate' ? 0 : r * Math.cos(angle));
+    n.y = H/2 + (n.type === 'candidate' ? 0 : r * Math.sin(angle));
+  });
+
+  // Edge group
+  const edgeGroup = svg.append('g').attr('class', 'edges');
+
+  // Map edges source/target to node objects
+  const nodeById = new Map(nodes.map(n => [n.id, n]));
+  const linkedEdges = edges.map(e => ({
+    ...e,
+    source: nodeById.get(e.source) || e.source,
+    target: nodeById.get(e.target) || e.target
+  })).filter(e => typeof e.source === 'object' && typeof e.target === 'object');
+
+  // Draw edges (curved bezier paths)
+  const edgePaths = edgeGroup.selectAll('path')
+    .data(linkedEdges)
+    .join('path')
+    .attr('class', 'edge-path')
+    .attr('stroke', d => sectorColor(d.sector))
+    .attr('stroke-width', d => Math.max(0.5, Math.log10((d.amount || 1) + 1) * 1.5))
+    .attr('opacity', 0.35)
+    .on('mouseover', function() { d3.select(this).attr('opacity', 0.9); })
+    .on('mouseout', function() { d3.select(this).attr('opacity', 0.35); });
+
+  // Node group
+  const nodeGroup = svg.append('g').attr('class', 'nodes');
+  const nodeSelection = nodeGroup.selectAll('g')
+    .data(nodes)
+    .join('g')
+    .attr('class', 'node-g')
+    .call(d3.drag()
+      .on('start', dragStart)
+      .on('drag', dragged)
+      .on('end', dragEnd)
+    )
+    .on('mouseover', onNodeOver)
+    .on('mousemove', onNodeMove)
+    .on('mouseout', onNodeOut);
+
+  // Draw node shapes
+  nodeSelection.each(function(d) {
+    const g = d3.select(this);
+    if (d.type === 'candidate') {
+      const r = 20;
+      const color = partyColor(d.party);
+      g.append('circle')
+        .attr('r', r)
+        .attr('fill', color)
+        .attr('filter', partyFilter(d.party))
+        .attr('class', 'node-circle');
+      // Highlight ring (hidden by default)
+      g.append('circle')
+        .attr('r', r + 8)
+        .attr('class', 'highlight-ring')
+        .attr('stroke', '#FFD700')
+        .attr('fill', 'none');
+    } else if (d.type === 'pac') {
+      const s = 10;
+      const color = partyColor(d.party) || '#FFD700';
+      g.append('rect')
+        .attr('x', -s).attr('y', -s)
+        .attr('width', s*2).attr('height', s*2)
+        .attr('transform', 'rotate(45)')
+        .attr('fill', color)
+        .attr('filter', 'url(#glow-gold)')
+        .attr('class', 'node-diamond');
+      g.append('rect')
+        .attr('x', -(s+8)).attr('y', -(s+8))
+        .attr('width', (s+8)*2).attr('height', (s+8)*2)
+        .attr('transform', 'rotate(45)')
+        .attr('class', 'highlight-ring')
+        .attr('fill', 'none')
+        .attr('stroke', '#FFD700');
+    } else {
+      // donor
+      const r = 7;
+      const color = sectorColor(d.sector);
+      g.append('circle')
+        .attr('r', r)
+        .attr('fill', color)
+        .attr('opacity', 0.85)
+        .attr('class', 'node-circle');
+      g.append('circle')
+        .attr('r', r + 8)
+        .attr('class', 'highlight-ring')
+        .attr('fill', 'none')
+        .attr('stroke', '#FFD700');
+    }
+
+    // Label
+    const labelY = d.type === 'candidate' ? 34 : d.type === 'pac' ? 20 : 18;
+    const labelText = d.label.length > 20 ? d.label.substring(0, 20) + '…' : d.label;
+    g.append('text')
+      .attr('class', 'node-label')
+      .attr('y', labelY)
+      .text(labelText);
+  });
+
+  // Hover: dim non-adjacent nodes
+  const adjacentIds = new Set();
+  nodeSelection
+    .on('mouseover', function(event, d) {
+      adjacentIds.clear();
+      adjacentIds.add(d.id);
+      linkedEdges.forEach(e => {
+        if (e.source.id === d.id) adjacentIds.add(e.target.id);
+        if (e.target.id === d.id) adjacentIds.add(e.source.id);
+      });
+      nodeSelection.attr('opacity', n => adjacentIds.has(n.id) ? 1 : 0.15);
+      edgePaths.attr('opacity', e =>
+        (e.source.id === d.id || e.target.id === d.id) ? 0.9 : 0.05
+      );
+      onNodeOver(event, d);
+    })
+    .on('mousemove', onNodeMove)
+    .on('mouseout', function(event, d) {
+      nodeSelection.attr('opacity', 1);
+      edgePaths.attr('opacity', 0.35);
+      onNodeOut();
+    });
+
+  // Force simulation
+  simulation = d3.forceSimulation(nodes)
+    .force('link', d3.forceLink(linkedEdges)
+      .id(d => d.id)
+      .distance(d => {
+        const base = d.target.type === 'candidate' ? 120 : 90;
+        return base + Math.log10((d.amount || 1) + 1) * 10;
+      })
+      .strength(0.4)
+    )
+    .force('charge', d3.forceManyBody().strength(-200))
+    .force('center', d3.forceCenter(W/2, H/2))
+    .force('collide', d3.forceCollide(30))
+    .on('tick', () => {
+      // Update edge paths (bezier curves)
+      edgePaths.attr('d', d => {
+        const x1 = d.source.x, y1 = d.source.y;
+        const x2 = d.target.x, y2 = d.target.y;
+        const dx = x2 - x1, dy = y2 - y1;
+        const len = Math.sqrt(dx*dx + dy*dy) || 1;
+        const perp = { x: -dy/len * 20, y: dx/len * 20 };
+        const cpx = (x1+x2)/2 + perp.x;
+        const cpy = (y1+y2)/2 + perp.y;
+
+        // Store bezier control points for particle animation
+        const key = `${d.source.id}|${d.target.id}`;
+        edgeBezierMap.set(key, { x1, y1, cpx, cpy, x2, y2 });
+
+        return `M${x1},${y1} Q${cpx},${cpy} ${x2},${y2}`;
+      });
+
+      // Update node positions
+      nodeSelection.attr('transform', d => `translate(${d.x},${d.y})`);
+
+      // Update nodePos map
+      nodes.forEach(n => nodePos.set(n.id, { x: n.x, y: n.y }));
+    });
+
+  svgNodes = nodeSelection;
+  svgEdges = edgePaths;
+
+  // Pick top 30 edges for particles
+  const sortedEdges = [...linkedEdges].sort((a, b) => (b.amount || 0) - (a.amount || 0)).slice(0, 30);
+  particleEdges = sortedEdges.map(e => ({
+    sourceId: e.source.id,
+    targetId: e.target.id,
+    color: sectorColor(e.sector),
+    amount: e.amount,
+    particles: Array.from({ length: 2 + Math.floor(Math.random()*2) }, () => ({
+      t: Math.random(),
+      speed: 0.003 + Math.random() * 0.002
+    }))
+  }));
+
+  // Start particle animation
+  startParticles();
+}
+
+// ═══════════════════════════════════════════════
+// DRAG HANDLERS
+// ═══════════════════════════════════════════════
+function dragStart(event, d) {
+  if (!event.active) simulation.alphaTarget(0.3).restart();
+  d.fx = d.x; d.fy = d.y;
+}
+function dragged(event, d) {
+  d.fx = event.x; d.fy = event.y;
+}
+function dragEnd(event, d) {
+  if (!event.active) simulation.alphaTarget(0);
+  d.fx = null; d.fy = null;
+}
+
+// ═══════════════════════════════════════════════
+// TOOLTIP
+// ═══════════════════════════════════════════════
+function onNodeOver(event, d) {
+  const tt = document.getElementById('tooltip');
+  document.getElementById('tt-name').textContent = d.label;
+  document.getElementById('tt-amount').textContent = fmt(d.amount || d.totalGiven || 0);
+  document.getElementById('tt-occ').textContent = d.occupation ? `Occ: ${d.occupation}` : (d.office ? `Office: ${d.office}` : '');
+  document.getElementById('tt-emp').textContent = d.employer ? `Emp: ${d.employer}` : (d.party ? `Party: ${d.party}` : '');
+  document.getElementById('tt-date').textContent = d.sector ? `Sector: ${d.sector}` : (d.state ? `State: ${d.state}` : '');
+  tt.classList.add('visible');
+  positionTooltip(event);
+}
+function onNodeMove(event) {
+  positionTooltip(event);
+}
+function onNodeOut() {
+  document.getElementById('tooltip').classList.remove('visible');
+}
+function positionTooltip(event) {
+  const tt = document.getElementById('tooltip');
+  const x = event.clientX + 14;
+  const y = event.clientY - 10;
+  const maxX = window.innerWidth - tt.offsetWidth - 10;
+  tt.style.left = Math.min(x, maxX) + 'px';
+  tt.style.top = y + 'px';
+}
+
+// ═══════════════════════════════════════════════
+// PARTICLE ANIMATION
+// ═══════════════════════════════════════════════
+function startParticles() {
+  if (animationId) cancelAnimationFrame(animationId);
+  const canvas = document.getElementById('particle-canvas');
+  const ctx = canvas.getContext('2d');
+
+  function loop() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    for (const pe of particleEdges) {
+      const key = `${pe.sourceId}|${pe.targetId}`;
+      const bez = edgeBezierMap.get(key);
+      if (!bez) continue;
+      const { x1, y1, cpx, cpy, x2, y2 } = bez;
+
+      for (const p of pe.particles) {
+        p.t += p.speed;
+        if (p.t > 1) p.t -= 1;
+
+        // Draw trail
+        for (let i = 5; i >= 0; i--) {
+          const trailT = ((p.t - i * 0.012) + 2) % 1;
+          const pt = bezierPoint(x1, y1, cpx, cpy, x2, y2, trailT);
+          const alpha = (1 - i/6) * 0.7;
+          const r = i === 0 ? 2.5 : 1.5;
+          ctx.beginPath();
+          ctx.arc(pt.x, pt.y, r, 0, Math.PI*2);
+          ctx.fillStyle = pe.color;
+          ctx.globalAlpha = alpha;
+          ctx.fill();
+        }
+      }
+    }
+    ctx.globalAlpha = 1;
+    animationId = requestAnimationFrame(loop);
+  }
+
+  loop();
+}
+
+// ═══════════════════════════════════════════════
+// HIGHLIGHT NODES (called from Oracle SSE)
+// ═══════════════════════════════════════════════
+function applyHighlight(nodeIds) {
+  if (!svgNodes) return;
+  const idSet = new Set(nodeIds);
+
+  // Dim all nodes not in set
+  svgNodes.attr('opacity', d => idSet.has(d.id) ? 1 : 0.25);
+  if (svgEdges) {
+    svgEdges.attr('opacity', e => {
+      const src = typeof e.source === 'object' ? e.source.id : e.source;
+      const tgt = typeof e.target === 'object' ? e.target.id : e.target;
+      return (idSet.has(src) || idSet.has(tgt)) ? 0.7 : 0.06;
+    });
+  }
+
+  // Pulse + gold ring on highlighted nodes
+  svgNodes.each(function(d) {
+    if (idSet.has(d.id)) {
+      const g = d3.select(this);
+      // Flash animation on the shape
+      g.select('.node-circle, .node-diamond').classed('highlighted', true);
+      // Show ring
+      g.select('.highlight-ring').classed('active', true);
+
+      setTimeout(() => {
+        g.select('.node-circle, .node-diamond').classed('highlighted', false);
+        // Keep ring active
+      }, 3600);
+    }
+  });
+
+  // Restore opacity after 5s
+  setTimeout(() => {
+    if (svgNodes) svgNodes.attr('opacity', 1);
+    if (svgEdges) svgEdges.attr('opacity', 0.35);
+    // Remove rings
+    svgNodes?.each(function() {
+      d3.select(this).select('.highlight-ring').classed('active', false);
+    });
+  }, 6000);
+}
+
+// ═══════════════════════════════════════════════
+// CHAT
+// ═══════════════════════════════════════════════
+function askChip(el) {
+  document.getElementById('chat-input').value = el.textContent;
+  sendChat();
+}
+
+document.getElementById('chat-input').addEventListener('keydown', e => {
+  if (e.key === 'Enter' && !e.shiftKey) {
+    e.preventDefault();
+    sendChat();
+  }
+});
+
+async function sendChat() {
+  const input = document.getElementById('chat-input');
+  const msg = input.value.trim();
+  if (!msg || isStreaming) return;
+
+  input.value = '';
+  isStreaming = true;
+  document.getElementById('send-btn').disabled = true;
+
+  // Append user message
+  appendMessage('user', msg);
+  chatMessages.push({ role: 'user', content: msg });
+
+  // Create Oracle message bubble
+  const oracleEl = createOracleMsg();
+  let fullText = '';
+
+  try {
+    const res = await fetch('/api/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        messages: chatMessages,
+        networkContext: networkData
+      })
+    });
+
+    if (!res.body) throw new Error('No response body');
+
+    const reader = res.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = '';
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split('\n');
+      buffer = lines.pop(); // keep incomplete line
+
+      for (const line of lines) {
+        if (!line.startsWith('data: ')) continue;
+        try {
+          const data = JSON.parse(line.slice(6));
+          if (data.type === 'text') {
+            fullText += data.delta;
+            setOracleMsgText(oracleEl, fullText);
+          } else if (data.type === 'highlight') {
+            applyHighlight(data.node_ids || []);
+          } else if (data.type === 'done') {
+            break;
+          } else if (data.type === 'error') {
+            setOracleMsgText(oracleEl, `Error: ${data.message}`);
+          }
+        } catch {}
+      }
+    }
+
+    // Push Oracle response into message history
+    if (fullText) {
+      chatMessages.push({ role: 'assistant', content: fullText });
+    }
+
+  } catch (err) {
+    setOracleMsgText(oracleEl, `Connection error: ${err.message}`);
+  } finally {
+    isStreaming = false;
+    document.getElementById('send-btn').disabled = false;
+  }
+}
+
+function appendMessage(role, text) {
+  const chatBox = document.getElementById('chat-messages');
+  const div = document.createElement('div');
+  div.className = `msg ${role}`;
+  div.textContent = text;
+  chatBox.appendChild(div);
+  chatBox.scrollTop = chatBox.scrollHeight;
+  return div;
+}
+
+function createOracleMsg() {
+  const chatBox = document.getElementById('chat-messages');
+  const div = document.createElement('div');
+  div.className = 'msg oracle';
+  const label = document.createElement('span');
+  label.className = 'oracle-label';
+  label.textContent = 'THE ORACLE';
+  div.appendChild(label);
+  const textEl = document.createElement('span');
+  div.appendChild(textEl);
+  chatBox.appendChild(div);
+  chatBox.scrollTop = chatBox.scrollHeight;
+  return div;
+}
+
+function setOracleMsgText(el, text) {
+  el.querySelector('span:last-child').textContent = text;
+  el.scrollIntoView({ block: 'end', behavior: 'smooth' });
+}
+
+function appendSystemNote(text) {
+  const chatBox = document.getElementById('chat-messages');
+  const div = document.createElement('div');
+  div.className = 'msg system-note';
+  div.textContent = text;
+  chatBox.appendChild(div);
+  chatBox.scrollTop = chatBox.scrollHeight;
+}
+
+// ═══════════════════════════════════════════════
+// RESIZE
+// ═══════════════════════════════════════════════
+window.addEventListener('resize', () => {
+  if (networkData) {
+    const panel = document.getElementById('graph-panel');
+    const canvas = document.getElementById('particle-canvas');
+    canvas.width = panel.clientWidth;
+    canvas.height = panel.clientHeight;
+    if (simulation) {
+      simulation.force('center', d3.forceCenter(panel.clientWidth/2, panel.clientHeight/2));
+      simulation.alpha(0.3).restart();
+    }
+  }
+});
+
+// ═══════════════════════════════════════════════
+// INIT — pre-load Joe Biden
+// ═══════════════════════════════════════════════
+window.addEventListener('DOMContentLoaded', () => {
+  fetchNetwork('Joe Biden', 'candidate');
+});
+</script>
+</body>
+</html>
