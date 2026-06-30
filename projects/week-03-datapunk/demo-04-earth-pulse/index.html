@@ -392,14 +392,12 @@
       ctx.arc(cx, cy, R, 0, Math.PI * 2);
       ctx.clip();
 
-      // Land masses
+      // Land masses (landGeo is a FeatureCollection from topojson.feature)
       if (landGeo) {
         ctx.fillStyle = '#1b3a24';
-        drawGeoFill(landGeo.geometry, cx, cy, R);
-
-        // Subtle terrain shading pass (slightly lighter)
-        ctx.fillStyle = 'rgba(40,90,55,0.25)';
-        drawGeoFill(landGeo.geometry, cx, cy, R);
+        landGeo.features.forEach(f => f.geometry && drawGeoFill(f.geometry, cx, cy, R));
+        ctx.fillStyle = 'rgba(40,90,55,0.22)';
+        landGeo.features.forEach(f => f.geometry && drawGeoFill(f.geometry, cx, cy, R));
       } else {
         // Fallback grid while geography loads
         ctx.strokeStyle = 'rgba(40,80,160,0.12)';
@@ -411,11 +409,11 @@
         }
       }
 
-      // Country borders
+      // Country borders (bordersGeo from topojson.mesh() IS the geometry directly)
       if (bordersGeo) {
         ctx.strokeStyle = 'rgba(70,160,90,0.3)';
         ctx.lineWidth = 0.5;
-        drawGeoLines(bordersGeo.geometry, cx, cy, R);
+        drawGeoLines(bordersGeo, cx, cy, R);
       }
 
       // Earthquake dots

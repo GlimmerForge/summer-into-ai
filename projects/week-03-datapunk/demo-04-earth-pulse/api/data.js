@@ -4,10 +4,11 @@ export default async function handler(req, res) {
   if (req.method !== 'GET') return res.status(405).end();
 
   try {
+    const safe = fn => fn().catch(e => ({ _error: e.message }));
     const [seismicData, marketData, atmosData] = await Promise.all([
-      fetchSeismic(),
-      fetchMarket(),
-      fetchAtmosphere(),
+      safe(fetchSeismic),
+      safe(fetchMarket),
+      safe(fetchAtmosphere),
     ]);
 
     res.setHeader('Content-Type', 'application/json');
