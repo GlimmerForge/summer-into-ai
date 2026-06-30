@@ -312,29 +312,38 @@
       ctx.stroke();
     }
 
+    // Cosine of angular distance between two geographic points.
+    // < 0 means > 90° apart — the edge would cross the back hemisphere.
+    function geoDot([lon1, lat1], [lon2, lat2]) {
+      const r1 = lat1*Math.PI/180, l1 = lon1*Math.PI/180;
+      const r2 = lat2*Math.PI/180, l2 = lon2*Math.PI/180;
+      return Math.sin(r1)*Math.sin(r2) + Math.cos(r1)*Math.cos(r2)*Math.cos(l2-l1);
+    }
+
     function drawGeoFill(geometry, cx, cy, R) {
       const polys = geometry.type === 'MultiPolygon' ? geometry.coordinates : [geometry.coordinates];
       polys.forEach(poly => {
         if (!poly[0]) return;
-        // Split ring into runs of consecutive visible vertices, flush each separately.
-        // This avoids closePath() drawing chords across the sphere when vertices go behind.
-        let run = [], prev = null;
+        let pxRun = [], cRun = [], prevC = null;
         const flush = () => {
-          if (run.length >= 3) {
+          if (pxRun.length >= 3) {
+            // Only close if the closing edge doesn't cross the back hemisphere
+            const canClose = geoDot(cRun[0], cRun[cRun.length - 1]) >= 0;
             ctx.beginPath();
-            ctx.moveTo(run[0].x, run[0].y);
-            for (let i = 1; i < run.length; i++) ctx.lineTo(run[i].x, run[i].y);
-            ctx.closePath();
+            ctx.moveTo(pxRun[0].x, pxRun[0].y);
+            for (let i = 1; i < pxRun.length; i++) ctx.lineTo(pxRun[i].x, pxRun[i].y);
+            if (canClose) ctx.closePath();
             ctx.fill();
           }
-          run = []; prev = null;
+          pxRun = []; cRun = []; prevC = null;
         };
-        poly[0].forEach(([lon, lat]) => {
+        poly[0].forEach(coord => {
+          const [lon, lat] = coord;
           const p = project(lat, lon, cx, cy, R, globeRotation);
           if (!p) { flush(); return; }
-          // Break on large jumps (wrap-around artifact across the limb)
-          if (prev && Math.hypot(p.x - prev.x, p.y - prev.y) > R * 0.5) flush();
-          run.push(p); prev = p;
+          // Break run if this edge would cross the back hemisphere
+          if (prevC && geoDot(prevC, coord) < 0) flush();
+          pxRun.push(p); cRun.push(coord); prevC = coord;
         });
         flush();
       });
@@ -344,14 +353,15 @@
       const lines = geometry.type === 'MultiLineString' ? geometry.coordinates : [geometry.coordinates];
       lines.forEach(line => {
         ctx.beginPath();
-        let penDown = false, prev = null;
-        line.forEach(([lon, lat]) => {
+        let penDown = false, prevC = null;
+        line.forEach(coord => {
+          const [lon, lat] = coord;
           const p = project(lat, lon, cx, cy, R, globeRotation);
-          if (!p) { penDown = false; prev = null; return; }
-          if (prev && Math.hypot(p.x - prev.x, p.y - prev.y) > R * 0.5) penDown = false;
+          if (!p) { penDown = false; prevC = null; return; }
+          if (prevC && geoDot(prevC, coord) < 0) penDown = false;
           if (!penDown) { ctx.moveTo(p.x, p.y); penDown = true; }
           else ctx.lineTo(p.x, p.y);
-          prev = p;
+          prevC = coord;
         });
         ctx.stroke();
       });
