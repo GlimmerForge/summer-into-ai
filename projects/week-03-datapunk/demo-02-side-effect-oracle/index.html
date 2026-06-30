@@ -147,6 +147,32 @@
   #query-btn:hover { background: var(--amber); color: var(--bg); }
   #query-btn:disabled { opacity: 0.35; cursor: default; }
 
+  /* ── Autocomplete dropdown ────────────────────────────────── */
+  #ac-dropdown {
+    display: none;
+    position: absolute;
+    top: 100%;
+    left: -1px;
+    min-width: calc(100% + 2px);
+    background: var(--panel-bg);
+    border: 1px solid var(--amber);
+    border-top: none;
+    z-index: 200;
+    max-height: 220px;
+    overflow-y: auto;
+  }
+  .ac-item {
+    padding: 7px 12px;
+    cursor: pointer;
+    font-size: 12px;
+    letter-spacing: 1px;
+    color: var(--text);
+    border-bottom: 1px solid var(--amber-dimmer);
+    white-space: nowrap;
+  }
+  .ac-item:last-child { border-bottom: none; }
+  .ac-item:hover, .ac-item.ac-active { background: var(--amber-dimmer); color: var(--amber); }
+
   .status-line {
     font-size: 11px;
     color: var(--amber-dim);
@@ -422,6 +448,7 @@
       <span class="prompt">&gt;</span>
       <input id="drug-input" type="text" placeholder="e.g. ibuprofen, metformin" autocomplete="off" spellcheck="false" />
       <span class="cursor-blink" id="cursor"></span>
+      <div id="ac-dropdown"></div>
     </div>
     <button id="query-btn">QUERY FDA</button>
   </div>
@@ -777,8 +804,82 @@ Try searching by generic name (e.g., "ibuprofen" instead of "Advil").
     run(val);
   });
 
+  // ── Autocomplete ──────────────────────────────────────────────────────────
+  const acDropdown = document.getElementById('ac-dropdown');
+  let acTimer = null;
+  let acIndex = -1;
+
+  function acItems() { return acDropdown.querySelectorAll('.ac-item'); }
+
+  function acHide() {
+    acDropdown.style.display = 'none';
+    acDropdown.innerHTML = '';
+    acIndex = -1;
+  }
+
+  function acSelect(name) {
+    document.getElementById('drug-input').value = name.toLowerCase();
+    acHide();
+  }
+
+  function acHighlight(idx) {
+    acIndex = idx;
+    acItems().forEach((el, i) => el.classList.toggle('ac-active', i === idx));
+  }
+
+  async function acFetch(q) {
+    try {
+      const res = await fetch(
+        `https://rxnav.nlm.nih.gov/REST/approximateTerm.json?term=${encodeURIComponent(q)}&maxEntries=12`
+      );
+      const data = await res.json();
+      const candidates = data?.approximateGroup?.candidate ?? [];
+      const seen = new Set();
+      const names = [];
+      for (const c of candidates) {
+        const n = c.name;
+        if (!seen.has(n)) { seen.add(n); names.push(n); }
+        if (names.length >= 10) break;
+      }
+      if (!names.length) { acHide(); return; }
+      acDropdown.innerHTML = '';
+      names.forEach(name => {
+        const item = document.createElement('div');
+        item.className = 'ac-item';
+        item.textContent = name;
+        item.addEventListener('mousedown', e => { e.preventDefault(); acSelect(name); });
+        acDropdown.appendChild(item);
+      });
+      acDropdown.style.display = 'block';
+      acIndex = -1;
+    } catch { acHide(); }
+  }
+
+  document.getElementById('drug-input').addEventListener('input', function () {
+    const q = this.value.trim();
+    clearTimeout(acTimer);
+    if (q.length < 2) { acHide(); return; }
+    acTimer = setTimeout(() => acFetch(q), 280);
+  });
+
   document.getElementById('drug-input').addEventListener('keydown', (e) => {
-    if (e.key === 'Enter') document.getElementById('query-btn').click();
+    const items = acItems();
+    if (items.length && (e.key === 'ArrowDown' || e.key === 'ArrowUp')) {
+      e.preventDefault();
+      acHighlight(e.key === 'ArrowDown'
+        ? Math.min(acIndex + 1, items.length - 1)
+        : Math.max(acIndex - 1, -1));
+      return;
+    }
+    if (e.key === 'Escape') { acHide(); return; }
+    if (e.key === 'Enter') {
+      if (acIndex >= 0 && items[acIndex]) {
+        e.preventDefault();
+        acSelect(items[acIndex].textContent);
+      } else {
+        document.getElementById('query-btn').click();
+      }
+    }
   });
 
   document.getElementById('drug-input').addEventListener('focus', () => {
@@ -786,6 +887,7 @@ Try searching by generic name (e.g., "ibuprofen" instead of "Advil").
   });
   document.getElementById('drug-input').addEventListener('blur', () => {
     document.getElementById('cursor').style.display = '';
+    setTimeout(acHide, 150);
   });
 
   // ── Reasoning toggle ──────────────────────────────────────────────────────
