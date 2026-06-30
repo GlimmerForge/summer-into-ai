@@ -1,0 +1,811 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Federal Money Finder</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #050810;
+    --surface: #0a0f1e;
+    --border: #1a2244;
+    --text: #e0e8ff;
+    --dim: #5566aa;
+    --accent: #4488ff;
+    --gold: #ffd700;
+    --red: #ff4444;
+    --green: #44cc88;
+    --mono: 'Courier New', Courier, monospace;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 13px;
+    line-height: 1.6;
+    min-height: 100vh;
+  }
+
+  /* HEADER */
+  .site-header {
+    border-bottom: 1px solid var(--border);
+    padding: 20px 24px 16px;
+    background: #070c1a;
+  }
+
+  .site-header h1 {
+    font-size: 22px;
+    letter-spacing: 0.2em;
+    color: var(--accent);
+    text-transform: uppercase;
+    margin-bottom: 4px;
+  }
+
+  .site-header h1 span { color: var(--gold); }
+
+  .header-sub {
+    color: var(--dim);
+    font-size: 11px;
+    letter-spacing: 0.15em;
+  }
+
+  .header-tagline {
+    color: var(--text);
+    font-size: 12px;
+    margin-top: 6px;
+    opacity: 0.7;
+  }
+
+  /* MAIN LAYOUT */
+  .container {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 24px 20px 60px;
+  }
+
+  /* SEARCH */
+  .search-section {
+    margin-bottom: 28px;
+  }
+
+  .search-label {
+    display: block;
+    color: var(--gold);
+    font-size: 11px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+
+  .search-row {
+    display: flex;
+    gap: 10px;
+    align-items: stretch;
+  }
+
+  .search-input {
+    flex: 1;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 15px;
+    padding: 10px 14px;
+    outline: none;
+    transition: border-color 0.15s;
+  }
+
+  .search-input::placeholder { color: var(--dim); }
+
+  .search-input:focus {
+    border-color: var(--accent);
+  }
+
+  .btn {
+    background: var(--accent);
+    border: none;
+    color: #000;
+    font-family: var(--mono);
+    font-size: 12px;
+    font-weight: bold;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    padding: 10px 20px;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+
+  .btn:hover { background: #5599ff; }
+  .btn:disabled { background: var(--border); color: var(--dim); cursor: not-allowed; }
+
+  .btn-secondary {
+    background: transparent;
+    border: 1px solid var(--accent);
+    color: var(--accent);
+    font-family: var(--mono);
+    font-size: 12px;
+    font-weight: bold;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    padding: 8px 16px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  .btn-secondary:hover { background: var(--accent); color: #000; }
+  .btn-secondary:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  /* STATUS */
+  .status-line {
+    font-size: 11px;
+    color: var(--dim);
+    margin-top: 8px;
+    min-height: 16px;
+    letter-spacing: 0.08em;
+  }
+
+  .status-line.error { color: var(--red); }
+  .status-line.ok { color: var(--green); }
+
+  /* SUMMARY ROW */
+  #summary-section { display: none; margin-bottom: 28px; }
+
+  .summary-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1px;
+    background: var(--border);
+    border: 1px solid var(--border);
+  }
+
+  .summary-cell {
+    background: var(--surface);
+    padding: 16px 20px;
+    text-align: center;
+  }
+
+  .summary-cell .label {
+    font-size: 10px;
+    letter-spacing: 0.18em;
+    color: var(--dim);
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+
+  .summary-cell .value {
+    font-size: 24px;
+    font-weight: bold;
+    color: var(--accent);
+    letter-spacing: 0.04em;
+  }
+
+  .summary-cell .value.gold { color: var(--gold); }
+
+  /* TOP CONTRACTS */
+  #contracts-section { display: none; margin-bottom: 28px; }
+
+  .section-header {
+    color: var(--gold);
+    font-size: 11px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 6px;
+    margin-bottom: 12px;
+  }
+
+  .contract-row {
+    display: flex;
+    gap: 12px;
+    align-items: baseline;
+    padding: 8px 0;
+    border-bottom: 1px solid #0d1428;
+  }
+
+  .contract-row:last-child { border-bottom: none; }
+
+  .contract-agency {
+    color: var(--dim);
+    font-size: 11px;
+    width: 180px;
+    flex-shrink: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .contract-agency span {
+    color: var(--text);
+    font-size: 10px;
+    opacity: 0.6;
+    display: block;
+  }
+
+  .contract-amount {
+    color: var(--accent);
+    font-size: 14px;
+    font-weight: bold;
+    width: 90px;
+    flex-shrink: 0;
+    text-align: right;
+  }
+
+  .contract-desc {
+    color: var(--text);
+    opacity: 0.8;
+    flex: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .contract-dates {
+    color: var(--dim);
+    font-size: 11px;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+
+  /* ANALYSIS SECTION */
+  #analysis-section { display: none; margin-bottom: 28px; }
+
+  .thinking-toggle {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--dim);
+    font-size: 11px;
+    cursor: pointer;
+    margin-bottom: 8px;
+    user-select: none;
+  }
+
+  .thinking-toggle:hover { color: var(--text); }
+
+  .thinking-toggle .arrow { transition: transform 0.2s; }
+  .thinking-toggle.open .arrow { transform: rotate(90deg); }
+
+  #thinking-box {
+    display: none;
+    background: #07091a;
+    border: 1px solid #1a1f3a;
+    border-left: 3px solid #334;
+    padding: 12px 16px;
+    color: #446;
+    font-size: 11px;
+    line-height: 1.7;
+    max-height: 200px;
+    overflow-y: auto;
+    margin-bottom: 12px;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+  }
+
+  #thinking-box.visible { display: block; }
+
+  #dossier-output {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--accent);
+    padding: 20px;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    line-height: 1.8;
+    min-height: 80px;
+    font-size: 13px;
+  }
+
+  /* Section headers inside the dossier */
+  .dossier-text [data-section] { color: var(--gold); font-weight: bold; }
+
+  /* FOLLOWUP SECTION */
+  #followup-section { display: none; margin-bottom: 28px; }
+
+  .followup-input-row {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    border: 1px solid var(--border);
+    background: var(--surface);
+  }
+
+  .followup-prompt {
+    color: var(--accent);
+    padding: 0 10px;
+    font-size: 14px;
+    flex-shrink: 0;
+  }
+
+  .followup-input {
+    flex: 1;
+    background: transparent;
+    border: none;
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 13px;
+    padding: 10px 8px;
+    outline: none;
+  }
+
+  .followup-input::placeholder { color: var(--dim); }
+
+  #qa-log {
+    margin-top: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  .qa-item {}
+
+  .qa-question {
+    color: var(--gold);
+    font-size: 12px;
+    margin-bottom: 4px;
+  }
+
+  .qa-question::before { content: '> '; color: var(--dim); }
+
+  .qa-answer {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    padding: 12px 16px;
+    font-size: 13px;
+    line-height: 1.7;
+    color: var(--text);
+    white-space: pre-wrap;
+    word-wrap: break-word;
+  }
+
+  .qa-loading {
+    color: var(--dim);
+    font-size: 12px;
+    animation: blink 1s step-end infinite;
+  }
+
+  @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+
+  /* DISCLAIMER */
+  #disclaimer {
+    display: none;
+    border-top: 1px solid var(--border);
+    padding-top: 16px;
+    color: var(--dim);
+    font-size: 11px;
+    line-height: 1.7;
+    opacity: 0.75;
+  }
+
+  /* SPINNER */
+  .spinner {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    border: 2px solid var(--border);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.6s linear infinite;
+    vertical-align: middle;
+    margin-right: 6px;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .hidden { display: none !important; }
+
+  /* Responsive */
+  @media (max-width: 600px) {
+    .summary-grid { grid-template-columns: 1fr; }
+    .contract-dates { display: none; }
+    .contract-agency { width: 120px; }
+    .summary-cell .value { font-size: 18px; }
+  }
+</style>
+</head>
+<body>
+
+<header class="site-header">
+  <h1>[ <span>FEDERAL</span> MONEY FINDER ]</h1>
+  <div class="header-sub">SOURCE: USASPENDING.GOV // POWERED BY AI // YOUR TAX DOLLARS</div>
+  <div class="header-tagline">What the government paid them. All of it.</div>
+</header>
+
+<main class="container">
+
+  <!-- SEARCH -->
+  <section class="search-section">
+    <label class="search-label" for="company-input">// Enter contractor name</label>
+    <div class="search-row">
+      <input
+        id="company-input"
+        class="search-input"
+        type="text"
+        placeholder="e.g. Lockheed Martin, Amazon, Deloitte"
+        autocomplete="off"
+        spellcheck="false"
+      />
+      <button id="search-btn" class="btn">Search Contracts</button>
+    </div>
+    <div id="search-status" class="status-line"></div>
+  </section>
+
+  <!-- SUMMARY ROW -->
+  <section id="summary-section">
+    <div class="summary-grid">
+      <div class="summary-cell">
+        <div class="label">Total Obligated</div>
+        <div class="value" id="stat-total">—</div>
+      </div>
+      <div class="summary-cell">
+        <div class="label">Contracts Found</div>
+        <div class="value gold" id="stat-count">—</div>
+      </div>
+      <div class="summary-cell">
+        <div class="label">Agencies</div>
+        <div class="value gold" id="stat-agencies">—</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- TOP CONTRACTS -->
+  <section id="contracts-section">
+    <div class="section-header">// Top Contracts (by value)</div>
+    <div id="contracts-list"></div>
+  </section>
+
+  <!-- ANALYSIS -->
+  <section id="analysis-section">
+    <div class="section-header">// Intelligence Analysis</div>
+
+    <div class="thinking-toggle" id="thinking-toggle">
+      <span class="arrow">&#9658;</span>
+      <span>Reasoning Stream</span>
+      <span id="thinking-status" style="color: var(--dim); font-size: 10px;"></span>
+    </div>
+    <div id="thinking-box"></div>
+
+    <div id="dossier-output"></div>
+  </section>
+
+  <!-- FOLLOW-UP Q&A -->
+  <section id="followup-section">
+    <div class="section-header">// Ask A Follow-Up</div>
+    <div class="followup-input-row">
+      <span class="followup-prompt">&gt;</span>
+      <input
+        id="followup-input"
+        class="followup-input"
+        type="text"
+        placeholder="What were the defense contracts for?"
+        autocomplete="off"
+        spellcheck="false"
+      />
+      <button id="followup-btn" class="btn-secondary">Query</button>
+    </div>
+    <div id="qa-log"></div>
+  </section>
+
+  <!-- DISCLAIMER -->
+  <div id="disclaimer">
+    Contract data from USASpending.gov (Federal Procurement Data System). Award amounts reflect obligated amounts as reported; actual spending may differ. Analysis is AI-generated interpretation of public federal records.
+  </div>
+
+</main>
+
+<script>
+// ─── Utilities ───────────────────────────────────────────────────────────────
+
+function formatMoney(n) {
+  if (!n && n !== 0) return '$0';
+  if (n >= 1e9) return '$' + (n / 1e9).toFixed(1) + 'B';
+  if (n >= 1e6) return '$' + (n / 1e6).toFixed(1) + 'M';
+  if (n >= 1e3) return '$' + (n / 1e3).toFixed(0) + 'K';
+  return '$' + Math.round(n).toLocaleString();
+}
+
+function formatYear(dateStr) {
+  if (!dateStr) return '';
+  return dateStr.substring(0, 4);
+}
+
+function truncate(str, max) {
+  if (!str) return '';
+  return str.length > max ? str.substring(0, max) + '…' : str;
+}
+
+function setStatus(msg, type = '') {
+  const el = document.getElementById('search-status');
+  el.textContent = msg;
+  el.className = 'status-line' + (type ? ' ' + type : '');
+}
+
+function show(id) { document.getElementById(id).style.display = ''; }
+function hide(id) { document.getElementById(id).style.display = 'none'; }
+
+// ─── State ───────────────────────────────────────────────────────────────────
+
+let currentContext = '';   // summary text passed to follow-up Q&A
+let isDossierDone = false;
+
+// ─── Search ──────────────────────────────────────────────────────────────────
+
+document.getElementById('search-btn').addEventListener('click', runSearch);
+document.getElementById('company-input').addEventListener('keydown', e => {
+  if (e.key === 'Enter') runSearch();
+});
+
+async function runSearch() {
+  const company = document.getElementById('company-input').value.trim();
+  if (!company) return;
+
+  // Reset UI
+  hide('summary-section');
+  hide('contracts-section');
+  hide('analysis-section');
+  hide('followup-section');
+  hide('disclaimer');
+  document.getElementById('dossier-output').textContent = '';
+  document.getElementById('thinking-box').textContent = '';
+  document.getElementById('thinking-box').classList.remove('visible');
+  document.getElementById('thinking-toggle').classList.remove('open');
+  document.getElementById('qa-log').innerHTML = '';
+  isDossierDone = false;
+
+  const searchBtn = document.getElementById('search-btn');
+  searchBtn.disabled = true;
+  setStatus('// Querying USASpending.gov…');
+
+  let data;
+  try {
+    const resp = await fetch('/api/search', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ companyName: company })
+    });
+    data = await resp.json();
+  } catch (err) {
+    setStatus('Network error: ' + err.message, 'error');
+    searchBtn.disabled = false;
+    return;
+  }
+
+  if (data.error) {
+    setStatus(data.error, 'error');
+    searchBtn.disabled = false;
+    return;
+  }
+
+  setStatus(`// Found ${data.totalAwards.toLocaleString()} contracts — building intelligence report…`, 'ok');
+
+  renderSummary(data);
+  renderContracts(data.awards);
+
+  // Build context string for follow-up Q&A
+  currentContext = buildContext(data);
+
+  searchBtn.disabled = false;
+
+  // Auto-start analysis
+  runAnalysis(data);
+}
+
+// ─── Render Summary ───────────────────────────────────────────────────────────
+
+function renderSummary(data) {
+  document.getElementById('stat-total').textContent = formatMoney(data.totalObligated);
+  document.getElementById('stat-count').textContent = data.totalAwards.toLocaleString();
+  document.getElementById('stat-agencies').textContent = Object.keys(data.topAgencies).length;
+
+  const summarySection = document.getElementById('summary-section');
+  summarySection.style.display = '';
+}
+
+// ─── Render Contracts ─────────────────────────────────────────────────────────
+
+function renderContracts(awards) {
+  const list = document.getElementById('contracts-list');
+  list.innerHTML = '';
+
+  const top = awards.slice(0, 8);
+  top.forEach(a => {
+    const row = document.createElement('div');
+    row.className = 'contract-row';
+
+    const startY = formatYear(a.startDate);
+    const endY = formatYear(a.endDate);
+    const dateRange = (startY && endY) ? `${startY}–${endY}` : (startY || endY || '');
+
+    row.innerHTML = `
+      <div class="contract-agency">
+        ${escHtml(truncate(a.agency, 22))}
+        ${a.subAgency ? `<span>${escHtml(truncate(a.subAgency, 24))}</span>` : ''}
+      </div>
+      <div class="contract-amount">${formatMoney(a.amount)}</div>
+      <div class="contract-desc">${escHtml(truncate(a.description, 55))}</div>
+      <div class="contract-dates">${escHtml(dateRange)}</div>
+    `;
+    list.appendChild(row);
+  });
+
+  document.getElementById('contracts-section').style.display = '';
+}
+
+function escHtml(str) {
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+// ─── Build Context for Q&A ────────────────────────────────────────────────────
+
+function buildContext(data) {
+  const lines = [
+    `COMPANY: ${data.company}`,
+    `TOTAL OBLIGATED: ${formatMoney(data.totalObligated)}`,
+    `TOTAL CONTRACTS IN FEDERAL DB: ${data.totalAwards}`,
+    '',
+    'TOP CONTRACTS (from USASpending.gov 2022-2025):',
+    ...data.awards.slice(0, 10).map((a, i) =>
+      `${i + 1}. ${formatMoney(a.amount)} | ${a.agency}${a.subAgency ? ' / ' + a.subAgency : ''} | ${a.description || 'N/A'} | ${a.startDate || ''} to ${a.endDate || ''}`
+    ),
+    '',
+    'AGENCY BREAKDOWN:',
+    ...Object.entries(data.topAgencies).map(([k, v]) => `  ${k}: ${formatMoney(v)}`)
+  ];
+  return lines.join('\n');
+}
+
+// ─── Analysis (SSE streaming) ─────────────────────────────────────────────────
+
+async function runAnalysis(spendingData) {
+  const analysisSection = document.getElementById('analysis-section');
+  analysisSection.style.display = '';
+
+  const dossier = document.getElementById('dossier-output');
+  dossier.textContent = '';
+
+  const thinkingBox = document.getElementById('thinking-box');
+  const thinkingStatus = document.getElementById('thinking-status');
+  thinkingBox.textContent = '';
+
+  let thinkingText = '';
+  let dossierText = '';
+
+  let resp;
+  try {
+    resp = await fetch('/api/analyze', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ mode: 'initial', spendingData })
+    });
+  } catch (err) {
+    dossier.textContent = 'Error: ' + err.message;
+    return;
+  }
+
+  const reader = resp.body.getReader();
+  const decoder = new TextDecoder();
+  let buffer = '';
+
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    buffer += decoder.decode(value, { stream: true });
+
+    const parts = buffer.split('\n\n');
+    buffer = parts.pop(); // last partial chunk
+
+    for (const part of parts) {
+      const lines = part.split('\n');
+      let eventType = 'message';
+      let dataStr = '';
+
+      for (const line of lines) {
+        if (line.startsWith('event: ')) eventType = line.slice(7).trim();
+        else if (line.startsWith('data: ')) dataStr = line.slice(6).trim();
+      }
+
+      if (!dataStr) continue;
+
+      let payload;
+      try { payload = JSON.parse(dataStr); } catch { continue; }
+
+      if (eventType === 'thinking_start') {
+        thinkingStatus.textContent = '(reasoning…)';
+      } else if (eventType === 'thinking') {
+        thinkingText += payload.text || '';
+        thinkingBox.textContent = thinkingText;
+        thinkingBox.scrollTop = thinkingBox.scrollHeight;
+      } else if (eventType === 'text') {
+        dossierText += payload.text || '';
+        dossier.textContent = dossierText;
+        dossier.scrollTop = dossier.scrollHeight;
+      } else if (eventType === 'done') {
+        thinkingStatus.textContent = thinkingText ? '(done)' : '';
+        isDossierDone = true;
+        showFollowup();
+        document.getElementById('disclaimer').style.display = '';
+        setStatus('// Analysis complete.', 'ok');
+      } else if (eventType === 'error') {
+        dossier.textContent += '\n[Error: ' + (payload.message || 'Unknown error') + ']';
+      }
+    }
+  }
+}
+
+// ─── Thinking Toggle ──────────────────────────────────────────────────────────
+
+document.getElementById('thinking-toggle').addEventListener('click', function () {
+  const box = document.getElementById('thinking-box');
+  const isOpen = box.classList.contains('visible');
+  box.classList.toggle('visible', !isOpen);
+  this.classList.toggle('open', !isOpen);
+});
+
+// ─── Follow-Up Q&A ────────────────────────────────────────────────────────────
+
+function showFollowup() {
+  document.getElementById('followup-section').style.display = '';
+  document.getElementById('followup-input').focus();
+}
+
+document.getElementById('followup-btn').addEventListener('click', runFollowup);
+document.getElementById('followup-input').addEventListener('keydown', e => {
+  if (e.key === 'Enter') runFollowup();
+});
+
+async function runFollowup() {
+  const input = document.getElementById('followup-input');
+  const question = input.value.trim();
+  if (!question) return;
+
+  const btn = document.getElementById('followup-btn');
+  btn.disabled = true;
+  input.disabled = true;
+
+  // Append question + loading to log
+  const log = document.getElementById('qa-log');
+  const item = document.createElement('div');
+  item.className = 'qa-item';
+  item.innerHTML = `
+    <div class="qa-question">${escHtml(question)}</div>
+    <div class="qa-answer qa-loading">// querying…</div>
+  `;
+  log.appendChild(item);
+  item.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+
+  const answerEl = item.querySelector('.qa-answer');
+
+  try {
+    const resp = await fetch('/api/analyze', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ mode: 'chat', question, context: currentContext })
+    });
+    const data = await resp.json();
+
+    if (data.error) {
+      answerEl.textContent = 'Error: ' + data.error;
+      answerEl.classList.remove('qa-loading');
+    } else {
+      answerEl.textContent = data.answer;
+      answerEl.classList.remove('qa-loading');
+    }
+  } catch (err) {
+    answerEl.textContent = 'Network error: ' + err.message;
+    answerEl.classList.remove('qa-loading');
+  }
+
+  input.value = '';
+  btn.disabled = false;
+  input.disabled = false;
+  input.focus();
+}
+</script>
+</body>
+</html>
