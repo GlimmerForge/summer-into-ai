@@ -181,6 +181,13 @@
 </head>
 <body>
   <canvas id="canvas"></canvas>
+  <div id="quake-tooltip" style="
+    display:none; position:fixed; pointer-events:none;
+    background:rgba(5,8,20,0.92); border:1px solid #ff330066;
+    color:#ff9977; font:11px 'Courier New',monospace;
+    padding:6px 10px; border-radius:3px; max-width:220px;
+    line-height:1.5; z-index:10;
+  "></div>
 
   <div class="panel">
     <div class="panel-title">EARTH PULSE</div>
@@ -241,6 +248,33 @@
     }
     window.addEventListener('resize', resizeCanvas);
     resizeCanvas();
+
+    // ── Hover tooltip ─────────────────────────────────────────────────────────
+    const tooltip = document.getElementById('quake-tooltip');
+    canvas.addEventListener('mousemove', e => {
+      const W = canvas.width, H = canvas.height;
+      const cx = W * 0.31, cy = H * 0.5;
+      const R = Math.min(W * 0.26, H * 0.41);
+      const mx = e.clientX, my = e.clientY;
+
+      let closest = null, closestDist = 18;
+      quakePoints.forEach(q => {
+        const p = project(q.lat, q.lon, cx, cy, R, globeRotation);
+        if (!p) return;
+        const d = Math.hypot(p.x - mx, p.y - my);
+        if (d < closestDist) { closestDist = d; closest = q; }
+      });
+
+      if (closest) {
+        tooltip.innerHTML = `<strong>M${closest.mag}</strong><br>${closest.place}<br><span style="color:#556677;font-size:9px">depth ${closest.depth}km</span>`;
+        tooltip.style.display = 'block';
+        tooltip.style.left = (mx + 14) + 'px';
+        tooltip.style.top  = (my - 10) + 'px';
+      } else {
+        tooltip.style.display = 'none';
+      }
+    });
+    canvas.addEventListener('mouseleave', () => { tooltip.style.display = 'none'; });
 
     // ── Orthographic projection ───────────────────────────────────────────────
     function project(lat, lon, cx, cy, R, rotation) {
@@ -367,6 +401,37 @@
         ctx.globalAlpha = 1;
       });
 
+      // Labels for M5+ quakes (drawn on top of dots, still inside clip)
+      ctx.save();
+      quakePoints.forEach(q => {
+        if (q.mag < 5) return;
+        const p = project(q.lat, q.lon, cx, cy, R, globeRotation);
+        if (!p || p.depth < 0.15) return;
+        const label = `M${q.mag} — ${q.place}`;
+        const truncated = label.length > 38 ? label.slice(0, 36) + '…' : label;
+        const dotR = Math.max(1.5, (q.mag - 2) * 1.8);
+        // Draw a short leader line from dot outward
+        const angle = Math.atan2(p.y - cy, p.x - cx);
+        const lx1 = p.x + Math.cos(angle) * (dotR + 3);
+        const ly1 = p.y + Math.sin(angle) * (dotR + 3);
+        const lx2 = p.x + Math.cos(angle) * (dotR + 16);
+        const ly2 = p.y + Math.sin(angle) * (dotR + 16);
+        ctx.strokeStyle = 'rgba(255,80,50,0.6)';
+        ctx.lineWidth = 0.8;
+        ctx.beginPath(); ctx.moveTo(lx1, ly1); ctx.lineTo(lx2, ly2); ctx.stroke();
+        // Text background
+        ctx.font = '9px Courier New';
+        const tw = ctx.measureText(truncated).width;
+        const tx = lx2 + (Math.cos(angle) > 0 ? 3 : -tw - 3);
+        const ty = ly2 + 3;
+        ctx.fillStyle = 'rgba(2,5,12,0.75)';
+        ctx.fillRect(tx - 2, ty - 10, tw + 4, 13);
+        // Text
+        ctx.fillStyle = q.mag >= 6 ? '#ff2233' : '#ff8866';
+        ctx.fillText(truncated, tx, ty);
+      });
+      ctx.restore();
+
       ctx.restore();
 
       // Globe rim highlight
@@ -428,7 +493,7 @@
 
       if (vitals.seismic.quakes) {
         quakePoints = vitals.seismic.quakes.map(q => ({
-          lat: q.lat, lon: q.lon, mag: q.mag,
+          lat: q.lat, lon: q.lon, mag: q.mag, place: q.place,
           pulse: Math.random() * Math.PI * 2,
         }));
       }

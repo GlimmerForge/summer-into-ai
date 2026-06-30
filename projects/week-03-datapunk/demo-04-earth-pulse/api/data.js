@@ -47,6 +47,7 @@ async function fetchSeismic() {
     lon: f.geometry.coordinates[0],
     mag: Math.round((f.properties.mag ?? 0) * 10) / 10,
     depth: Math.round(f.geometry.coordinates[2] ?? 0),
+    place: f.properties.place ?? '',
   })).filter(q => q.mag > 0);
 
   return {
