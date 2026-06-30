@@ -678,87 +678,44 @@ function buildContext(data) {
   return lines.join('\n');
 }
 
-// ─── Analysis (SSE streaming) ─────────────────────────────────────────────────
+// ─── Analysis ────────────────────────────────────────────────────────────────
 
 async function runAnalysis(spendingData) {
   const analysisSection = document.getElementById('analysis-section');
   analysisSection.style.display = '';
 
   const dossier = document.getElementById('dossier-output');
-  dossier.textContent = '';
+  dossier.textContent = '// Generating intelligence report…';
 
-  let dossierText = '';
-
-  let resp;
   try {
-    resp = await fetch('/api/analyze', {
+    const resp = await fetch('/api/analyze', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ mode: 'initial', spendingData })
     });
+
+    if (!resp.ok) {
+      const errText = await resp.text();
+      dossier.textContent = 'Server error (' + resp.status + '): ' + errText.slice(0, 200);
+      setStatus('// Analysis failed.', 'error');
+      return;
+    }
+
+    const result = await resp.json();
+    if (result.error) {
+      dossier.textContent = 'Error: ' + result.error;
+      setStatus('// Analysis failed.', 'error');
+      return;
+    }
+
+    renderDossier(dossier, result.dossier);
+    isDossierDone = true;
+    showFollowup();
+    document.getElementById('disclaimer').style.display = '';
+    setStatus('// Analysis complete.', 'ok');
   } catch (err) {
     dossier.textContent = 'Network error: ' + err.message;
     setStatus('// Analysis failed.', 'error');
-    return;
-  }
-
-  if (!resp.ok) {
-    const errText = await resp.text();
-    dossier.textContent = 'Server error (' + resp.status + '): ' + errText.slice(0, 200);
-    setStatus('// Analysis failed.', 'error');
-    return;
-  }
-
-  const reader = resp.body.getReader();
-  const decoder = new TextDecoder();
-  let buffer = '';
-
-  while (true) {
-    let chunk;
-    try { chunk = await reader.read(); } catch {
-      if (!isDossierDone) dossier.innerHTML += '\n<span style="color:#ff6644">[Stream closed — try a smaller company or refresh]</span>';
-      break;
-    }
-    const { done, value } = chunk;
-    if (done) {
-      if (!isDossierDone && dossierText.length > 0) {
-        isDossierDone = true; showFollowup(); setStatus('// Analysis complete.', 'ok');
-      }
-      break;
-    }
-    buffer += decoder.decode(value, { stream: true });
-
-    const parts = buffer.split('\n\n');
-    buffer = parts.pop(); // last partial chunk
-
-    for (const part of parts) {
-      const lines = part.split('\n');
-      let eventType = 'message';
-      let dataStr = '';
-
-      for (const line of lines) {
-        if (line.startsWith('event: ')) eventType = line.slice(7).trim();
-        else if (line.startsWith('data: ')) dataStr = line.slice(6).trim();
-      }
-
-      if (!dataStr) continue;
-
-      let payload;
-      try { payload = JSON.parse(dataStr); } catch { continue; }
-
-      if (eventType === 'text') {
-        dossierText += payload.text || '';
-        renderDossier(dossier, dossierText);
-        dossier.scrollTop = dossier.scrollHeight;
-      } else if (eventType === 'done') {
-        isDossierDone = true;
-        showFollowup();
-        document.getElementById('disclaimer').style.display = '';
-        setStatus('// Analysis complete.', 'ok');
-      } else if (eventType === 'error') {
-        dossier.textContent += '\n[Error: ' + (payload.message || 'Unknown error') + ']';
-      }
-    }
   }
 }
 

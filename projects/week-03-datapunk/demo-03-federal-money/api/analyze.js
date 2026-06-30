@@ -70,42 +70,20 @@ async function handleInitialDossier(req, res, body) {
 
 ${JSON.stringify(slim, null, 2)}`;
 
-  res.setHeader('Content-Type', 'text/event-stream');
-  res.setHeader('Cache-Control', 'no-cache');
-  res.setHeader('Connection', 'keep-alive');
   res.setHeader('Access-Control-Allow-Origin', '*');
 
   try {
-    const stream = client.messages.stream({
+    const result = await client.messages.create({
       model: 'claude-sonnet-4-6',
-      max_tokens: 1200,
+      max_tokens: 800,
       system: DOSSIER_SYSTEM,
       messages: [{ role: 'user', content: userMessage }]
     });
 
-    for await (const event of stream) {
-      if (event.type === 'content_block_start') {
-        if (event.content_block.type === 'thinking') {
-          res.write(`event: thinking_start\ndata: {}\n\n`);
-        }
-      } else if (event.type === 'content_block_delta') {
-        if (event.delta.type === 'thinking_delta') {
-          res.write(`event: thinking\ndata: ${JSON.stringify({ text: event.delta.thinking })}\n\n`);
-        } else if (event.delta.type === 'text_delta') {
-          res.write(`event: text\ndata: ${JSON.stringify({ text: event.delta.text })}\n\n`);
-        }
-      } else if (event.type === 'content_block_stop') {
-        // no-op
-      } else if (event.type === 'message_stop') {
-        res.write(`event: done\ndata: {}\n\n`);
-      }
-    }
-
-    res.end();
+    return res.status(200).json({ dossier: result.content[0]?.text ?? '' });
   } catch (err) {
-    console.error('Streaming error:', err);
-    res.write(`event: error\ndata: ${JSON.stringify({ message: err.message || 'Analysis failed.' })}\n\n`);
-    res.end();
+    console.error('Analysis error:', err);
+    return res.status(500).json({ error: err.message || 'Analysis failed.' });
   }
 }
 
