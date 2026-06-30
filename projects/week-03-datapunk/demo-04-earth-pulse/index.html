@@ -328,12 +328,15 @@
         let pxRun = [], prevC = null;
         const flush = () => {
           if (pxRun.length >= 3) {
-            // Suppress fills whose projected x-span exceeds the globe diameter —
-            // those are wrap-around artifacts where the closing chord crosses the sphere.
+            const first = pxRun[0], last = pxRun[pxRun.length - 1];
             const xs = pxRun.map(p => p.x);
-            if (Math.max(...xs) - Math.min(...xs) < R * 1.8) {
+            const xSpan = Math.max(...xs) - Math.min(...xs);
+            // Pixel distance between run start and end — a large gap means the
+            // closing chord would cut across the ocean face.
+            const closeDist = Math.hypot(first.x - last.x, first.y - last.y);
+            if (xSpan < R * 1.8 && closeDist < R * 0.5) {
               ctx.beginPath();
-              ctx.moveTo(pxRun[0].x, pxRun[0].y);
+              ctx.moveTo(first.x, first.y);
               for (let i = 1; i < pxRun.length; i++) ctx.lineTo(pxRun[i].x, pxRun[i].y);
               ctx.closePath();
               ctx.fill();
