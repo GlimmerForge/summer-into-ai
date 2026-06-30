@@ -316,16 +316,27 @@
       const polys = geometry.type === 'MultiPolygon' ? geometry.coordinates : [geometry.coordinates];
       polys.forEach(poly => {
         if (!poly[0]) return;
-        ctx.beginPath();
-        let penDown = false;
+        // Split ring into runs of consecutive visible vertices, flush each separately.
+        // This avoids closePath() drawing chords across the sphere when vertices go behind.
+        let run = [], prev = null;
+        const flush = () => {
+          if (run.length >= 3) {
+            ctx.beginPath();
+            ctx.moveTo(run[0].x, run[0].y);
+            for (let i = 1; i < run.length; i++) ctx.lineTo(run[i].x, run[i].y);
+            ctx.closePath();
+            ctx.fill();
+          }
+          run = []; prev = null;
+        };
         poly[0].forEach(([lon, lat]) => {
           const p = project(lat, lon, cx, cy, R, globeRotation);
-          if (!p) { penDown = false; return; }
-          if (!penDown) { ctx.moveTo(p.x, p.y); penDown = true; }
-          else ctx.lineTo(p.x, p.y);
+          if (!p) { flush(); return; }
+          // Break on large jumps (wrap-around artifact across the limb)
+          if (prev && Math.hypot(p.x - prev.x, p.y - prev.y) > R * 0.5) flush();
+          run.push(p); prev = p;
         });
-        ctx.closePath();
-        ctx.fill();
+        flush();
       });
     }
 
@@ -333,12 +344,14 @@
       const lines = geometry.type === 'MultiLineString' ? geometry.coordinates : [geometry.coordinates];
       lines.forEach(line => {
         ctx.beginPath();
-        let penDown = false;
+        let penDown = false, prev = null;
         line.forEach(([lon, lat]) => {
           const p = project(lat, lon, cx, cy, R, globeRotation);
-          if (!p) { penDown = false; return; }
+          if (!p) { penDown = false; prev = null; return; }
+          if (prev && Math.hypot(p.x - prev.x, p.y - prev.y) > R * 0.5) penDown = false;
           if (!penDown) { ctx.moveTo(p.x, p.y); penDown = true; }
           else ctx.lineTo(p.x, p.y);
+          prev = p;
         });
         ctx.stroke();
       });
