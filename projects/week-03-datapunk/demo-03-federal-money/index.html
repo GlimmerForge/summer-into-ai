@@ -543,7 +543,7 @@ function setStatus(msg, type = '') {
   el.className = 'status-line' + (type ? ' ' + type : '');
 }
 
-function show(id) { document.getElementById(id).style.display = ''; }
+function show(id) { document.getElementById(id).style.display = 'block'; }
 function hide(id) { document.getElementById(id).style.display = 'none'; }
 
 // ─── State ───────────────────────────────────────────────────────────────────
@@ -602,12 +602,22 @@ async function runSearch() {
   renderContracts(data.awards);
 
   // Build context string for follow-up Q&A
-  currentContext = buildContext(data);
+  try {
+    currentContext = buildContext(data);
+  } catch (e) {
+    setStatus('buildContext error: ' + e.message, 'error');
+    searchBtn.disabled = false;
+    return;
+  }
 
   searchBtn.disabled = false;
 
   // Auto-start analysis
-  runAnalysis(data);
+  try {
+    runAnalysis(data);
+  } catch (e) {
+    setStatus('runAnalysis error: ' + e.message, 'error');
+  }
 }
 
 // ─── Render Summary ───────────────────────────────────────────────────────────
@@ -682,7 +692,7 @@ function buildContext(data) {
 
 async function runAnalysis(spendingData) {
   const analysisSection = document.getElementById('analysis-section');
-  analysisSection.style.display = '';
+  analysisSection.style.display = 'block';
 
   const dossier = document.getElementById('dossier-output');
   dossier.textContent = '// Generating intelligence report…';
@@ -708,7 +718,7 @@ async function runAnalysis(spendingData) {
       return;
     }
 
-    renderDossier(dossier, result.dossier);
+    dossier.textContent = result.dossier || ('Error — no content returned. Raw: ' + JSON.stringify(result).slice(0, 300));
     isDossierDone = true;
     showFollowup();
     document.getElementById('disclaimer').style.display = '';
@@ -723,7 +733,7 @@ async function runAnalysis(spendingData) {
 // ─── Follow-Up Q&A ────────────────────────────────────────────────────────────
 
 function showFollowup() {
-  document.getElementById('followup-section').style.display = '';
+  document.getElementById('followup-section').style.display = 'block';
   document.getElementById('followup-input').focus();
 }
 
