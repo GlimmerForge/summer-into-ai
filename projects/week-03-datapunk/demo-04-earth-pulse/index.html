@@ -1,0 +1,635 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>EARTH PULSE — Planetary Vital Signs</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: #050510;
+      color: #e0e8ff;
+      font-family: 'Courier New', Courier, monospace;
+      overflow: hidden;
+      height: 100vh;
+      width: 100vw;
+    }
+
+    #canvas {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100vw; height: 100vh;
+      z-index: 0;
+    }
+
+    /* ── Panel ─────────────────────────────────────────── */
+    .panel {
+      position: fixed;
+      right: 0; top: 0;
+      width: 38%;
+      height: 100vh;
+      background: rgba(8, 12, 30, 0.88);
+      border-left: 1px solid #1a2244;
+      padding: 28px 28px 20px 28px;
+      overflow-y: auto;
+      z-index: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+    }
+
+    .panel-title {
+      font-size: 2rem;
+      font-weight: 900;
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+      color: #e0e8ff;
+      text-shadow:
+        0 0 18px rgba(100, 160, 255, 0.9),
+        0 0 40px rgba(60, 100, 255, 0.5);
+      line-height: 1;
+      margin-bottom: 6px;
+    }
+
+    .panel-sub {
+      font-size: 0.62rem;
+      letter-spacing: 0.3em;
+      color: #4455aa;
+      text-transform: uppercase;
+      margin-bottom: 20px;
+    }
+
+    /* ── Vitals ─────────────────────────────────────────── */
+    .vitals {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+
+    .vital {
+      background: rgba(15, 20, 50, 0.7);
+      border-radius: 6px;
+      padding: 10px 14px;
+      border-left: 3px solid transparent;
+    }
+    .vital.seismic   { border-left-color: #ff3355; }
+    .vital.market    { border-left-color: #ffcc00; }
+    .vital.atmosphere{ border-left-color: #00ddff; }
+
+    .vital-label {
+      display: block;
+      font-size: 0.6rem;
+      letter-spacing: 0.25em;
+      text-transform: uppercase;
+      margin-bottom: 4px;
+      font-weight: bold;
+    }
+    .vital.seismic    .vital-label { color: #ff3355; }
+    .vital.market     .vital-label { color: #ffcc00; }
+    .vital.atmosphere .vital-label { color: #00ddff; }
+
+    .vital-stats {
+      font-size: 0.82rem;
+      color: #b0c0e8;
+      line-height: 1.5;
+    }
+
+    /* ── Divider ─────────────────────────────────────────── */
+    .divider {
+      height: 1px;
+      background: linear-gradient(to right, transparent, #1a2244, transparent);
+      margin: 4px 0 12px;
+    }
+
+    /* ── Analysis ────────────────────────────────────────── */
+    .analysis-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.6rem;
+      letter-spacing: 0.25em;
+      text-transform: uppercase;
+      color: #4455aa;
+      margin-bottom: 8px;
+    }
+
+    .audio-dot {
+      display: none;
+      color: #00ddff;
+      font-size: 0.6rem;
+      letter-spacing: 0.15em;
+      animation: blink 1s step-start infinite;
+    }
+
+    @keyframes blink {
+      0%, 100% { opacity: 1; }
+      50%       { opacity: 0.2; }
+    }
+
+    .analysis-text {
+      font-size: 0.82rem;
+      line-height: 1.75;
+      color: #c8d8ff;
+      white-space: pre-wrap;
+      flex: 1;
+      min-height: 120px;
+    }
+
+    /* ── Footer ──────────────────────────────────────────── */
+    .footer {
+      margin-top: 16px;
+      padding-top: 12px;
+      border-top: 1px solid #1a2244;
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.58rem;
+      color: #4455aa;
+      letter-spacing: 0.1em;
+    }
+
+    /* ── Loading state ───────────────────────────────────── */
+    .acquiring {
+      color: #4455aa;
+      animation: pulse-text 1.5s ease-in-out infinite;
+    }
+
+    @keyframes pulse-text {
+      0%, 100% { opacity: 0.4; }
+      50%       { opacity: 1; }
+    }
+
+    /* ── Scrollbar ───────────────────────────────────────── */
+    .panel::-webkit-scrollbar { width: 4px; }
+    .panel::-webkit-scrollbar-track { background: transparent; }
+    .panel::-webkit-scrollbar-thumb { background: #1a2244; border-radius: 2px; }
+
+    /* ── Error state ─────────────────────────────────────── */
+    .error-text { color: #ff3355; }
+
+    /* ── Status indicator ────────────────────────────────── */
+    #scan-status {
+      font-size: 0.58rem;
+      letter-spacing: 0.2em;
+      color: #4455aa;
+      text-transform: uppercase;
+      margin-bottom: 6px;
+      min-height: 14px;
+    }
+  </style>
+</head>
+<body>
+  <canvas id="canvas"></canvas>
+
+  <div class="panel">
+    <div class="panel-title">EARTH PULSE</div>
+    <div class="panel-sub">PLANETARY VITAL SIGNS — LIVE</div>
+
+    <div id="scan-status">Initialising sensors…</div>
+
+    <div class="vitals">
+      <div class="vital seismic">
+        <span class="vital-label">&#11041; SEISMIC</span>
+        <div id="seismic-stats" class="vital-stats acquiring">Scanning…</div>
+      </div>
+      <div class="vital market">
+        <span class="vital-label">&#11041; MARKETS</span>
+        <div id="market-stats" class="vital-stats acquiring">Scanning…</div>
+      </div>
+      <div class="vital atmosphere">
+        <span class="vital-label">&#11041; ATMOSPHERE</span>
+        <div id="atmos-stats" class="vital-stats acquiring">Scanning…</div>
+      </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <div class="analysis-header">
+      <span>PLANETARY BRIEFING</span>
+      <span id="audio-status" class="audio-dot">&#9654; VOICE</span>
+    </div>
+
+    <div id="analysis-text" class="analysis-text acquiring">Acquiring signal…</div>
+
+    <div class="footer">
+      <span id="last-updated">—</span>
+      <span id="countdown"></span>
+    </div>
+  </div>
+
+  <script>
+    // ── Canvas setup ──────────────────────────────────────────────────────────
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+
+    let pulsePhase = 0;
+    let ripples = [];
+
+    const stars = Array.from({ length: 220 }, () => ({
+      x: Math.random(),
+      y: Math.random(),
+      r: Math.random() * 1.5 + 0.3,
+      opacity: Math.random() * 0.7 + 0.2,
+      twinkle: Math.random() * Math.PI * 2,
+      twinkleSpeed: 0.01 + Math.random() * 0.02,
+    }));
+
+    const orbitals = [
+      { color: '#ff3355', radius: 120, angle: 0,   speed: 0.008, intensity: 0.3, label: 'SEISMIC' },
+      { color: '#ffcc00', radius: 190, angle: 2.1, speed: 0.005, intensity: 0.3, label: 'MARKET'  },
+      { color: '#00ddff', radius: 260, angle: 4.2, speed: 0.003, intensity: 0.3, label: 'ATMOS'   },
+    ];
+
+    function resizeCanvas() {
+      canvas.width  = window.innerWidth;
+      canvas.height = window.innerHeight;
+    }
+    window.addEventListener('resize', resizeCanvas);
+    resizeCanvas();
+
+    // ── Draw loop ─────────────────────────────────────────────────────────────
+    function draw() {
+      const W  = canvas.width;
+      const H  = canvas.height;
+      const cx = W * 0.31;   // center of visual area (left of panel)
+      const cy = H * 0.5;
+
+      // Background
+      ctx.fillStyle = '#050510';
+      ctx.fillRect(0, 0, W, H);
+
+      // Subtle grid
+      ctx.strokeStyle = 'rgba(26, 34, 68, 0.35)';
+      ctx.lineWidth = 1;
+      for (let x = 0; x < W * 0.62; x += 60) {
+        ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke();
+      }
+      for (let y = 0; y < H; y += 60) {
+        ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W * 0.62, y); ctx.stroke();
+      }
+
+      // Stars
+      stars.forEach(s => {
+        s.twinkle += s.twinkleSpeed;
+        const op = s.opacity * (0.7 + 0.3 * Math.sin(s.twinkle));
+        ctx.beginPath();
+        ctx.arc(s.x * W * 0.62, s.y * H, s.r, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(180,200,255,${op})`;
+        ctx.fill();
+      });
+
+      // Ripples
+      ripples = ripples.filter(r => r.opacity > 0.01);
+      ripples.forEach(r => {
+        ctx.beginPath();
+        ctx.arc(cx, cy, r.radius, 0, Math.PI * 2);
+        const hex = Math.floor(r.opacity * 255).toString(16).padStart(2, '0');
+        ctx.strokeStyle = r.color + hex;
+        ctx.lineWidth = 1.5;
+        ctx.stroke();
+        r.radius += 1.8;
+        r.opacity *= 0.983;
+      });
+
+      // Orbital rings + particles
+      orbitals.forEach(orb => {
+        const speed = orb.speed * (1 + orb.intensity * 3);
+        orb.angle += speed;
+
+        // Faint arc ring
+        ctx.beginPath();
+        ctx.arc(cx, cy, orb.radius, 0, Math.PI * 2);
+        ctx.strokeStyle = orb.color + '28';
+        ctx.lineWidth = 1;
+        ctx.stroke();
+
+        // Orbit label
+        ctx.save();
+        ctx.font = '9px Courier New';
+        ctx.fillStyle = orb.color + '66';
+        ctx.letterSpacing = '0.1em';
+        ctx.fillText(orb.label, cx + orb.radius + 6, cy - 3);
+        ctx.restore();
+
+        // Particles
+        const count = Math.max(3, Math.floor(4 + orb.intensity * 10));
+        for (let i = 0; i < count; i++) {
+          const a  = orb.angle + (i / count) * Math.PI * 2;
+          const px = cx + Math.cos(a) * orb.radius;
+          const py = cy + Math.sin(a) * orb.radius;
+          const sz = 1.5 + orb.intensity * 3.5;
+
+          // Glow halo
+          const g = ctx.createRadialGradient(px, py, 0, px, py, sz * 3.5);
+          g.addColorStop(0, orb.color + 'bb');
+          g.addColorStop(1, orb.color + '00');
+          ctx.beginPath();
+          ctx.arc(px, py, sz * 3.5, 0, Math.PI * 2);
+          ctx.fillStyle = g;
+          ctx.fill();
+
+          // Core dot
+          ctx.beginPath();
+          ctx.arc(px, py, sz, 0, Math.PI * 2);
+          ctx.fillStyle = orb.color;
+          ctx.fill();
+        }
+      });
+
+      // Central aura
+      pulsePhase += 0.035;
+      const coreR = 28 + Math.sin(pulsePhase) * 9;
+
+      const outerAura = ctx.createRadialGradient(cx, cy, 0, cx, cy, coreR * 7);
+      outerAura.addColorStop(0,   'rgba(60, 120, 255, 0.22)');
+      outerAura.addColorStop(0.5, 'rgba(30,  60, 180, 0.08)');
+      outerAura.addColorStop(1,   'rgba(0,    0,   0, 0)');
+      ctx.beginPath();
+      ctx.arc(cx, cy, coreR * 7, 0, Math.PI * 2);
+      ctx.fillStyle = outerAura;
+      ctx.fill();
+
+      // Mid ring glow
+      const midAura = ctx.createRadialGradient(cx, cy, coreR * 0.8, cx, cy, coreR * 3);
+      midAura.addColorStop(0, 'rgba(100,160,255,0.18)');
+      midAura.addColorStop(1, 'rgba(0,0,0,0)');
+      ctx.beginPath();
+      ctx.arc(cx, cy, coreR * 3, 0, Math.PI * 2);
+      ctx.fillStyle = midAura;
+      ctx.fill();
+
+      // Core sphere
+      const coreGrad = ctx.createRadialGradient(
+        cx - coreR * 0.35, cy - coreR * 0.35, 0,
+        cx, cy, coreR
+      );
+      coreGrad.addColorStop(0,   '#ffffff');
+      coreGrad.addColorStop(0.3, '#aaccff');
+      coreGrad.addColorStop(0.7, '#4477dd');
+      coreGrad.addColorStop(1,   '#112266');
+      ctx.beginPath();
+      ctx.arc(cx, cy, coreR, 0, Math.PI * 2);
+      ctx.fillStyle = coreGrad;
+      ctx.fill();
+
+      // Core specular
+      const spec = ctx.createRadialGradient(
+        cx - coreR * 0.4, cy - coreR * 0.4, 0,
+        cx - coreR * 0.4, cy - coreR * 0.4, coreR * 0.6
+      );
+      spec.addColorStop(0, 'rgba(255,255,255,0.55)');
+      spec.addColorStop(1, 'rgba(255,255,255,0)');
+      ctx.beginPath();
+      ctx.arc(cx, cy, coreR, 0, Math.PI * 2);
+      ctx.fillStyle = spec;
+      ctx.fill();
+
+      requestAnimationFrame(draw);
+    }
+
+    // ── Update canvas intensities from vitals ─────────────────────────────────
+    function updateIntensities(vitals) {
+      // Seismic: 0–1 based on quake count (0 → 0, 30+ → 1)
+      orbitals[0].intensity = Math.min(vitals.seismic.count / 30, 1);
+
+      // Market: 0–1 based on absolute BTC 24h change (0 → 0, 10%+ → 1)
+      const btcChg = Math.abs(vitals.market.btcChange ?? 0);
+      orbitals[1].intensity = Math.min(btcChg / 10, 1);
+
+      // Atmosphere: 0–1 based on temp range across cities (0 → 0, 40+ → 1)
+      const range = (vitals.atmosphere.maxTemp ?? 0) - (vitals.atmosphere.minTemp ?? 0);
+      orbitals[2].intensity = Math.min(range / 40, 1);
+
+      // Ripple burst on data refresh
+      ['#ff3355', '#ffcc00', '#00ddff'].forEach((color, i) => {
+        setTimeout(() => {
+          ripples.push({ radius: 35, opacity: 0.9, color });
+        }, i * 180);
+      });
+    }
+
+    // ── Update stat blocks ────────────────────────────────────────────────────
+    function updateStats(vitals) {
+      const { seismic, market, atmosphere } = vitals;
+
+      // Seismic
+      const seEl = document.getElementById('seismic-stats');
+      seEl.className = 'vital-stats';
+      if (seismic.count != null) {
+        const magStr = seismic.maxMag > 0 ? ` / M${seismic.maxMag} max` : '';
+        const sigStr = seismic.significantCount > 0
+          ? `\n${seismic.significantCount} event${seismic.significantCount > 1 ? 's' : ''} M3.0+`
+          : '\nNo M3.0+ events';
+        const locStr = seismic.recentLocation ? `\n${seismic.recentLocation}` : '';
+        seEl.textContent = `${seismic.count} events past hr${magStr}${sigStr}${locStr}`;
+      } else {
+        seEl.textContent = 'Data unavailable';
+      }
+
+      // Market
+      const mkEl = document.getElementById('market-stats');
+      mkEl.className = 'vital-stats';
+      if (market.btcPrice != null) {
+        const btcChg = market.btcChange != null
+          ? ` ${market.btcChange >= 0 ? '+' : ''}${market.btcChange.toFixed(2)}%`
+          : '';
+        const ethChg = market.ethChange != null
+          ? ` ${market.ethChange >= 0 ? '+' : ''}${market.ethChange.toFixed(2)}%`
+          : '';
+        mkEl.textContent =
+          `BTC $${market.btcPrice.toLocaleString()}${btcChg} 24h\nETH $${market.ethPrice.toLocaleString()}${ethChg} 24h`;
+      } else {
+        mkEl.textContent = 'Data unavailable';
+      }
+
+      // Atmosphere
+      const atEl = document.getElementById('atmos-stats');
+      atEl.className = 'vital-stats';
+      if (atmosphere.maxTemp != null) {
+        atEl.textContent =
+          `${atmosphere.minTemp}°C (${atmosphere.minCity}) → ${atmosphere.maxTemp}°C (${atmosphere.maxCity})\nAvg ${atmosphere.avgTemp}°C across 5 cities`;
+      } else {
+        atEl.textContent = 'Data unavailable';
+      }
+    }
+
+    // ── SSE streaming helper ──────────────────────────────────────────────────
+    async function streamAnalysis(vitals) {
+      const analysiEl = document.getElementById('analysis-text');
+      analysiEl.className = 'analysis-text';
+      analysiEl.textContent = '';
+      let fullText = '';
+
+      const resp = await fetch('/api/analyze', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ vitals }),
+      });
+
+      if (!resp.ok) {
+        analysiEl.className = 'analysis-text error-text';
+        analysiEl.textContent = `Analysis error: ${resp.status}`;
+        return null;
+      }
+
+      const reader  = resp.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = '';
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+        const parts = buffer.split('\n\n');
+        buffer = parts.pop() ?? '';
+
+        for (const part of parts) {
+          if (!part.trim()) continue;
+          const lines = part.split('\n');
+          let eventType = '';
+          let dataStr   = '';
+          for (const line of lines) {
+            if (line.startsWith('event: ')) eventType = line.slice(7).trim();
+            if (line.startsWith('data: '))  dataStr   = line.slice(6).trim();
+          }
+          if (eventType === 'text' && dataStr) {
+            try {
+              const { text } = JSON.parse(dataStr);
+              fullText += text;
+              analysiEl.textContent = fullText;
+            } catch (_) { /* ignore parse errors */ }
+          } else if (eventType === 'done' && dataStr) {
+            try {
+              fullText = JSON.parse(dataStr).fullText;
+              analysiEl.textContent = fullText;
+            } catch (_) { /* use accumulated text */ }
+          } else if (eventType === 'error' && dataStr) {
+            try {
+              const { error } = JSON.parse(dataStr);
+              analysiEl.className = 'analysis-text error-text';
+              analysiEl.textContent = `Briefing error: ${error}`;
+            } catch (_) { /* ignore */ }
+          }
+        }
+      }
+
+      return fullText || null;
+    }
+
+    // ── Voice ─────────────────────────────────────────────────────────────────
+    async function playVoice(text) {
+      const audioStatusEl = document.getElementById('audio-status');
+      audioStatusEl.style.display = 'inline';
+
+      try {
+        const resp = await fetch('/api/voice', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ text }),
+        });
+        if (!resp.ok) {
+          audioStatusEl.style.display = 'none';
+          return;
+        }
+        const blob = await resp.blob();
+        const url  = URL.createObjectURL(blob);
+        const audio = new Audio(url);
+        audio.play().catch(() => {
+          // Autoplay blocked — keep indicator visible so user knows voice is ready
+        });
+        audio.onended = () => {
+          audioStatusEl.style.display = 'none';
+          URL.revokeObjectURL(url);
+        };
+        audio.onerror = () => {
+          audioStatusEl.style.display = 'none';
+          URL.revokeObjectURL(url);
+        };
+      } catch (_) {
+        audioStatusEl.style.display = 'none';
+      }
+    }
+
+    // ── Countdown ─────────────────────────────────────────────────────────────
+    let countdownTimer = null;
+
+    function startCountdown(seconds, onDone) {
+      if (countdownTimer) clearInterval(countdownTimer);
+      const el = document.getElementById('countdown');
+      let s = seconds;
+      el.textContent = `Next scan in ${s}s`;
+      countdownTimer = setInterval(() => {
+        s--;
+        if (s <= 0) {
+          clearInterval(countdownTimer);
+          countdownTimer = null;
+          el.textContent = 'Scanning…';
+          onDone();
+        } else {
+          el.textContent = `Next scan in ${s}s`;
+        }
+      }, 1000);
+    }
+
+    // ── Main cycle ────────────────────────────────────────────────────────────
+    let cycleRunning = false;
+
+    async function runCycle() {
+      if (cycleRunning) return;
+      cycleRunning = true;
+
+      const statusEl   = document.getElementById('scan-status');
+      const analysiEl  = document.getElementById('analysis-text');
+
+      // Reset stat displays to loading
+      ['seismic-stats', 'market-stats', 'atmos-stats'].forEach(id => {
+        const el = document.getElementById(id);
+        el.className = 'vital-stats acquiring';
+        el.textContent = 'Scanning…';
+      });
+
+      analysiEl.className = 'analysis-text acquiring';
+      analysiEl.textContent = 'Acquiring live data…';
+      statusEl.textContent  = 'SCANNING — fetching live data…';
+
+      try {
+        // 1. Fetch live data
+        const dataResp = await fetch('/api/data');
+        if (!dataResp.ok) throw new Error(`Data API returned ${dataResp.status}`);
+        const vitals = await dataResp.json();
+
+        updateIntensities(vitals);
+        updateStats(vitals);
+        statusEl.textContent = 'SCANNING — generating briefing…';
+
+        // 2. Stream Claude analysis
+        const fullText = await streamAnalysis(vitals);
+        statusEl.textContent = 'LIVE';
+
+        // 3. Voice narration
+        if (fullText) {
+          await playVoice(fullText);
+        }
+
+        // 4. Timestamp + schedule next scan
+        document.getElementById('last-updated').textContent =
+          'Updated ' + new Date().toLocaleTimeString();
+
+      } catch (err) {
+        console.error('Cycle error:', err);
+        analysiEl.className = 'analysis-text error-text';
+        analysiEl.textContent = `Scan failed: ${err.message}`;
+        statusEl.textContent  = 'ERROR — retrying in 60s';
+      }
+
+      cycleRunning = false;
+      startCountdown(60, runCycle);
+    }
+
+    // ── Boot ──────────────────────────────────────────────────────────────────
+    draw();
+    runCycle();
+  </script>
+</body>
+</html>
