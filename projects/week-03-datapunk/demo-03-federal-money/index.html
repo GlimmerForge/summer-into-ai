@@ -286,6 +286,16 @@
 
   #thinking-box.visible { display: block; }
 
+  .dossier-hdr {
+    display: block;
+    color: var(--gold);
+    font-size: 11px;
+    letter-spacing: 0.15em;
+    border-bottom: 1px solid var(--border);
+    margin: 18px 0 6px;
+    padding-bottom: 4px;
+  }
+
   #dossier-output {
     background: var(--surface);
     border: 1px solid var(--border);
@@ -497,6 +507,24 @@
 
 <script>
 // ─── Utilities ───────────────────────────────────────────────────────────────
+
+function escHtml(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function renderDossier(el, text) {
+  const lines = text.split('\n');
+  let html = '';
+  for (const line of lines) {
+    const m = line.match(/^\[(.+?)\]\s*$/);
+    if (m) {
+      html += `<span class="dossier-hdr">[ ${escHtml(m[1])} ]</span>\n`;
+    } else {
+      html += escHtml(line) + '\n';
+    }
+  }
+  el.innerHTML = html;
+}
 
 function formatMoney(n) {
   if (!n && n !== 0) return '$0';
@@ -723,7 +751,7 @@ async function runAnalysis(spendingData) {
         thinkingBox.scrollTop = thinkingBox.scrollHeight;
       } else if (eventType === 'text') {
         dossierText += payload.text || '';
-        dossier.textContent = dossierText;
+        renderDossier(dossier, dossierText);
         dossier.scrollTop = dossier.scrollHeight;
       } else if (eventType === 'done') {
         thinkingStatus.textContent = thinkingText ? '(done)' : '';
