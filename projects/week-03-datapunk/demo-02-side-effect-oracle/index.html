@@ -806,7 +806,6 @@ Try searching by generic name (e.g., "ibuprofen" instead of "Advil").
 
   // ── Autocomplete ──────────────────────────────────────────────────────────
   const acDropdown = document.getElementById('ac-dropdown');
-  let acTimer = null;
   let acIndex = -1;
 
   function acItems() { return acDropdown.querySelectorAll('.ac-item'); }
@@ -827,39 +826,83 @@ Try searching by generic name (e.g., "ibuprofen" instead of "Advil").
     acItems().forEach((el, i) => el.classList.toggle('ac-active', i === idx));
   }
 
-  async function acFetch(q) {
-    try {
-      const res = await fetch(
-        `https://rxnav.nlm.nih.gov/REST/approximateTerm.json?term=${encodeURIComponent(q)}&maxEntries=12`
-      );
-      const data = await res.json();
-      const candidates = data?.approximateGroup?.candidate ?? [];
-      const seen = new Set();
-      const names = [];
-      for (const c of candidates) {
-        const n = c.name;
-        if (!seen.has(n)) { seen.add(n); names.push(n); }
-        if (names.length >= 10) break;
-      }
-      if (!names.length) { acHide(); return; }
-      acDropdown.innerHTML = '';
-      names.forEach(name => {
-        const item = document.createElement('div');
-        item.className = 'ac-item';
-        item.textContent = name;
-        item.addEventListener('mousedown', e => { e.preventDefault(); acSelect(name); });
-        acDropdown.appendChild(item);
-      });
-      acDropdown.style.display = 'block';
-      acIndex = -1;
-    } catch { acHide(); }
+  const DRUG_LIST = [
+    'abacavir','acarbose','acebutolol','acetaminophen','acyclovir','adalimumab',
+    'adefovir','albuterol','alendronate','allopurinol','alprazolam','amiodarone',
+    'amisulpride','amlodipine','amoxicillin','amoxicillin-clavulanate','ampicillin',
+    'apixaban','aripiprazole','aspirin','atenolol','atomoxetine','atorvastatin',
+    'azathioprine','azithromycin','baclofen','benazepril','bisoprolol','budesonide',
+    'buprenorphine','bupropion','buspirone','calcitonin','candesartan','captopril',
+    'carbamazepine','carbidopa-levodopa','carvedilol','celecoxib','cetirizine',
+    'chlorthalidone','citalopram','clarithromycin','clindamycin','clobazam',
+    'clomipramine','clonazepam','clonidine','clopidogrel','clozapine','codeine',
+    'colchicine','cyclosporine','dabigatran','dapagliflozin','desvenlafaxine',
+    'dexamethasone','dexlansoprazole','dextroamphetamine','diazepam','diclofenac',
+    'digoxin','diltiazem','diphenhydramine','divalproex','donepezil','doxazosin',
+    'doxycycline','duloxetine','edoxaban','empagliflozin','enalapril','escitalopram',
+    'esomeprazole','eszopiclone','etanercept','ezetimibe','famotidine','felodipine',
+    'fentanyl','finasteride','fluconazole','fluoxetine','fluticasone','fosinopril',
+    'furosemide','gabapentin','glimepiride','glipizide','glyburide','guanfacine',
+    'haloperidol','hydrochlorothiazide','hydrocodone','hydromorphone',
+    'hydroxychloroquine','ibuprofen','infliximab','insulin','insulin aspart',
+    'insulin glargine','insulin lispro','irbesartan','isosorbide','isotretinoin',
+    'ketoprofen','labetalol','lamotrigine','lansoprazole','levofloxacin',
+    'levothyroxine','lisdexamfetamine','lisinopril','lithium','loperamide',
+    'loratadine','lorazepam','losartan','lovastatin','lurasidone','memantine',
+    'metformin','methotrexate','methylphenidate','methylprednisolone','metoprolol',
+    'metronidazole','midazolam','mirtazapine','modafinil','montelukast','morphine',
+    'moxifloxacin','naproxen','nifedipine','nitrofurantoin','nitroglycerin',
+    'nortriptyline','olanzapine','olmesartan','omeprazole','ondansetron',
+    'oxycodone','oxymorphone','paliperidone','pantoprazole','paroxetine',
+    'phenobarbital','phenytoin','pioglitazone','pravastatin','prednisone',
+    'pregabalin','propranolol','quetiapine','quinapril','rabeprazole','ramipril',
+    'ranitidine','risperidone','rivaroxaban','ropinirole','rosuvastatin',
+    'saxagliptin','semaglutide','sertraline','sildenafil','simvastatin',
+    'sitagliptin','sotalol','spironolactone','sulfamethoxazole-trimethoprim',
+    'sumatriptan','tacrolimus','tadalafil','tamoxifen','tamsulosin','temazepam',
+    'telmisartan','tiotropium','topiramate','tramadol','trazodone','triamcinolone',
+    'trimethoprim','valacyclovir','valproic acid','valsartan','varenicline',
+    'venlafaxine','verapamil','voriconazole','warfarin','zolpidem','zonisamide',
+    // common brand names
+    'abilify','actos','adderall','advil','ambien','amitriptyline','ativan',
+    'augmentin','avalide','avandia','avapro','bactrim','benadryl','celebrex',
+    'celexa','chantix','cozaar','coumadin','crestor','cymbalta','diflucan',
+    'dilantin','effexor','eliquis','enablex','farxiga','glucophage','glucotrol',
+    'humira','jardiance','klonopin','lantus','lasix','levaquin','lexapro',
+    'lipitor','lopressor','lunesta','lyrica','motrin','neurontin','nexium',
+    'norvasc','novolog','nuvigil','ozempic','paxil','pepcid','pradaxa',
+    'premarin','prilosec','pristiq','protonix','prozac','remicade','risperdal',
+    'ritalin','seroquel','singulair','spiriva','strattera','symbicort','synthroid',
+    'tamiflu','tenormin','toprol','trulicity','tylenol','valium','victoza',
+    'vyvanse','wellbutrin','xanax','xarelto','zithromax','zocor','zoloft','zyprexa',
+    'zyrtec',
+  ];
+
+  function acSearch(q) {
+    const lower = q.toLowerCase();
+    const prefix = DRUG_LIST.filter(d => d.startsWith(lower));
+    const sub    = DRUG_LIST.filter(d => !d.startsWith(lower) && d.includes(lower));
+    return [...prefix, ...sub].slice(0, 10);
+  }
+
+  function acShow(names) {
+    if (!names.length) { acHide(); return; }
+    acDropdown.innerHTML = '';
+    names.forEach(name => {
+      const item = document.createElement('div');
+      item.className = 'ac-item';
+      item.textContent = name;
+      item.addEventListener('mousedown', e => { e.preventDefault(); acSelect(name); });
+      acDropdown.appendChild(item);
+    });
+    acDropdown.style.display = 'block';
+    acIndex = -1;
   }
 
   document.getElementById('drug-input').addEventListener('input', function () {
     const q = this.value.trim();
-    clearTimeout(acTimer);
     if (q.length < 2) { acHide(); return; }
-    acTimer = setTimeout(() => acFetch(q), 280);
+    acShow(acSearch(q));
   });
 
   document.getElementById('drug-input').addEventListener('keydown', (e) => {
