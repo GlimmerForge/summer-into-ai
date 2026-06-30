@@ -32,21 +32,29 @@ async function fetchSeismic() {
   let data;
   try { data = JSON.parse(text); } catch { throw new Error('USGS non-JSON: ' + text.slice(0, 50)); }
 
-  const quakes = data.features || [];
-  const count = quakes.length;
-  const significant = quakes.filter(q => q.properties.mag >= 3.0);
-  const mags = quakes.map(q => q.properties.mag).filter(m => m != null);
+  const features = data.features || [];
+  const count = features.length;
+  const significant = features.filter(q => q.properties.mag >= 3.0);
+  const mags = features.map(q => q.properties.mag).filter(m => m != null);
   const maxMag = mags.length ? Math.max(...mags) : 0;
   const recentSig = significant[0];
   const recentLocation = recentSig
     ? recentSig.properties.place
-    : quakes[0]?.properties.place ?? 'none';
+    : features[0]?.properties.place ?? 'none';
+
+  const quakes = features.map(f => ({
+    lat: f.geometry.coordinates[1],
+    lon: f.geometry.coordinates[0],
+    mag: Math.round((f.properties.mag ?? 0) * 10) / 10,
+    depth: Math.round(f.geometry.coordinates[2] ?? 0),
+  })).filter(q => q.mag > 0);
 
   return {
     count,
     maxMag: Math.round(maxMag * 10) / 10,
     significantCount: significant.length,
     recentLocation,
+    quakes,
   };
 }
 
