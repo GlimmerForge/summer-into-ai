@@ -43,9 +43,28 @@ async function handleInitialDossier(req, res, body) {
     return res.status(400).json({ error: 'Missing spendingData.' });
   }
 
+  // Slim the payload — top 15 contracts, essential fields only
+  const slimAwards = (spendingData.awards ?? []).slice(0, 15).map(a => ({
+    amount: a['Award Amount'],
+    agency: a['Awarding Agency Name'],
+    subagency: a['Awarding Sub Agency Name'],
+    description: (a['Description'] ?? '').slice(0, 120),
+    type: a['Award Type'],
+    start: a['Period of Performance Start Date'],
+    end: a['Period of Performance Current End Date'],
+  }));
+
+  const slim = {
+    company: spendingData.company,
+    totalObligated: spendingData.totalObligated,
+    totalAwards: spendingData.totalAwards,
+    topAgencies: spendingData.topAgencies,
+    topContracts: slimAwards,
+  };
+
   const userMessage = `Analyze this federal contractor spending data and write the FEDERAL SPENDING INTELLIGENCE REPORT:
 
-${JSON.stringify(spendingData, null, 2)}`;
+${JSON.stringify(slim, null, 2)}`;
 
   res.setHeader('Content-Type', 'text/event-stream');
   res.setHeader('Cache-Control', 'no-cache');
@@ -55,8 +74,8 @@ ${JSON.stringify(spendingData, null, 2)}`;
   try {
     const stream = client.messages.stream({
       model: 'claude-sonnet-4-6',
-      max_tokens: 8000,
-      thinking: { type: 'enabled', budget_tokens: 4000 },
+      max_tokens: 4000,
+      thinking: { type: 'enabled', budget_tokens: 1500 },
       system: DOSSIER_SYSTEM,
       messages: [{ role: 'user', content: userMessage }]
     });
