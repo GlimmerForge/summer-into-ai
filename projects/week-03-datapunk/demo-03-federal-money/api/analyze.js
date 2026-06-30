@@ -17,7 +17,7 @@ In WHAT THE CONTRACTS REVEAL: analyze what the contract descriptions say about t
 
 End with: TOTAL FEDERAL OBLIGATION: $X.XX BILLION (or MILLION)
 
-FORMATTING RULES: Plain text only. No markdown. No asterisks. Use numbers for lists. Be specific but concise — 2-4 sentences per section max. Cite actual dollar amounts from the data.`;
+FORMATTING RULES: Plain text only. No markdown. No asterisks. Use numbers for lists. KEEP IT TIGHT — 2-3 sentences per section max. Total response under 400 words. Cite dollar amounts.`;
 
 const FOLLOWUP_SYSTEM = `You are a federal spending analyst. The user has questions about a specific company's federal contracts. Answer concisely and directly using the contract data provided. Plain text, no markdown. Be specific — cite dollar amounts and agency names when relevant.`;
 
@@ -54,11 +54,15 @@ async function handleInitialDossier(req, res, body) {
     end: a.endDate,
   }));
 
+  const top5Agencies = Object.fromEntries(
+    Object.entries(spendingData.topAgencies ?? {}).slice(0, 5)
+  );
+
   const slim = {
     company: spendingData.company,
     totalObligated: spendingData.totalObligated,
     totalAwards: spendingData.totalAwards,
-    topAgencies: spendingData.topAgencies,
+    topAgencies: top5Agencies,
     topContracts: slimAwards,
   };
 
@@ -74,7 +78,7 @@ ${JSON.stringify(slim, null, 2)}`;
   try {
     const stream = client.messages.stream({
       model: 'claude-sonnet-4-6',
-      max_tokens: 2500,
+      max_tokens: 1200,
       system: DOSSIER_SYSTEM,
       messages: [{ role: 'user', content: userMessage }]
     });
