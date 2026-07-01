@@ -82,5 +82,13 @@
   "projects/week-03-datapunk/demo-04-earth-pulse": {
     "projectId": "prj_wtE4af0yShMJKieJpcTRumC0ZSuc",
     "orgId": "team_D79TvyBcfHAyncBLxxnY1foW"
+  },
+  "projects/week-03-datapunk/demo-05-dark-money-map": {
+    "projectId": "prj_PLDD09sHTWoMHlWVDvzuXmV3KpkA",
+    "orgId": "team_D79TvyBcfHAyncBLxxnY1foW"
+  },
+  "projects/week-03-datapunk/demo-06-complaint-storm": {
+    "projectId": "prj_6VpwN9PWzpzMgwb9VVOtL2F1LGO0",
+    "orgId": "team_D79TvyBcfHAyncBLxxnY1foW"
   }
 }

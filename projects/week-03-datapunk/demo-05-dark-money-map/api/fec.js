@@ -55,7 +55,7 @@ export default async function handler(req, res) {
 
       // Step 2: Get committees
       const comData = await fecFetch(
-        `${FEC_BASE}/candidate/${candidateId}/committees/?api_key=${key}&cycle=2024&designation=P,A`
+        `${FEC_BASE}/candidate/${candidateId}/committees/?api_key=${key}&cycle=2024`
       );
       const committees = comData.results || [];
       if (!committees.length) {
@@ -70,10 +70,20 @@ export default async function handler(req, res) {
       const primaryCom = committees.find(c => c.designation === 'P') || committees[0];
       const committeeId = primaryCom.committee_id;
 
-      // Step 3: Get top contributors
-      const contribData = await fecFetch(
+      // Step 3: Get top contributors — try 2024, fall back to 2022
+      let contribData = await fecFetch(
         `${FEC_BASE}/schedules/schedule_a/?committee_id=${committeeId}&api_key=${key}&sort=-contribution_receipt_amount&per_page=25&two_year_transaction_period=2024`
       );
+      if (!contribData.results?.length) {
+        contribData = await fecFetch(
+          `${FEC_BASE}/schedules/schedule_a/?committee_id=${committeeId}&api_key=${key}&sort=-contribution_receipt_amount&per_page=25&two_year_transaction_period=2022`
+        );
+      }
+      if (!contribData.results?.length) {
+        contribData = await fecFetch(
+          `${FEC_BASE}/schedules/schedule_a/?committee_id=${committeeId}&api_key=${key}&sort=-contribution_receipt_amount&per_page=25`
+        );
+      }
       const contributions = contribData.results || [];
 
       // Build nodes

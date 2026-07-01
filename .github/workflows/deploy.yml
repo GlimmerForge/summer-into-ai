@@ -87,6 +87,14 @@ on:
         description: 'week-03 / earth-pulse'
         type: boolean
         default: false
+      w03-dark-money-map:
+        description: 'week-03 / dark-money-map'
+        type: boolean
+        default: false
+      w03-complaint-storm:
+        description: 'week-03 / complaint-storm'
+        type: boolean
+        default: false
 
 jobs:
   deploy:
@@ -127,6 +135,8 @@ jobs:
             [ "${{ github.event.inputs.w03-side-effect-oracle }}" = "true" ] && CHANGED="$CHANGED\nprojects/week-03-datapunk/demo-02-side-effect-oracle"
             [ "${{ github.event.inputs.w03-federal-money }}" = "true" ] && CHANGED="$CHANGED\nprojects/week-03-datapunk/demo-03-federal-money"
             [ "${{ github.event.inputs.w03-earth-pulse }}" = "true" ] && CHANGED="$CHANGED\nprojects/week-03-datapunk/demo-04-earth-pulse"
+            [ "${{ github.event.inputs.w03-dark-money-map }}" = "true" ] && CHANGED="$CHANGED\nprojects/week-03-datapunk/demo-05-dark-money-map"
+            [ "${{ github.event.inputs.w03-complaint-storm }}" = "true" ] && CHANGED="$CHANGED\nprojects/week-03-datapunk/demo-06-complaint-storm"
 
           elif [ "${{ github.event.before }}" = "0000000000000000000000000000000000000000" ]; then
             CHANGED=$(find projects -mindepth 2 -maxdepth 2 -type d -name 'demo-*' | sort)
