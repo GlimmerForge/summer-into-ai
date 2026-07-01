@@ -686,14 +686,25 @@ async function fetchNetwork(query, mode) {
       body: JSON.stringify({ query, mode })
     });
 
+    const raw = await res.text();
+    let data;
+    try { data = JSON.parse(raw); } catch {
+      showLoading(false);
+      setStatus(`Server error (${res.status}). Try again.`, true);
+      return;
+    }
+
     if (res.status === 429) {
-      const d = await res.json();
-      setStatus(d.error || 'Rate limit reached.', true);
+      setStatus(data.error || 'FEC rate limit reached. Try again in an hour.', true);
       showLoading(false);
       return;
     }
 
-    const data = await res.json();
+    if (!res.ok) {
+      showLoading(false);
+      setStatus(data.error || `Error ${res.status}.`, true);
+      return;
+    }
     showLoading(false);
 
     if (data.meta?.error) {
