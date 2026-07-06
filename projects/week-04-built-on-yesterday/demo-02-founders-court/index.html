@@ -359,6 +359,29 @@
     .speak-btn:disabled { opacity: 0.5; cursor: default; }
     .speak-btn.visible { display: block; }
 
+    /* ── Rebuttal section ── */
+    .rebuttal-divider {
+      border-top: 1px dashed #333;
+      margin: 0.6rem 0;
+      font-size: 0.55rem;
+      letter-spacing: 0.2em;
+      color: #444;
+      text-align: center;
+      font-family: monospace;
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      padding-top: 0.3rem;
+    }
+
+    .rebuttal-text {
+      font-family: Georgia, serif;
+      font-size: 0.82rem;
+      color: var(--cream-dim);
+      line-height: 1.65;
+      font-style: italic;
+    }
+
     .founder-error {
       font-size: 0.75rem;
       color: var(--against-fg);
@@ -449,7 +472,7 @@
 <div id="phase-select">
   <h1 class="court-title">The Founders' Court</h1>
   <p class="court-subtitle">Five founding fathers. Modern controversies. Extended reasoning.</p>
-  <p class="court-credit">Built on: <a href="#" title="The Convention — Week 2">The Convention (Week 2)</a> ↗</p>
+  <p class="court-credit">Built on: <a href="#" title="The Convention — Week 2">The Convention (Week 2)</a> &#8599;</p>
 
   <p class="topics-label">Select a controversy to debate</p>
 
@@ -551,7 +574,11 @@ const FOUNDERS = [
 
 // State
 let selectedTopicId = null;
+let currentTopic = null;
+let currentRound = 1;
 let founderArguments = {};
+let founderTexts = {};
+let founderVotes = {};
 let founderDone = {};
 let voteTally = { FOR: 0, AGAINST: 0 };
 
@@ -621,14 +648,30 @@ function buildDebateUI(topic) {
         <div class="argument-text" id="argument-${f.id}"></div>
         <div class="vote-chip" id="vote-${f.id}"></div>
         <button class="speak-btn" id="speak-${f.id}" onclick="speakFounder('${f.id}')">&#9654; Speak</button>
+        <div class="rebuttal-divider" id="rebuttal-divider-${f.id}">
+          <span class="rebuttal-label">REBUTTAL</span>
+        </div>
+        <div class="thinking-section" id="thinking-section-r2-${f.id}">
+          <div class="thinking-label" id="thinking-label-r2-${f.id}">Round 2 Reasoning</div>
+          <div class="thinking-text" id="thinking-text-r2-${f.id}"></div>
+        </div>
+        <div class="rebuttal-text" id="rebuttal-${f.id}"></div>
       </div>
     `;
     grid.appendChild(col);
 
-    // Toggle thinking on label click
+    // Toggle round 1 thinking on label click
     document.getElementById(`thinking-label-${f.id}`).addEventListener('click', () => {
       const lbl = document.getElementById(`thinking-label-${f.id}`);
       const txt = document.getElementById(`thinking-text-${f.id}`);
+      lbl.classList.toggle('expanded');
+      txt.classList.toggle('expanded');
+    });
+
+    // Toggle round 2 thinking on label click (starts collapsed)
+    document.getElementById(`thinking-label-r2-${f.id}`).addEventListener('click', () => {
+      const lbl = document.getElementById(`thinking-label-r2-${f.id}`);
+      const txt = document.getElementById(`thinking-text-r2-${f.id}`);
       lbl.classList.toggle('expanded');
       txt.classList.toggle('expanded');
     });
@@ -637,7 +680,11 @@ function buildDebateUI(topic) {
 
 function startDebate(topic) {
   // Reset state
+  currentTopic = topic;
+  currentRound = 1;
   founderArguments = {};
+  founderTexts = {};
+  founderVotes = {};
   founderDone = {};
   voteTally = { FOR: 0, AGAINST: 0 };
   FOUNDERS.forEach(f => { founderArguments[f.id] = ''; founderDone[f.id] = false; });
@@ -650,11 +697,11 @@ function startDebate(topic) {
 
   buildDebateUI(topic);
 
-  // Launch all founders simultaneously
-  FOUNDERS.forEach(f => startFounderStream(f, topic));
+  // Launch all founders simultaneously for round 1
+  FOUNDERS.forEach(f => startFounderStream(f, topic, 1, []));
 }
 
-async function startFounderStream(founder, topic) {
+async function startFounderStream(founder, topic, round = 1, priorArguments = []) {
   const dot = document.getElementById(`dot-${founder.id}`);
   dot.classList.add('active');
 
@@ -662,7 +709,13 @@ async function startFounderStream(founder, topic) {
     const response = await fetch('/api/debate', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ topic: topic.label, founderId: founder.id, topicBrief: topic.brief })
+      body: JSON.stringify({
+        topic: topic.label,
+        founderId: founder.id,
+        topicBrief: topic.brief,
+        round,
+        priorArguments: priorArguments || []
+      })
     });
 
     if (!response.ok) {
@@ -696,34 +749,52 @@ async function startFounderStream(founder, topic) {
     }
     dot.classList.remove('active');
     dot.classList.add('error');
-    markFounderDone(founder.id);
+    markFounderDone(founder.id, round);
   }
 }
 
 function handleFounderEvent(founderId, event) {
   if (event.type === 'thinking') {
-    const section = document.getElementById(`thinking-section-${founderId}`);
-    const lbl = document.getElementById(`thinking-label-${founderId}`);
-    const txt = document.getElementById(`thinking-text-${founderId}`);
-    if (!section || !txt) return;
-    section.classList.add('visible');
-    if (!lbl.classList.contains('expanded')) {
-      lbl.classList.add('expanded');
-      txt.classList.add('expanded');
+    if (currentRound === 1) {
+      // Round 1: auto-expand thinking as it arrives
+      const section = document.getElementById(`thinking-section-${founderId}`);
+      const lbl = document.getElementById(`thinking-label-${founderId}`);
+      const txt = document.getElementById(`thinking-text-${founderId}`);
+      if (!section || !txt) return;
+      section.classList.add('visible');
+      if (!lbl.classList.contains('expanded')) {
+        lbl.classList.add('expanded');
+        txt.classList.add('expanded');
+      }
+      txt.textContent += event.delta;
+      txt.scrollTop = txt.scrollHeight;
+    } else {
+      // Round 2: make section visible but start collapsed — user expands manually
+      const section = document.getElementById(`thinking-section-r2-${founderId}`);
+      const txt = document.getElementById(`thinking-text-r2-${founderId}`);
+      if (!section || !txt) return;
+      section.classList.add('visible');
+      txt.textContent += event.delta;
     }
-    txt.textContent += event.delta;
-    txt.scrollTop = txt.scrollHeight;
 
   } else if (event.type === 'text') {
-    founderArguments[founderId] += event.delta;
-    const argEl = document.getElementById(`argument-${founderId}`);
-    if (argEl) {
-      // Render without the [VOTE:...] marker
-      const display = founderArguments[founderId].replace(/\[VOTE:(FOR|AGAINST)\]/g, '').trim();
-      argEl.textContent = display;
+    if (currentRound === 1) {
+      founderArguments[founderId] += event.delta;
+      const argEl = document.getElementById(`argument-${founderId}`);
+      if (argEl) {
+        // Render without the [VOTE:...] marker
+        const display = founderArguments[founderId].replace(/\[VOTE:(FOR|AGAINST)\]/g, '').trim();
+        argEl.textContent = display;
+      }
+    } else {
+      // Round 2: stream into rebuttal element
+      const rebEl = document.getElementById(`rebuttal-${founderId}`);
+      if (rebEl) rebEl.textContent += event.delta;
     }
 
   } else if (event.type === 'vote') {
+    // Round 1 only — capture vote and update chip
+    founderVotes[founderId] = event.value;
     const voteEl = document.getElementById(`vote-${founderId}`);
     if (voteEl) {
       voteEl.className = `vote-chip ${event.value === 'FOR' ? 'for' : 'against'}`;
@@ -735,10 +806,16 @@ function handleFounderEvent(founderId, event) {
   } else if (event.type === 'done') {
     const dot = document.getElementById(`dot-${founderId}`);
     if (dot) { dot.classList.remove('active'); dot.classList.add('done'); }
-    // Show speak button
-    const speakBtn = document.getElementById(`speak-${founderId}`);
-    if (speakBtn) speakBtn.classList.add('visible');
-    markFounderDone(founderId);
+
+    const round = event.round || 1;
+    if (round === 1) {
+      // Capture full round-1 text for rebuttal context
+      founderTexts[founderId] = founderArguments[founderId];
+      // Show speak button
+      const speakBtn = document.getElementById(`speak-${founderId}`);
+      if (speakBtn) speakBtn.classList.add('visible');
+    }
+    markFounderDone(founderId, round);
 
   } else if (event.type === 'error') {
     const argEl = document.getElementById(`argument-${founderId}`);
@@ -747,15 +824,49 @@ function handleFounderEvent(founderId, event) {
     }
     const dot = document.getElementById(`dot-${founderId}`);
     if (dot) { dot.classList.remove('active'); dot.classList.add('error'); }
-    markFounderDone(founderId);
+    markFounderDone(founderId, currentRound);
   }
 }
 
-function markFounderDone(founderId) {
+function markFounderDone(founderId, round) {
   founderDone[founderId] = true;
   if (Object.values(founderDone).every(Boolean)) {
-    showVerdict();
+    if (round === 1) {
+      startRound2();
+    } else {
+      showVerdict();
+    }
   }
+}
+
+function startRound2() {
+  currentRound = 2;
+
+  // Reset done tracking for round 2
+  FOUNDERS.forEach(f => { founderDone[f.id] = false; });
+
+  // Update header to show rebuttal phase
+  const header = document.getElementById('debate-topic-name');
+  header.textContent = header.textContent + ' — REBUTTAL';
+
+  // Show rebuttal dividers and reactivate progress dots
+  FOUNDERS.forEach(f => {
+    document.getElementById(`rebuttal-divider-${f.id}`).style.display = 'flex';
+    const dot = document.getElementById(`dot-${f.id}`);
+    dot.classList.remove('done');
+    dot.classList.add('active');
+  });
+
+  // Build prior arguments array for all founders
+  const priorArguments = FOUNDERS.map(f => ({
+    founderId: f.id,
+    name: f.name,
+    argument: founderTexts[f.id] || '',
+    vote: founderVotes[f.id] || 'UNKNOWN'
+  }));
+
+  // Launch all round-2 streams simultaneously
+  FOUNDERS.forEach(f => startFounderStream(f, currentTopic, 2, priorArguments));
 }
 
 function updateTally() {
@@ -819,7 +930,11 @@ async function speakFounder(founderId) {
 function resetToSelect() {
   // Reset state
   selectedTopicId = null;
+  currentTopic = null;
+  currentRound = 1;
   founderArguments = {};
+  founderTexts = {};
+  founderVotes = {};
   founderDone = {};
   voteTally = { FOR: 0, AGAINST: 0 };
 
