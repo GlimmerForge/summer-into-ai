@@ -60,7 +60,7 @@ export default async function handler(req, res) {
   res.flushHeaders();
 
   const body = typeof req.body === 'string' ? JSON.parse(req.body) : req.body;
-  const { topic, founderId, topicBrief } = body;
+  const { topic, founderId, topicBrief, round = 1, priorArguments = [] } = body;
 
   const founder = FOUNDER_DATA[founderId];
   if (!founder) {
@@ -69,27 +69,56 @@ export default async function handler(req, res) {
     return;
   }
 
-  const systemPrompt = `You are ${founder.name} (${founder.role}), debating a modern constitutional question in the year 2026. You have somehow learned about this modern world, but you reason from your 18th-century principles and writings.
+  let systemPrompt, userMessage;
 
-Your known quotes and writings include:
+  if (round === 1) {
+    systemPrompt = `You are ${founder.name} (${founder.role}), debating a modern constitutional question in 2026, reasoning from your 18th-century principles.
+
+Your writings and positions:
 ${founder.quotes.map(q => `"${q}"`).join('\n')}
 
-The question before you: ${topicBrief}
+The question: ${topicBrief}
 
 Instructions:
-- Reason carefully from your historical principles. Think through the constitutional implications.
-- Give a substantive argument of 3-4 paragraphs.
-- Cite your own writings or principles specifically.
-- At the very end of your response, on its own line, write exactly: [VOTE:FOR] or [VOTE:AGAINST] to indicate your position.
-- Do not hedge — take a clear position.`;
+- Reason carefully. Think through constitutional implications step by step.
+- Give a substantive argument of 3-4 paragraphs. Cite your own writings specifically.
+- At the very end, on its own line, write exactly: [VOTE:FOR] or [VOTE:AGAINST]
+- Take a clear position. No hedging.`;
+    userMessage = `State your opening position on: ${topic}`;
+  } else {
+    // Round 2: read all prior arguments, write targeted rebuttal
+    const othersText = priorArguments
+      .filter(p => p.founderId !== founderId)
+      .map(p => `${p.name}:\n"${p.argument.slice(0, 800)}"`)
+      .join('\n\n---\n\n');
+
+    const myEntry = priorArguments.find(p => p.founderId === founderId);
+
+    systemPrompt = `You are ${founder.name} (${founder.role}), now in the rebuttal round.
+
+Your established position on ${topic}: You voted ${myEntry?.vote || 'for your stated view'}.
+
+Your writings:
+${founder.quotes.map(q => `"${q}"`).join('\n')}
+
+Your colleagues have now spoken. Read their arguments carefully.`;
+
+    userMessage = `Your colleagues said:
+
+${othersText}
+
+---
+
+Choose the SINGLE argument that most directly challenges your position. Identify who made it and write a targeted 1-2 paragraph rebuttal. Be specific — quote or directly reference their claim, then tear it apart with your own documented principles. Name them. Start with something like "Hamilton's assertion that..." or "Jefferson would have us believe...". Do NOT add a new vote. Do NOT restate your full position — just attack the strongest opposing argument.`;
+  }
 
   try {
     const stream = await client.messages.create({
       model: 'claude-sonnet-4-6',
-      max_tokens: 16000,
-      thinking: { type: 'enabled', budget_tokens: 8000 },
+      max_tokens: round === 1 ? 16000 : 8000,
+      thinking: { type: 'enabled', budget_tokens: round === 1 ? 8000 : 5000 },
       system: systemPrompt,
-      messages: [{ role: 'user', content: `What is your position on: ${topic}?` }],
+      messages: [{ role: 'user', content: userMessage }],
       stream: true
     });
 
@@ -104,7 +133,7 @@ Instructions:
         } else if (d.type === 'text_delta') {
           buffer += d.text;
           res.write(`data: ${JSON.stringify({ type: 'text', delta: d.text })}\n\n`);
-          if (!voteSent) {
+          if (round === 1 && !voteSent) {
             const voteMatch = buffer.match(/\[VOTE:(FOR|AGAINST)\]/);
             if (voteMatch) {
               voteSent = true;
@@ -115,7 +144,7 @@ Instructions:
       }
     }
 
-    res.write(`data: ${JSON.stringify({ type: 'done' })}\n\n`);
+    res.write(`data: ${JSON.stringify({ type: 'done', round })}\n\n`);
     res.end();
   } catch (err) {
     res.write(`data: ${JSON.stringify({ type: 'error', message: err.message })}\n\n`);
