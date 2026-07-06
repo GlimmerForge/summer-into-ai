@@ -1,0 +1,1422 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DEEP COVER — Culper Ring</title>
+<style>
+  :root {
+    --bg: #0a0a08;
+    --bg2: #111108;
+    --bg3: #181810;
+    --parchment: #e8d5a0;
+    --parchment-dim: #a89060;
+    --red: #cc2200;
+    --red-dim: #881500;
+    --green: #22aa44;
+    --orange: #cc7700;
+    --blue-water: #1a2535;
+    --land: #1e2018;
+    --land2: #252a1a;
+    --ink: #3a3020;
+    --active-line: #44bb66;
+    --font: 'Courier New', Courier, monospace;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--parchment);
+    font-family: var(--font);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* ======= INTRO SCREEN ======= */
+  #intro-screen {
+    position: fixed;
+    inset: 0;
+    background: var(--bg);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+    gap: 24px;
+  }
+
+  .wax-seal {
+    width: 120px;
+    height: 120px;
+    animation: sealAppear 1.2s ease-out forwards;
+    opacity: 0;
+  }
+
+  @keyframes sealAppear {
+    0% { opacity: 0; transform: scale(0.6) rotate(-20deg); }
+    70% { opacity: 1; transform: scale(1.05) rotate(2deg); }
+    100% { opacity: 1; transform: scale(1) rotate(0deg); }
+  }
+
+  #intro-title {
+    font-size: clamp(2.5rem, 8vw, 5rem);
+    font-weight: bold;
+    letter-spacing: 0.3em;
+    color: var(--parchment);
+    text-transform: uppercase;
+    animation: titleFade 1.5s ease-out 0.8s forwards;
+    opacity: 0;
+  }
+
+  #intro-subtitle {
+    font-size: 0.95rem;
+    color: var(--parchment-dim);
+    letter-spacing: 0.15em;
+    text-align: center;
+    animation: titleFade 1s ease-out 1.4s forwards;
+    opacity: 0;
+  }
+
+  #intro-body {
+    max-width: 480px;
+    text-align: center;
+    color: var(--parchment-dim);
+    font-size: 0.9rem;
+    line-height: 1.7;
+    animation: titleFade 1s ease-out 2s forwards;
+    opacity: 0;
+    padding: 0 24px;
+  }
+
+  @keyframes titleFade {
+    from { opacity: 0; transform: translateY(12px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .btn-begin {
+    animation: titleFade 1s ease-out 2.6s forwards;
+    opacity: 0;
+  }
+
+  /* ======= BUTTONS ======= */
+  .btn {
+    background: transparent;
+    border: 1px solid var(--parchment-dim);
+    color: var(--parchment);
+    font-family: var(--font);
+    font-size: 0.9rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    padding: 12px 28px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .btn:hover:not(:disabled) {
+    border-color: var(--parchment);
+    background: rgba(232, 213, 160, 0.07);
+  }
+
+  .btn:disabled {
+    opacity: 0.4;
+    cursor: default;
+  }
+
+  .btn-primary {
+    border-color: var(--red);
+    color: var(--parchment);
+  }
+
+  .btn-primary:hover:not(:disabled) {
+    background: rgba(204, 34, 0, 0.15);
+    border-color: var(--red);
+  }
+
+  .btn-danger {
+    border-color: var(--red);
+    color: var(--red);
+  }
+
+  /* ======= MAIN GAME LAYOUT ======= */
+  #game-screen {
+    display: none;
+    flex-direction: column;
+    min-height: 100vh;
+  }
+
+  /* Top bar */
+  #top-bar {
+    background: var(--bg2);
+    border-bottom: 1px solid #2a2a1a;
+    padding: 10px 20px;
+    display: flex;
+    align-items: center;
+    gap: 24px;
+    flex-wrap: wrap;
+  }
+
+  #top-bar h1 {
+    font-size: 1.1rem;
+    letter-spacing: 0.3em;
+    color: var(--parchment);
+  }
+
+  #top-bar .credit {
+    font-size: 0.65rem;
+    color: var(--parchment-dim);
+    opacity: 0.6;
+    letter-spacing: 0.05em;
+  }
+
+  .mission-pips {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+  }
+
+  .pip {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    border: 1px solid var(--parchment-dim);
+    background: transparent;
+    transition: background 0.3s, border-color 0.3s;
+  }
+
+  .pip.done { background: var(--parchment-dim); border-color: var(--parchment-dim); }
+  .pip.current { background: var(--red); border-color: var(--red); animation: pipPulse 1.5s infinite; }
+  .pip.success { background: var(--green); border-color: var(--green); }
+  .pip.partial { background: var(--orange); border-color: var(--orange); }
+  .pip.failure { background: var(--red); border-color: var(--red); }
+
+  @keyframes pipPulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+  }
+
+  .network-section {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-left: auto;
+  }
+
+  .network-label {
+    font-size: 0.7rem;
+    letter-spacing: 0.1em;
+    color: var(--parchment-dim);
+    text-transform: uppercase;
+  }
+
+  #network-bar-wrap {
+    width: 140px;
+    height: 10px;
+    background: #222;
+    border: 1px solid #333;
+    overflow: hidden;
+  }
+
+  #network-bar {
+    height: 100%;
+    background: var(--green);
+    width: 75%;
+    transition: width 1s ease, background 1s ease;
+  }
+
+  #network-pct {
+    font-size: 0.8rem;
+    color: var(--parchment);
+    min-width: 36px;
+    text-align: right;
+  }
+
+  /* Main content area */
+  #main-content {
+    display: flex;
+    flex: 1;
+    overflow: hidden;
+  }
+
+  /* Left panel — Map */
+  #map-panel {
+    width: 38%;
+    min-width: 260px;
+    border-right: 1px solid #2a2a1a;
+    background: var(--bg2);
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    overflow-y: auto;
+  }
+
+  #map-panel h2 {
+    font-size: 0.7rem;
+    letter-spacing: 0.2em;
+    color: var(--parchment-dim);
+    text-transform: uppercase;
+    border-bottom: 1px solid #2a2a1a;
+    padding-bottom: 6px;
+  }
+
+  #agent-map {
+    width: 100%;
+    border: 1px solid #2a2a1a;
+    background: var(--blue-water);
+  }
+
+  .agent-legend {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.72rem;
+    color: var(--parchment-dim);
+    padding: 4px 6px;
+    border-left: 2px solid transparent;
+    transition: border-color 0.3s, color 0.3s;
+  }
+
+  .legend-item.active { border-left-color: var(--green); color: var(--parchment); }
+  .legend-item.compromised { border-left-color: var(--orange); color: var(--orange); }
+  .legend-item.burned { border-left-color: var(--red); color: var(--red); text-decoration: line-through; }
+
+  .legend-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  .legend-dot.active { background: var(--green); }
+  .legend-dot.compromised { background: var(--orange); }
+  .legend-dot.burned { background: var(--red); }
+
+  .legend-codename { font-weight: bold; }
+  .legend-role { font-size: 0.65rem; opacity: 0.7; }
+
+  /* Right panel — Game */
+  #game-panel {
+    flex: 1;
+    padding: 20px 24px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .mission-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+
+  .mission-number {
+    font-size: 0.7rem;
+    letter-spacing: 0.2em;
+    color: var(--parchment-dim);
+    text-transform: uppercase;
+  }
+
+  .mission-type-badge {
+    font-size: 0.65rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    padding: 3px 10px;
+    border: 1px solid currentColor;
+  }
+
+  .badge-decode { color: #5599ff; border-color: #5599ff; }
+  .badge-compose { color: var(--orange); border-color: var(--orange); }
+  .badge-decision { color: var(--red); border-color: var(--red); }
+
+  .scenario-box {
+    background: var(--bg3);
+    border-left: 2px solid var(--parchment-dim);
+    padding: 14px 16px;
+    font-size: 0.88rem;
+    line-height: 1.7;
+    color: var(--parchment-dim);
+  }
+
+  .dispatch-box {
+    background: #0e0e08;
+    border: 1px solid #3a3020;
+    padding: 16px;
+    font-size: 0.92rem;
+    line-height: 1.8;
+    color: var(--parchment);
+    letter-spacing: 0.06em;
+    font-style: italic;
+    position: relative;
+  }
+
+  .dispatch-box::before {
+    content: 'INTERCEPTED DISPATCH';
+    position: absolute;
+    top: -8px;
+    left: 12px;
+    font-size: 0.6rem;
+    letter-spacing: 0.2em;
+    color: var(--parchment-dim);
+    background: #0e0e08;
+    padding: 0 6px;
+    font-style: normal;
+  }
+
+  .compose-prompt-box {
+    background: #0e0e08;
+    border: 1px solid #3a3020;
+    padding: 16px;
+    font-size: 0.88rem;
+    line-height: 1.7;
+    color: var(--parchment-dim);
+    position: relative;
+  }
+
+  .compose-prompt-box::before {
+    content: 'MISSION DIRECTIVE';
+    position: absolute;
+    top: -8px;
+    left: 12px;
+    font-size: 0.6rem;
+    letter-spacing: 0.2em;
+    color: var(--parchment-dim);
+    background: #0e0e08;
+    padding: 0 6px;
+  }
+
+  .cipher-hint {
+    font-size: 0.75rem;
+    color: var(--parchment-dim);
+    opacity: 0.7;
+    border-top: 1px solid #2a2a1a;
+    padding-top: 8px;
+    margin-top: 8px;
+    font-style: normal;
+  }
+
+  /* Response area */
+  .response-section {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .response-section label {
+    font-size: 0.7rem;
+    letter-spacing: 0.15em;
+    color: var(--parchment-dim);
+    text-transform: uppercase;
+  }
+
+  textarea, input[type="text"] {
+    background: var(--bg3);
+    border: 1px solid #3a3020;
+    color: var(--parchment);
+    font-family: var(--font);
+    font-size: 0.88rem;
+    padding: 10px 12px;
+    resize: vertical;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+
+  textarea:focus, input[type="text"]:focus {
+    border-color: var(--parchment-dim);
+  }
+
+  textarea { width: 100%; min-height: 80px; }
+  input[type="text"] { width: 100%; }
+
+  .options-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .option-btn {
+    background: var(--bg3);
+    border: 1px solid #3a3020;
+    color: var(--parchment-dim);
+    font-family: var(--font);
+    font-size: 0.82rem;
+    padding: 12px 14px;
+    text-align: left;
+    cursor: pointer;
+    transition: all 0.2s;
+    line-height: 1.5;
+  }
+
+  .option-btn:hover { border-color: var(--parchment-dim); color: var(--parchment); }
+  .option-btn.selected { border-color: var(--parchment); color: var(--parchment); background: rgba(232, 213, 160, 0.05); }
+
+  .option-letter {
+    color: var(--red);
+    font-weight: bold;
+    margin-right: 8px;
+  }
+
+  /* Decision buttons (large) */
+  .decision-options {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .decision-btn {
+    background: var(--bg3);
+    border: 1px solid #3a3020;
+    color: var(--parchment);
+    font-family: var(--font);
+    font-size: 0.85rem;
+    padding: 16px 18px;
+    text-align: left;
+    cursor: pointer;
+    transition: all 0.2s;
+    line-height: 1.5;
+  }
+
+  .decision-btn:hover { border-color: var(--parchment-dim); background: rgba(232, 213, 160, 0.04); }
+  .decision-btn.selected { border-color: var(--red); background: rgba(204, 34, 0, 0.08); }
+
+  /* Washington judgment panel */
+  #judgment-panel {
+    display: none;
+    flex-direction: column;
+    gap: 0;
+    border: 1px solid #3a3020;
+    animation: judgeSlide 0.4s ease-out;
+  }
+
+  @keyframes judgeSlide {
+    from { opacity: 0; transform: translateX(20px); }
+    to { opacity: 1; transform: translateX(0); }
+  }
+
+  .judgment-header {
+    background: var(--bg3);
+    border-bottom: 1px solid #3a3020;
+    padding: 10px 14px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .judgment-title {
+    font-size: 0.7rem;
+    letter-spacing: 0.2em;
+    color: var(--parchment-dim);
+    text-transform: uppercase;
+    flex: 1;
+  }
+
+  #outcome-badge {
+    font-size: 0.7rem;
+    letter-spacing: 0.15em;
+    padding: 3px 12px;
+    border: 1px solid currentColor;
+    display: none;
+  }
+
+  .outcome-success { color: var(--green); }
+  .outcome-partial { color: var(--orange); }
+  .outcome-failure { color: var(--red); }
+
+  #thinking-section {
+    background: #0c0c08;
+    border-bottom: 1px solid #2a2a1a;
+    padding: 10px 14px;
+    display: none;
+  }
+
+  #thinking-section h3 {
+    font-size: 0.6rem;
+    letter-spacing: 0.2em;
+    color: #554433;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+
+  #thinking-text {
+    font-size: 0.75rem;
+    color: #554433;
+    font-style: italic;
+    line-height: 1.6;
+    max-height: 120px;
+    overflow-y: auto;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+
+  #assessment-section {
+    padding: 14px 16px;
+    background: #0f0f0a;
+  }
+
+  #assessment-text {
+    font-size: 0.88rem;
+    line-height: 1.8;
+    color: var(--parchment);
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+
+  #network-change-notice {
+    padding: 8px 14px;
+    background: var(--bg3);
+    border-top: 1px solid #2a2a1a;
+    font-size: 0.75rem;
+    display: none;
+  }
+
+  /* End screen */
+  #end-screen {
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    gap: 20px;
+    padding: 40px;
+    text-align: center;
+  }
+
+  #end-screen h1 {
+    font-size: clamp(1.5rem, 5vw, 3rem);
+    letter-spacing: 0.15em;
+    color: var(--parchment);
+    line-height: 1.3;
+  }
+
+  #end-screen .end-year {
+    font-size: 1.8rem;
+    color: var(--parchment-dim);
+    letter-spacing: 0.3em;
+  }
+
+  #end-screen p {
+    max-width: 500px;
+    color: var(--parchment-dim);
+    font-size: 0.9rem;
+    line-height: 1.7;
+  }
+
+  .score-summary {
+    display: flex;
+    gap: 28px;
+    flex-wrap: wrap;
+    justify-content: center;
+    border: 1px solid #3a3020;
+    padding: 16px 24px;
+    background: var(--bg3);
+  }
+
+  .score-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .score-val {
+    font-size: 2rem;
+    font-weight: bold;
+    color: var(--parchment);
+  }
+
+  .score-lbl {
+    font-size: 0.65rem;
+    letter-spacing: 0.15em;
+    color: var(--parchment-dim);
+    text-transform: uppercase;
+  }
+
+  /* Loading state */
+  .loading-indicator {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: var(--parchment-dim);
+    font-size: 0.8rem;
+    padding: 20px 0;
+  }
+
+  .loading-dots span {
+    animation: dotBlink 1.2s infinite;
+    display: inline-block;
+  }
+
+  .loading-dots span:nth-child(2) { animation-delay: 0.2s; }
+  .loading-dots span:nth-child(3) { animation-delay: 0.4s; }
+
+  @keyframes dotBlink {
+    0%, 80%, 100% { opacity: 0.2; }
+    40% { opacity: 1; }
+  }
+
+  .error-box {
+    background: rgba(204, 34, 0, 0.1);
+    border: 1px solid var(--red);
+    padding: 12px;
+    color: #ff6644;
+    font-size: 0.85rem;
+  }
+
+  /* Responsive */
+  @media (max-width: 700px) {
+    #main-content { flex-direction: column; }
+    #map-panel { width: 100%; min-width: unset; border-right: none; border-bottom: 1px solid #2a2a1a; }
+    #agent-map { max-height: 220px; }
+  }
+
+  /* SVG animation for connection lines */
+  .agent-line {
+    stroke-dasharray: 8 4;
+    animation: lineMarch 3s linear infinite;
+  }
+
+  @keyframes lineMarch {
+    from { stroke-dashoffset: 0; }
+    to { stroke-dashoffset: -36; }
+  }
+
+  .agent-dot {
+    transition: fill 0.6s, r 0.3s;
+  }
+</style>
+</head>
+<body>
+
+<!-- INTRO SCREEN -->
+<div id="intro-screen">
+  <svg class="wax-seal" viewBox="0 0 120 120">
+    <circle cx="60" cy="60" r="56" fill="#1a0800" stroke="#cc2200" stroke-width="2"/>
+    <circle cx="60" cy="60" r="46" fill="none" stroke="#cc2200" stroke-width="1" stroke-dasharray="4 3"/>
+    <circle cx="60" cy="60" r="38" fill="#220800"/>
+    <text x="60" y="53" text-anchor="middle" font-family="'Courier New', monospace" font-size="12" fill="#cc6622" letter-spacing="2">CULPER</text>
+    <text x="60" y="68" text-anchor="middle" font-family="'Courier New', monospace" font-size="9" fill="#cc6622" letter-spacing="1">RING</text>
+    <text x="60" y="82" text-anchor="middle" font-family="'Courier New', monospace" font-size="8" fill="#cc4400">● 711 ●</text>
+  </svg>
+  <div id="intro-title">DEEP COVER</div>
+  <div id="intro-subtitle">CULPER RING — 5 MISSION ARC</div>
+  <div id="intro-body">
+    You are Agent 711.<br>
+    The Culper Ring is all that stands between<br>
+    Washington's army and annihilation.<br><br>
+    Decode dispatches. Compose disinformation.<br>
+    Protect the network at all costs.
+  </div>
+  <button class="btn btn-primary btn-begin" onclick="startGame()">BEGIN MISSION 1</button>
+</div>
+
+<!-- GAME SCREEN -->
+<div id="game-screen">
+  <!-- Top bar -->
+  <div id="top-bar">
+    <h1>DEEP COVER</h1>
+    <span class="credit">Built on: The Culper Ring (Week 2)</span>
+    <div class="mission-pips" id="mission-pips">
+      <span style="font-size:0.65rem;color:var(--parchment-dim);letter-spacing:0.1em;margin-right:4px;">MISSION</span>
+      <div class="pip" id="pip-1"></div>
+      <div class="pip" id="pip-2"></div>
+      <div class="pip" id="pip-3"></div>
+      <div class="pip" id="pip-4"></div>
+      <div class="pip" id="pip-5"></div>
+    </div>
+    <div class="network-section">
+      <span class="network-label">Network Integrity</span>
+      <div id="network-bar-wrap"><div id="network-bar"></div></div>
+      <span id="network-pct">75%</span>
+    </div>
+  </div>
+
+  <!-- Main content -->
+  <div id="main-content">
+    <!-- Map panel -->
+    <div id="map-panel">
+      <h2>Agent Network</h2>
+      <svg id="agent-map" viewBox="0 0 340 300" xmlns="http://www.w3.org/2000/svg">
+        <!-- Water background -->
+        <rect width="340" height="300" fill="#0e1a24"/>
+
+        <!-- Long Island Sound label -->
+        <text x="170" y="18" text-anchor="middle" font-size="7" fill="#2a4060" font-family="'Courier New', monospace" letter-spacing="2">LONG ISLAND SOUND</text>
+
+        <!-- Hudson River -->
+        <path d="M58,0 C55,40 53,80 56,120 C59,160 56,200 54,260 C52,290 50,300 50,300 L58,300 C60,270 62,240 64,210 C67,170 66,130 63,95 C60,60 64,20 66,0 Z" fill="#0e1a24" stroke="#0e1a24"/>
+
+        <!-- New Jersey (left) -->
+        <path d="M0,60 C10,55 20,50 35,52 C45,53 55,58 58,70 C60,85 58,110 55,140 C52,165 50,190 50,220 C50,260 52,290 54,300 L0,300 Z" fill="#1e2418"/>
+
+        <!-- Manhattan Island -->
+        <path d="M56,70 C60,65 66,62 72,64 C78,66 82,72 84,82 C86,92 84,105 80,115 C76,125 70,130 64,128 C58,126 54,118 53,108 C52,98 52,84 56,70 Z" fill="#252e1a" stroke="#3a4a2a" stroke-width="0.5"/>
+        <text x="69" y="100" text-anchor="middle" font-size="5.5" fill="#3a4a2a" font-family="'Courier New', monospace" letter-spacing="1">MANHATTAN</text>
+
+        <!-- Long Island main landmass -->
+        <path d="M72,80 C90,72 115,70 140,72 C165,74 185,76 205,78 C230,80 255,82 272,84 C290,86 308,88 318,90 C328,92 336,95 340,98 L340,150 C320,148 300,146 280,148 C260,150 240,155 220,158 C200,161 180,162 160,160 C140,158 120,154 100,150 C85,147 72,142 65,135 C62,130 62,120 64,110 C66,100 68,88 72,80 Z" fill="#1e2018" stroke="#2a2a1a" stroke-width="0.5"/>
+
+        <!-- Eastern Long Island fork (South Fork) -->
+        <path d="M280,148 C290,148 305,148 318,152 C326,154 332,156 338,162 L340,165 C336,163 328,160 318,160 C308,160 296,162 286,166 C278,168 272,170 268,168 C264,166 264,162 266,158 C268,154 274,150 280,148 Z" fill="#1e2018"/>
+
+        <!-- North Fork -->
+        <path d="M270,86 C280,84 292,82 305,82 C316,82 326,84 334,88 C338,90 340,92 340,94 L340,100 C334,98 324,96 312,96 C300,96 286,98 274,100 C268,100 263,98 262,94 C261,90 264,88 270,86 Z" fill="#1e2018"/>
+
+        <!-- Connecticut shore (top) -->
+        <path d="M0,0 L340,0 L340,15 C320,12 295,10 270,12 C245,14 220,14 195,13 C170,12 145,11 120,12 C95,13 70,14 50,16 C35,17 20,17 0,15 Z" fill="#1e2418"/>
+
+        <!-- Stars for towns -->
+        <circle cx="118" cy="118" r="2" fill="#3a4a2a"/>
+        <text x="118" y="128" text-anchor="middle" font-size="5" fill="#2a3a1a" font-family="'Courier New', monospace">Brooklyn</text>
+
+        <circle cx="190" cy="108" r="2" fill="#2a3a1a"/>
+        <text x="195" y="105" font-size="5" fill="#2a3a1a" font-family="'Courier New', monospace">Oyster Bay</text>
+
+        <circle cx="245" cy="108" r="2" fill="#2a3a1a"/>
+        <text x="250" y="105" font-size="5" fill="#2a3a1a" font-family="'Courier New', monospace">Setauket</text>
+
+        <!-- Compass rose -->
+        <g transform="translate(310,240)">
+          <circle r="14" fill="#0e1a24" stroke="#1a2535" stroke-width="1"/>
+          <path d="M0,-12 L2,-4 L0,-6 L-2,-4 Z" fill="#8899aa"/>
+          <path d="M0,12 L2,4 L0,6 L-2,4 Z" fill="#445566"/>
+          <path d="M-12,0 L-4,2 L-6,0 L-4,-2 Z" fill="#445566"/>
+          <path d="M12,0 L4,2 L6,0 L4,-2 Z" fill="#445566"/>
+          <text x="0" y="-14" text-anchor="middle" font-size="7" fill="#8899aa" font-family="serif">N</text>
+        </g>
+
+        <!-- Scale bar -->
+        <line x1="20" y1="280" x2="80" y2="280" stroke="#2a4060" stroke-width="1"/>
+        <text x="50" y="292" text-anchor="middle" font-size="6" fill="#2a4060" font-family="'Courier New', monospace">20 miles</text>
+
+        <!-- Agent connection lines (drawn first, below dots) -->
+        <g id="agent-lines">
+          <!-- Brewster ↔ Tallmadge (courier route) -->
+          <line id="line-brewster-tallmadge"
+            x1="255" y1="84" x2="228" y2="76"
+            stroke="#44bb66" stroke-width="1" opacity="0.5"
+            class="agent-line" stroke-dasharray="8 4"/>
+
+          <!-- Culper Sr ↔ Brewster (dispatch handoff) -->
+          <line id="line-sr-brewster"
+            x1="245" y1="108" x2="255" y2="92"
+            stroke="#44bb66" stroke-width="1" opacity="0.5"
+            class="agent-line" stroke-dasharray="8 4"/>
+
+          <!-- Culper Sr ↔ Culper Jr (intelligence chain) -->
+          <line id="line-sr-jr"
+            x1="245" y1="108" x2="187" y2="155"
+            stroke="#44bb66" stroke-width="1" opacity="0.5"
+            class="agent-line" stroke-dasharray="8 4"/>
+
+          <!-- Culper Jr ↔ Agent 355 (NYC network) -->
+          <line id="line-jr-355"
+            x1="187" y1="155" x2="177" y2="157"
+            stroke="#44bb66" stroke-width="1" opacity="0.5"
+            class="agent-line" stroke-dasharray="8 4"/>
+        </g>
+
+        <!-- Agent markers -->
+        <!-- Tallmadge: x=0.67, y=0.28 → 228,84 -->
+        <circle id="dot-tallmadge" class="agent-dot" cx="228" cy="76" r="5" fill="#22aa44" stroke="#0a0a08" stroke-width="1.5"/>
+        <text x="228" y="68" text-anchor="middle" font-size="6.5" fill="#44cc66" font-family="'Courier New', monospace">BOLTON</text>
+
+        <!-- Brewster: x=0.75, y=0.32 → 255,96 -->
+        <circle id="dot-brewster" class="agent-dot" cx="255" cy="84" r="5" fill="#22aa44" stroke="#0a0a08" stroke-width="1.5"/>
+        <text x="275" y="80" font-size="6.5" fill="#44cc66" font-family="'Courier New', monospace">JONAS</text>
+
+        <!-- Culper Sr: x=0.72, y=0.38 → 245,114 -->
+        <circle id="dot-culper_sr" class="agent-dot" cx="245" cy="108" r="5" fill="#22aa44" stroke="#0a0a08" stroke-width="1.5"/>
+        <text x="260" y="108" font-size="6.5" fill="#44cc66" font-family="'Courier New', monospace">CULPER SR</text>
+
+        <!-- Culper Jr: x=0.55, y=0.55 → 187,165 -->
+        <circle id="dot-culper_jr" class="agent-dot" cx="187" cy="155" r="5" fill="#22aa44" stroke="#0a0a08" stroke-width="1.5"/>
+        <text x="187" y="170" text-anchor="middle" font-size="6.5" fill="#44cc66" font-family="'Courier New', monospace">CULPER JR</text>
+
+        <!-- Agent 355: x=0.52, y=0.52 → 177,156 -->
+        <circle id="dot-agent_355" class="agent-dot" cx="177" cy="157" r="5" fill="#22aa44" stroke="#0a0a08" stroke-width="1.5"/>
+        <text x="162" y="151" text-anchor="end" font-size="6.5" fill="#44cc66" font-family="'Courier New', monospace">355</text>
+      </svg>
+
+      <!-- Agent legend -->
+      <div class="agent-legend" id="agent-legend">
+        <div class="legend-item active" id="legend-tallmadge">
+          <div class="legend-dot active"></div>
+          <div>
+            <div class="legend-codename">John Bolton</div>
+            <div class="legend-role">Benjamin Tallmadge — Handler</div>
+          </div>
+        </div>
+        <div class="legend-item active" id="legend-brewster">
+          <div class="legend-dot active"></div>
+          <div>
+            <div class="legend-codename">Jonas</div>
+            <div class="legend-role">Caleb Brewster — Courier</div>
+          </div>
+        </div>
+        <div class="legend-item active" id="legend-culper_sr">
+          <div class="legend-dot active"></div>
+          <div>
+            <div class="legend-codename">Samuel Culper Sr.</div>
+            <div class="legend-role">Abraham Woodhull — Gatherer</div>
+          </div>
+        </div>
+        <div class="legend-item active" id="legend-culper_jr">
+          <div class="legend-dot active"></div>
+          <div>
+            <div class="legend-codename">Samuel Culper Jr.</div>
+            <div class="legend-role">Robert Townsend — Writer</div>
+          </div>
+        </div>
+        <div class="legend-item active" id="legend-agent_355">
+          <div class="legend-dot active"></div>
+          <div>
+            <div class="legend-codename">Agent 355</div>
+            <div class="legend-role">Unknown — Social Infiltrator</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Game panel -->
+    <div id="game-panel">
+      <div id="mission-loading" class="loading-indicator" style="display:none;">
+        <span>Receiving dispatch</span>
+        <span class="loading-dots"><span>.</span><span>.</span><span>.</span></span>
+      </div>
+      <div id="mission-error" class="error-box" style="display:none;"></div>
+
+      <!-- Mission content (populated by JS) -->
+      <div id="mission-content" style="display:none;">
+        <div class="mission-header">
+          <span class="mission-number" id="mission-label">MISSION 1 OF 5</span>
+          <span class="mission-type-badge" id="mission-type-badge">DECODE</span>
+        </div>
+
+        <div class="scenario-box" id="scenario-text"></div>
+
+        <!-- Decode: dispatch + options -->
+        <div id="decode-section" style="display:none;">
+          <div class="dispatch-box" id="dispatch-text"></div>
+          <div class="response-section">
+            <label>Your interpretation of the dispatch:</label>
+            <textarea id="decode-interpretation" rows="3" placeholder="What does this message actually say? Who sent it? What are they reporting?"></textarea>
+          </div>
+          <div class="response-section" style="margin-top:8px;">
+            <label>Choose your recommended action:</label>
+            <div class="options-grid" id="decode-options"></div>
+          </div>
+        </div>
+
+        <!-- Compose: directive + textarea -->
+        <div id="compose-section" style="display:none;">
+          <div class="compose-prompt-box" id="compose-directive"></div>
+          <div class="response-section" style="margin-top:12px;">
+            <label>Write your disinformation dispatch:</label>
+            <textarea id="compose-text" rows="6" placeholder="Compose a deceptive message in the style of the period..."></textarea>
+          </div>
+          <div class="response-section" style="margin-top:8px;">
+            <label>Choose your disinformation approach:</label>
+            <div class="options-grid" id="compose-options"></div>
+          </div>
+        </div>
+
+        <!-- Decision: options only -->
+        <div id="decision-section" style="display:none;">
+          <div class="decision-options" id="decision-options"></div>
+        </div>
+
+        <div style="margin-top:12px; display:flex; gap:10px; flex-wrap:wrap; align-items:center;">
+          <button class="btn btn-primary" id="submit-btn" onclick="submitResponse()">
+            TRANSMIT RESPONSE
+          </button>
+          <span id="submit-hint" style="font-size:0.7rem;color:var(--parchment-dim);letter-spacing:0.1em;"></span>
+        </div>
+      </div>
+
+      <!-- Washington judgment -->
+      <div id="judgment-panel">
+        <div class="judgment-header">
+          <span class="judgment-title">Washington's Assessment — Mission <span id="judgment-mission-num"></span></span>
+          <span id="outcome-badge">—</span>
+        </div>
+        <div id="thinking-section">
+          <h3>Washington deliberates...</h3>
+          <div id="thinking-text"></div>
+        </div>
+        <div id="assessment-section">
+          <div id="assessment-text"></div>
+        </div>
+        <div id="network-change-notice"></div>
+      </div>
+
+      <!-- Proceed button -->
+      <div id="proceed-wrap" style="display:none; margin-top:8px;">
+        <button class="btn btn-primary" id="proceed-btn" onclick="proceedToNext()">—</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- END SCREEN -->
+<div id="end-screen">
+  <div id="end-seal"></div>
+  <h1 id="end-title"></h1>
+  <div class="end-year" id="end-year"></div>
+  <p id="end-body"></p>
+  <div class="score-summary" id="score-summary"></div>
+  <button class="btn btn-primary" onclick="location.reload()">REPLAY</button>
+</div>
+
+<script>
+const MISSION_TYPES = ['decode', 'decode', 'compose', 'decision', 'decode'];
+
+const AGENTS = [
+  { id: 'culper_sr', codename: 'Samuel Culper Sr.', realName: 'Abraham Woodhull' },
+  { id: 'culper_jr', codename: 'Samuel Culper Jr.', realName: 'Robert Townsend' },
+  { id: 'agent_355', codename: 'Agent 355', realName: 'Unknown' },
+  { id: 'tallmadge', codename: 'John Bolton', realName: 'Benjamin Tallmadge' },
+  { id: 'brewster', codename: 'Jonas', realName: 'Caleb Brewster' }
+];
+
+let gameState = {
+  currentMission: 1,
+  networkIntegrity: 75,
+  agentStatuses: {
+    culper_sr: 'active', culper_jr: 'active',
+    agent_355: 'active', tallmadge: 'active', brewster: 'active'
+  },
+  decisions: [],
+  missionResults: [],
+  currentMissionData: null,
+  selectedOption: null,
+  isJudging: false
+};
+
+// ==== INTRO ====
+function startGame() {
+  document.getElementById('intro-screen').style.display = 'none';
+  document.getElementById('game-screen').style.display = 'flex';
+  updateUI();
+  loadMission(1);
+}
+
+// ==== NETWORK UI ====
+function updateNetworkBar(val) {
+  const bar = document.getElementById('network-bar');
+  const pct = document.getElementById('network-pct');
+  const clamped = Math.max(0, Math.min(100, val));
+  bar.style.width = clamped + '%';
+  pct.textContent = clamped + '%';
+  if (clamped >= 60) bar.style.background = 'var(--green)';
+  else if (clamped >= 35) bar.style.background = 'var(--orange)';
+  else bar.style.background = 'var(--red)';
+}
+
+// ==== MAP ====
+const STATUS_COLORS = { active: '#22aa44', compromised: '#cc7700', burned: '#cc2200' };
+const LINE_COLORS = { active: '#44bb66', compromised: '#cc9922', burned: '#441100' };
+
+function updateMap() {
+  for (const agent of AGENTS) {
+    const status = gameState.agentStatuses[agent.id];
+    const dot = document.getElementById('dot-' + agent.id);
+    const legend = document.getElementById('legend-' + agent.id);
+    if (dot) dot.setAttribute('fill', STATUS_COLORS[status] || '#22aa44');
+    if (legend) {
+      legend.className = 'legend-item ' + status;
+      const dotEl = legend.querySelector('.legend-dot');
+      if (dotEl) dotEl.className = 'legend-dot ' + status;
+    }
+  }
+  // Update line colors based on connected agents
+  function lineColor(a, b) {
+    const sa = gameState.agentStatuses[a];
+    const sb = gameState.agentStatuses[b];
+    if (sa === 'burned' || sb === 'burned') return 'none';
+    if (sa === 'compromised' || sb === 'compromised') return LINE_COLORS.compromised;
+    return LINE_COLORS.active;
+  }
+  function setLine(id, a, b) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    const c = lineColor(a, b);
+    el.setAttribute('stroke', c === 'none' ? '#331100' : c);
+    el.setAttribute('opacity', c === 'none' ? '0.2' : '0.5');
+  }
+  setLine('line-brewster-tallmadge', 'brewster', 'tallmadge');
+  setLine('line-sr-brewster', 'culper_sr', 'brewster');
+  setLine('line-sr-jr', 'culper_sr', 'culper_jr');
+  setLine('line-jr-355', 'culper_jr', 'agent_355');
+}
+
+// ==== PIPS ====
+function updatePips() {
+  for (let i = 1; i <= 5; i++) {
+    const pip = document.getElementById('pip-' + i);
+    pip.className = 'pip';
+    if (i < gameState.currentMission) {
+      const result = gameState.missionResults[i - 1];
+      pip.classList.add(result ? result.toLowerCase() : 'done');
+    } else if (i === gameState.currentMission) {
+      pip.classList.add('current');
+    }
+  }
+}
+
+function updateUI() {
+  updateNetworkBar(gameState.networkIntegrity);
+  updatePips();
+  updateMap();
+}
+
+// ==== MISSION LOADING ====
+async function loadMission(num) {
+  gameState.currentMission = num;
+  gameState.selectedOption = null;
+  gameState.currentMissionData = null;
+
+  // Reset panels
+  document.getElementById('mission-content').style.display = 'none';
+  document.getElementById('judgment-panel').style.display = 'none';
+  document.getElementById('proceed-wrap').style.display = 'none';
+  document.getElementById('mission-error').style.display = 'none';
+  document.getElementById('mission-loading').style.display = 'flex';
+
+  updatePips();
+
+  const missionType = MISSION_TYPES[num - 1];
+
+  try {
+    const res = await fetch('/api/mission', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        missionNumber: num,
+        missionType,
+        previousDecisions: gameState.decisions
+      })
+    });
+    if (!res.ok) throw new Error('Server error ' + res.status);
+    const data = await res.json();
+    if (data.error) throw new Error(data.error);
+
+    gameState.currentMissionData = data;
+    renderMission(data, missionType, num);
+  } catch (err) {
+    document.getElementById('mission-loading').style.display = 'none';
+    const errBox = document.getElementById('mission-error');
+    errBox.textContent = 'Error loading mission: ' + err.message;
+    errBox.style.display = 'block';
+  }
+}
+
+// ==== RENDER MISSION ====
+function renderMission(data, type, num) {
+  document.getElementById('mission-loading').style.display = 'none';
+
+  document.getElementById('mission-label').textContent = `MISSION ${num} OF 5`;
+  const badge = document.getElementById('mission-type-badge');
+  badge.textContent = type.toUpperCase();
+  badge.className = 'mission-type-badge badge-' + type;
+
+  document.getElementById('scenario-text').textContent = data.scenario || '';
+
+  // Hide all sections
+  document.getElementById('decode-section').style.display = 'none';
+  document.getElementById('compose-section').style.display = 'none';
+  document.getElementById('decision-section').style.display = 'none';
+
+  if (type === 'decode') {
+    document.getElementById('decode-section').style.display = 'block';
+    let dispatchHtml = data.dispatch || '';
+    if (data.cipherKey) {
+      dispatchHtml += `<div class="cipher-hint">Cipher note: ${data.cipherKey}</div>`;
+    }
+    document.getElementById('dispatch-text').innerHTML = dispatchHtml;
+    document.getElementById('decode-interpretation').value = '';
+
+    const optGrid = document.getElementById('decode-options');
+    optGrid.innerHTML = '';
+    (data.options || []).forEach((opt, i) => {
+      const letters = ['A', 'B', 'C'];
+      const btn = document.createElement('button');
+      btn.className = 'option-btn';
+      btn.dataset.idx = i;
+      btn.innerHTML = `<span class="option-letter">[${letters[i]}]</span>${opt}`;
+      btn.onclick = () => selectOption(btn, optGrid, i);
+      optGrid.appendChild(btn);
+    });
+  } else if (type === 'compose') {
+    document.getElementById('compose-section').style.display = 'block';
+    document.getElementById('compose-directive').textContent = data.dispatch || data.scenario || '';
+    document.getElementById('compose-text').value = '';
+
+    const optGrid = document.getElementById('compose-options');
+    optGrid.innerHTML = '';
+    (data.options || []).forEach((opt, i) => {
+      const letters = ['A', 'B', 'C'];
+      const btn = document.createElement('button');
+      btn.className = 'option-btn';
+      btn.dataset.idx = i;
+      btn.innerHTML = `<span class="option-letter">[${letters[i]}]</span>${opt}`;
+      btn.onclick = () => selectOption(btn, optGrid, i);
+      optGrid.appendChild(btn);
+    });
+  } else if (type === 'decision') {
+    document.getElementById('decision-section').style.display = 'block';
+    const decGrid = document.getElementById('decision-options');
+    decGrid.innerHTML = '';
+    (data.options || []).forEach((opt, i) => {
+      const btn = document.createElement('button');
+      btn.className = 'decision-btn';
+      btn.dataset.idx = i;
+      btn.textContent = opt;
+      btn.onclick = () => selectDecision(btn, decGrid, i);
+      decGrid.appendChild(btn);
+    });
+  }
+
+  document.getElementById('mission-content').style.display = 'block';
+  document.getElementById('submit-hint').textContent = '';
+  document.getElementById('submit-btn').disabled = false;
+}
+
+function selectOption(btn, grid, idx) {
+  grid.querySelectorAll('.option-btn').forEach(b => b.classList.remove('selected'));
+  btn.classList.add('selected');
+  gameState.selectedOption = idx;
+}
+
+function selectDecision(btn, grid, idx) {
+  grid.querySelectorAll('.decision-btn').forEach(b => b.classList.remove('selected'));
+  btn.classList.add('selected');
+  gameState.selectedOption = idx;
+}
+
+// ==== SUBMIT ====
+async function submitResponse() {
+  if (gameState.isJudging) return;
+  const data = gameState.currentMissionData;
+  if (!data) return;
+
+  const type = MISSION_TYPES[gameState.currentMission - 1];
+  let playerResponse = '';
+
+  if (type === 'decode') {
+    const interp = document.getElementById('decode-interpretation').value.trim();
+    if (!interp) {
+      document.getElementById('submit-hint').textContent = 'Write your interpretation first.';
+      return;
+    }
+    const optButtons = document.querySelectorAll('#decode-options .option-btn');
+    const selectedBtn = Array.from(optButtons).find(b => b.classList.contains('selected'));
+    const optText = selectedBtn ? selectedBtn.textContent.replace(/^\[.\]/, '').trim() : '(no option selected)';
+    playerResponse = `Interpretation: ${interp}\n\nChosen action: ${optText}`;
+  } else if (type === 'compose') {
+    const composed = document.getElementById('compose-text').value.trim();
+    if (!composed) {
+      document.getElementById('submit-hint').textContent = 'Write your dispatch first.';
+      return;
+    }
+    const optButtons = document.querySelectorAll('#compose-options .option-btn');
+    const selectedBtn = Array.from(optButtons).find(b => b.classList.contains('selected'));
+    const approach = selectedBtn ? selectedBtn.textContent.replace(/^\[.\]/, '').trim() : '(no approach selected)';
+    playerResponse = `Disinformation dispatch: ${composed}\n\nApproach: ${approach}`;
+  } else if (type === 'decision') {
+    if (gameState.selectedOption === null) {
+      document.getElementById('submit-hint').textContent = 'Select a course of action.';
+      return;
+    }
+    const opts = data.options || [];
+    playerResponse = opts[gameState.selectedOption] || 'Option ' + (gameState.selectedOption + 1);
+    // Record decision for future missions
+    gameState.decisions.push({
+      mission: gameState.currentMission,
+      choice: playerResponse
+    });
+  }
+
+  // Update affected agent if mission specifies
+  if (type === 'decision' && data.affectedAgent && data.affectedAgent !== '') {
+    if (gameState.selectedOption === 0) {
+      // First decision option typically burns the agent
+      gameState.agentStatuses[data.affectedAgent] = 'burned';
+    } else if (gameState.selectedOption === 1) {
+      // Second option might compromise
+      if (Math.random() > 0.5) gameState.agentStatuses[data.affectedAgent] = 'compromised';
+    }
+    updateMap();
+  }
+
+  gameState.isJudging = true;
+  document.getElementById('submit-btn').disabled = true;
+  document.getElementById('submit-hint').textContent = 'Awaiting Washington...';
+
+  // Show judgment panel
+  const panel = document.getElementById('judgment-panel');
+  panel.style.display = 'flex';
+  panel.style.flexDirection = 'column';
+  document.getElementById('judgment-mission-num').textContent = gameState.currentMission;
+  document.getElementById('outcome-badge').style.display = 'none';
+  document.getElementById('outcome-badge').textContent = '—';
+  document.getElementById('outcome-badge').className = '';
+  document.getElementById('thinking-section').style.display = 'none';
+  document.getElementById('thinking-text').textContent = '';
+  document.getElementById('assessment-text').textContent = '';
+  document.getElementById('network-change-notice').style.display = 'none';
+  document.getElementById('proceed-wrap').style.display = 'none';
+
+  try {
+    const res = await fetch('/api/judge', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        missionNumber: gameState.currentMission,
+        missionType: type,
+        missionData: data,
+        playerResponse,
+        networkState: { networkIntegrity: gameState.networkIntegrity }
+      })
+    });
+
+    if (!res.ok) throw new Error('Judge API error ' + res.status);
+
+    const reader = res.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = '';
+    let outcome = null;
+    let networkChange = 0;
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split('\n');
+      buffer = lines.pop();
+
+      for (const line of lines) {
+        if (!line.startsWith('data: ')) continue;
+        let evt;
+        try { evt = JSON.parse(line.slice(6)); } catch { continue; }
+
+        if (evt.type === 'thinking') {
+          document.getElementById('thinking-section').style.display = 'block';
+          document.getElementById('thinking-text').textContent += evt.delta;
+          document.getElementById('thinking-text').scrollTop = 9999;
+        } else if (evt.type === 'text') {
+          document.getElementById('assessment-text').textContent += evt.delta;
+          document.getElementById('assessment-text').parentElement.scrollTop = 9999;
+        } else if (evt.type === 'outcome') {
+          outcome = evt.value;
+          const badge = document.getElementById('outcome-badge');
+          badge.textContent = evt.value;
+          badge.style.display = 'inline-block';
+          badge.className = 'outcome-' + evt.value.toLowerCase();
+        } else if (evt.type === 'network_change') {
+          networkChange = evt.value;
+        } else if (evt.type === 'done') {
+          // Apply network change
+          gameState.networkIntegrity = Math.max(0, Math.min(100, gameState.networkIntegrity + networkChange));
+          updateNetworkBar(gameState.networkIntegrity);
+
+          const notice = document.getElementById('network-change-notice');
+          notice.style.display = 'block';
+          const sign = networkChange >= 0 ? '+' : '';
+          notice.textContent = `Network integrity: ${sign}${networkChange}% → ${gameState.networkIntegrity}%`;
+          notice.style.color = networkChange >= 0 ? 'var(--green)' : 'var(--red)';
+
+          // Record result
+          gameState.missionResults.push(outcome || 'PARTIAL');
+          updatePips();
+
+          // Show proceed button
+          const proceedWrap = document.getElementById('proceed-wrap');
+          const proceedBtn = document.getElementById('proceed-btn');
+          proceedWrap.style.display = 'block';
+          if (gameState.currentMission < 5) {
+            proceedBtn.textContent = `PROCEED TO MISSION ${gameState.currentMission + 1}`;
+          } else {
+            proceedBtn.textContent = 'VIEW FINAL REPORT';
+          }
+
+          gameState.isJudging = false;
+          document.getElementById('submit-hint').textContent = '';
+        } else if (evt.type === 'error') {
+          throw new Error(evt.message);
+        }
+      }
+    }
+  } catch (err) {
+    gameState.isJudging = false;
+    document.getElementById('assessment-text').textContent = 'Error: ' + err.message;
+    document.getElementById('judgment-panel').style.display = 'flex';
+    document.getElementById('proceed-wrap').style.display = 'block';
+    document.getElementById('proceed-btn').textContent = gameState.currentMission < 5 ? 'PROCEED ANYWAY' : 'VIEW FINAL REPORT';
+    gameState.missionResults.push('PARTIAL');
+    updatePips();
+    document.getElementById('submit-hint').textContent = '';
+  }
+}
+
+// ==== PROCEED ====
+function proceedToNext() {
+  if (gameState.currentMission >= 5) {
+    showEndScreen();
+    return;
+  }
+  loadMission(gameState.currentMission + 1);
+}
+
+// ==== END SCREEN ====
+function showEndScreen() {
+  document.getElementById('game-screen').style.display = 'none';
+
+  const successes = gameState.missionResults.filter(r => r === 'SUCCESS').length;
+  const partials = gameState.missionResults.filter(r => r === 'PARTIAL').length;
+  const failures = gameState.missionResults.filter(r => r === 'FAILURE').length;
+  const ni = gameState.networkIntegrity;
+
+  let title, year, body;
+
+  if (ni > 50 && successes >= 3) {
+    title = 'The Culper Ring Survives.';
+    year = '1781';
+    body = 'Washington marches south. The intelligence you secured guides the Yorktown campaign. The British never knew what hit them. The Ring\'s identity remains secret for another generation.';
+  } else if (ni >= 25) {
+    title = 'The Network Limps Forward.';
+    year = '1780';
+    body = 'Crippled but not broken. Your mixed record of success and failure has cost the Ring dearly, but Washington presses on. The war drags into its fifth year. History\'s verdict remains unwritten.';
+  } else {
+    title = 'The Ring is Exposed.';
+    year = '1780';
+    body = 'Major André\'s counterintelligence closes the net. Jonas is captured on the Sound. The network collapses. Washington loses his eyes in New York. The Revolution hangs by a thread.';
+  }
+
+  document.getElementById('end-title').textContent = title;
+  document.getElementById('end-year').textContent = year;
+  document.getElementById('end-body').textContent = body;
+  document.getElementById('score-summary').innerHTML = `
+    <div class="score-item"><div class="score-val" style="color:var(--green)">${successes}</div><div class="score-lbl">Successes</div></div>
+    <div class="score-item"><div class="score-val" style="color:var(--orange)">${partials}</div><div class="score-lbl">Partial</div></div>
+    <div class="score-item"><div class="score-val" style="color:var(--red)">${failures}</div><div class="score-lbl">Failures</div></div>
+    <div class="score-item"><div class="score-val">${ni}%</div><div class="score-lbl">Network Integrity</div></div>
+  `;
+
+  const endScreen = document.getElementById('end-screen');
+  endScreen.style.display = 'flex';
+}
+
+// Init
+updateNetworkBar(75);
+</script>
+</body>
+</html>

@@ -1,0 +1,839 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>The Founders' Court</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0a0a0f;
+      --surface: #111118;
+      --border: #2a2a3a;
+      --cream: #f5e6c8;
+      --cream-dim: #c4b08a;
+      --amber: #d4a017;
+      --amber-glow: #f5c842;
+      --text: #f0e8d5;
+      --muted: #666;
+      --for-bg: #1a4a1a;
+      --for-fg: #4ade80;
+      --for-border: #4ade80;
+      --against-bg: #4a1a1a;
+      --against-fg: #f87171;
+      --against-border: #f87171;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: Georgia, 'Times New Roman', serif;
+      min-height: 100vh;
+    }
+
+    /* ── PHASE 1: Topic Selection ── */
+    #phase-select {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem 1rem;
+      text-align: center;
+    }
+
+    .court-title {
+      font-size: clamp(2rem, 6vw, 4rem);
+      font-weight: 700;
+      color: var(--cream);
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      text-shadow: 0 0 40px rgba(212,160,23,0.4);
+      margin-bottom: 0.5rem;
+    }
+
+    .court-subtitle {
+      font-size: clamp(0.85rem, 2vw, 1.1rem);
+      color: var(--cream-dim);
+      font-style: italic;
+      margin-bottom: 0.75rem;
+      letter-spacing: 0.05em;
+    }
+
+    .court-credit {
+      font-size: 0.75rem;
+      color: var(--muted);
+      font-family: monospace;
+      margin-bottom: 2.5rem;
+      letter-spacing: 0.05em;
+    }
+
+    .court-credit a {
+      color: #555;
+      text-decoration: none;
+    }
+
+    .court-credit a:hover { color: var(--amber); }
+
+    .topics-label {
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 0.2em;
+      color: var(--muted);
+      margin-bottom: 1.25rem;
+    }
+
+    .topics-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 1rem;
+      max-width: 780px;
+      width: 100%;
+      margin-bottom: 2rem;
+    }
+
+    .topic-chip {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 1rem 1.2rem;
+      cursor: pointer;
+      text-align: left;
+      transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
+      user-select: none;
+    }
+
+    .topic-chip:hover, .topic-chip.selected {
+      border-color: var(--amber);
+      box-shadow: 0 0 16px rgba(212,160,23,0.25);
+      background: #15140a;
+    }
+
+    .topic-chip-title {
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: var(--cream);
+      margin-bottom: 0.4rem;
+      letter-spacing: 0.03em;
+    }
+
+    .topic-chip-brief {
+      font-size: 0.75rem;
+      color: var(--cream-dim);
+      line-height: 1.5;
+      font-family: Georgia, serif;
+      font-style: italic;
+    }
+
+    #btn-convene {
+      background: var(--amber);
+      color: #0a0a0f;
+      border: none;
+      border-radius: 4px;
+      padding: 0.85rem 2.5rem;
+      font-size: 0.9rem;
+      font-family: Georgia, serif;
+      font-weight: 700;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: background 0.2s, box-shadow 0.2s, opacity 0.2s;
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    #btn-convene.visible {
+      opacity: 1;
+      pointer-events: all;
+    }
+
+    #btn-convene:hover {
+      background: var(--amber-glow);
+      box-shadow: 0 0 20px rgba(212,160,23,0.5);
+    }
+
+    /* ── PHASE 2: Debate ── */
+    #phase-debate {
+      display: none;
+      flex-direction: column;
+      min-height: 100vh;
+      padding: 1rem;
+    }
+
+    #phase-debate.active { display: flex; }
+
+    .debate-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding-bottom: 0.75rem;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 1rem;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+
+    .debate-header-left {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .debate-title-sm {
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 0.2em;
+      color: var(--muted);
+    }
+
+    .debate-topic-name {
+      font-size: 1.1rem;
+      color: var(--cream);
+      font-weight: 700;
+    }
+
+    .progress-dots {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .progress-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      border: 1px solid var(--border);
+      background: transparent;
+      transition: background 0.3s, border-color 0.3s;
+    }
+
+    .progress-dot.active { border-color: var(--amber); background: transparent; animation: pulse-dot 1s ease-in-out infinite; }
+    .progress-dot.done { border-color: var(--for-fg); background: var(--for-fg); animation: none; }
+    .progress-dot.error { border-color: var(--against-fg); background: var(--against-fg); animation: none; }
+
+    @keyframes pulse-dot {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(212,160,23,0.5); }
+      50% { box-shadow: 0 0 0 4px rgba(212,160,23,0); }
+    }
+
+    /* 5-column grid */
+    .founders-grid {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 0.75rem;
+      flex: 1;
+    }
+
+    .founder-col {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      min-height: 0;
+    }
+
+    .founder-header {
+      padding: 0.6rem 0.75rem 0.5rem;
+      border-bottom: 2px solid var(--founder-color, #666);
+    }
+
+    .founder-name {
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: var(--founder-color, var(--cream));
+    }
+
+    .founder-role {
+      font-size: 0.65rem;
+      color: var(--muted);
+      font-style: italic;
+      margin-top: 1px;
+    }
+
+    .founder-body {
+      flex: 1;
+      overflow-y: auto;
+      padding: 0.6rem 0.75rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .thinking-section {
+      display: none;
+    }
+
+    .thinking-section.visible { display: block; }
+
+    .thinking-label {
+      font-size: 0.6rem;
+      text-transform: uppercase;
+      letter-spacing: 0.15em;
+      color: #555;
+      margin-bottom: 3px;
+      font-family: monospace;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .thinking-label::before {
+      content: '▶';
+      font-size: 0.5rem;
+      transition: transform 0.2s;
+    }
+
+    .thinking-label.expanded::before { transform: rotate(90deg); }
+
+    .thinking-text {
+      font-family: monospace;
+      font-size: 0.68rem;
+      color: #555;
+      font-style: italic;
+      background: #0d0d12;
+      border: 1px solid #222;
+      padding: 5px 6px;
+      max-height: 0;
+      overflow-y: auto;
+      transition: max-height 0.3s ease;
+      line-height: 1.5;
+    }
+
+    .thinking-text.expanded { max-height: 120px; }
+
+    .argument-text {
+      font-family: Georgia, serif;
+      font-size: 0.82rem;
+      color: var(--text);
+      line-height: 1.65;
+      flex: 1;
+    }
+
+    .vote-chip {
+      display: none;
+      padding: 3px 10px;
+      border-radius: 4px;
+      font-size: 0.72rem;
+      font-family: monospace;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      width: fit-content;
+    }
+
+    .vote-chip.for {
+      display: inline-block;
+      background: var(--for-bg);
+      color: var(--for-fg);
+      border: 1px solid var(--for-border);
+    }
+
+    .vote-chip.against {
+      display: inline-block;
+      background: var(--against-bg);
+      color: var(--against-fg);
+      border: 1px solid var(--against-border);
+    }
+
+    .speak-btn {
+      margin-top: 0.4rem;
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--cream-dim);
+      border-radius: 3px;
+      padding: 4px 10px;
+      font-size: 0.7rem;
+      font-family: monospace;
+      cursor: pointer;
+      transition: border-color 0.2s, color 0.2s;
+      display: none;
+    }
+
+    .speak-btn:hover:not(:disabled) {
+      border-color: var(--amber);
+      color: var(--amber);
+    }
+
+    .speak-btn:disabled { opacity: 0.5; cursor: default; }
+    .speak-btn.visible { display: block; }
+
+    .founder-error {
+      font-size: 0.75rem;
+      color: var(--against-fg);
+      font-style: italic;
+      padding: 0.5rem;
+    }
+
+    /* ── PHASE 3: Verdict ── */
+    #verdict-banner {
+      display: none;
+      margin-top: 1rem;
+      padding: 1.25rem 2rem;
+      border: 1px solid var(--amber);
+      border-radius: 6px;
+      background: #15140a;
+      text-align: center;
+    }
+
+    #verdict-banner.visible { display: block; }
+
+    .verdict-label {
+      font-size: 0.65rem;
+      text-transform: uppercase;
+      letter-spacing: 0.2em;
+      color: var(--muted);
+      margin-bottom: 0.5rem;
+    }
+
+    .verdict-tally {
+      font-size: 1.4rem;
+      font-weight: 700;
+      color: var(--cream);
+      margin-bottom: 0.5rem;
+    }
+
+    .verdict-tally .tally-for { color: var(--for-fg); }
+    .verdict-tally .tally-against { color: var(--against-fg); }
+
+    .verdict-result {
+      font-size: 1rem;
+      color: var(--amber);
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      font-weight: 700;
+      margin-bottom: 1rem;
+    }
+
+    #btn-reset {
+      background: transparent;
+      border: 1px solid var(--amber);
+      color: var(--amber);
+      border-radius: 4px;
+      padding: 0.6rem 1.5rem;
+      font-size: 0.8rem;
+      font-family: Georgia, serif;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    #btn-reset:hover { background: rgba(212,160,23,0.1); }
+
+    /* ── Responsive ── */
+    @media (max-width: 900px) {
+      .founders-grid {
+        grid-template-columns: repeat(3, 1fr);
+      }
+    }
+
+    @media (max-width: 600px) {
+      .topics-grid { grid-template-columns: 1fr; }
+      .founders-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    /* scrollbar styling */
+    ::-webkit-scrollbar { width: 4px; height: 4px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: #333; border-radius: 2px; }
+    ::-webkit-scrollbar-thumb:hover { background: #555; }
+  </style>
+</head>
+<body>
+
+<!-- Phase 1: Topic Selection -->
+<div id="phase-select">
+  <h1 class="court-title">The Founders' Court</h1>
+  <p class="court-subtitle">Five founding fathers. Modern controversies. Extended reasoning.</p>
+  <p class="court-credit">Built on: <a href="#" title="The Convention — Week 2">The Convention (Week 2)</a> ↗</p>
+
+  <p class="topics-label">Select a controversy to debate</p>
+
+  <div class="topics-grid" id="topics-grid"></div>
+
+  <button id="btn-convene">Convene the Court</button>
+</div>
+
+<!-- Phase 2: Debate -->
+<div id="phase-debate">
+  <div class="debate-header">
+    <div class="debate-header-left">
+      <span class="debate-title-sm">The Founders' Court</span>
+      <span class="debate-topic-name" id="debate-topic-name"></span>
+    </div>
+    <div class="progress-dots" id="progress-dots"></div>
+  </div>
+
+  <div class="founders-grid" id="founders-grid"></div>
+
+  <div id="verdict-banner">
+    <div class="verdict-label">Court Adjourned</div>
+    <div class="verdict-tally">
+      <span class="tally-for" id="tally-for">FOR: 0</span>
+      &nbsp;&nbsp;&mdash;&nbsp;&nbsp;
+      <span class="tally-against" id="tally-against">AGAINST: 0</span>
+    </div>
+    <div class="verdict-result" id="verdict-result"></div>
+    <button id="btn-reset">Hear Another Controversy</button>
+  </div>
+</div>
+
+<script>
+const TOPICS = [
+  {
+    id: 'ai_rights',
+    label: 'AI Rights & Personhood',
+    brief: 'Should artificial intelligence systems that demonstrate reasoning and autonomy have legal rights or protections? Congress is considering the AI Civil Liberties Act of 2026.'
+  },
+  {
+    id: 'social_media',
+    label: 'Social Media & Speech',
+    brief: 'The government is proposing mandatory algorithmic transparency for platforms with over 10M users and a "truth score" system for political content. Does this violate the First Amendment?'
+  },
+  {
+    id: 'surveillance',
+    label: 'Digital Surveillance',
+    brief: 'Federal agencies collect metadata on all internet traffic without a warrant under the Digital Security Act. The Supreme Court must decide if this violates the Fourth Amendment.'
+  },
+  {
+    id: 'healthcare',
+    label: 'Universal Healthcare',
+    brief: 'Congress is debating the American Health Guarantee Act — mandatory universal coverage funded by a 4% income tax. Is this constitutional? Does government have a duty to ensure health?'
+  },
+  {
+    id: 'guns',
+    label: 'Weapons Technology',
+    brief: 'Ghost guns, 3D-printed firearms, and AI-targeting systems are unregulated. A new bill would require registration of all self-defense weapons and ban AI targeting. Does the Second Amendment protect these technologies?'
+  },
+  {
+    id: 'executive',
+    label: 'Executive Power',
+    brief: 'The current administration has issued 847 executive orders in 18 months, bypassing Congress on immigration, trade, and environmental policy. Has the executive branch exceeded constitutional limits?'
+  }
+];
+
+const FOUNDERS = [
+  {
+    id: 'washington',
+    name: 'George Washington',
+    role: 'Commander-in-Chief, First President',
+    color: '#4a9eff'
+  },
+  {
+    id: 'franklin',
+    name: 'Benjamin Franklin',
+    role: 'Diplomat, Scientist, Inventor',
+    color: '#ffd700'
+  },
+  {
+    id: 'hamilton',
+    name: 'Alexander Hamilton',
+    role: 'Secretary of the Treasury, Federalist',
+    color: '#ff6b35'
+  },
+  {
+    id: 'madison',
+    name: 'James Madison',
+    role: 'Father of the Constitution',
+    color: '#a8e6cf'
+  },
+  {
+    id: 'jefferson',
+    name: 'Thomas Jefferson',
+    role: 'Author of the Declaration, Third President',
+    color: '#c3a6ff'
+  }
+];
+
+// State
+let selectedTopicId = null;
+let founderArguments = {};
+let founderDone = {};
+let voteTally = { FOR: 0, AGAINST: 0 };
+
+// ── Phase 1 setup ──
+const topicsGrid = document.getElementById('topics-grid');
+const btnConvene = document.getElementById('btn-convene');
+
+TOPICS.forEach(topic => {
+  const chip = document.createElement('div');
+  chip.className = 'topic-chip';
+  chip.dataset.id = topic.id;
+  chip.innerHTML = `
+    <div class="topic-chip-title">${topic.label}</div>
+    <div class="topic-chip-brief">${topic.brief}</div>
+  `;
+  chip.addEventListener('click', () => {
+    document.querySelectorAll('.topic-chip').forEach(c => c.classList.remove('selected'));
+    chip.classList.add('selected');
+    selectedTopicId = topic.id;
+    btnConvene.classList.add('visible');
+  });
+  topicsGrid.appendChild(chip);
+});
+
+btnConvene.addEventListener('click', () => {
+  if (!selectedTopicId) return;
+  const topic = TOPICS.find(t => t.id === selectedTopicId);
+  startDebate(topic);
+});
+
+document.getElementById('btn-reset').addEventListener('click', resetToSelect);
+
+// ── Phase 2: Debate ──
+function buildDebateUI(topic) {
+  document.getElementById('debate-topic-name').textContent = topic.label;
+
+  // Progress dots
+  const dotsEl = document.getElementById('progress-dots');
+  dotsEl.innerHTML = '';
+  FOUNDERS.forEach(f => {
+    const dot = document.createElement('div');
+    dot.className = 'progress-dot';
+    dot.id = `dot-${f.id}`;
+    dot.title = f.name;
+    dotsEl.appendChild(dot);
+  });
+
+  // Founders columns
+  const grid = document.getElementById('founders-grid');
+  grid.innerHTML = '';
+  FOUNDERS.forEach(f => {
+    const col = document.createElement('div');
+    col.className = 'founder-col';
+    col.id = `col-${f.id}`;
+    col.style.setProperty('--founder-color', f.color);
+
+    col.innerHTML = `
+      <div class="founder-header">
+        <div class="founder-name">${f.name}</div>
+        <div class="founder-role">${f.role}</div>
+      </div>
+      <div class="founder-body">
+        <div class="thinking-section" id="thinking-section-${f.id}">
+          <div class="thinking-label" id="thinking-label-${f.id}">Reasoning</div>
+          <div class="thinking-text" id="thinking-text-${f.id}"></div>
+        </div>
+        <div class="argument-text" id="argument-${f.id}"></div>
+        <div class="vote-chip" id="vote-${f.id}"></div>
+        <button class="speak-btn" id="speak-${f.id}" onclick="speakFounder('${f.id}')">&#9654; Speak</button>
+      </div>
+    `;
+    grid.appendChild(col);
+
+    // Toggle thinking on label click
+    document.getElementById(`thinking-label-${f.id}`).addEventListener('click', () => {
+      const lbl = document.getElementById(`thinking-label-${f.id}`);
+      const txt = document.getElementById(`thinking-text-${f.id}`);
+      lbl.classList.toggle('expanded');
+      txt.classList.toggle('expanded');
+    });
+  });
+}
+
+function startDebate(topic) {
+  // Reset state
+  founderArguments = {};
+  founderDone = {};
+  voteTally = { FOR: 0, AGAINST: 0 };
+  FOUNDERS.forEach(f => { founderArguments[f.id] = ''; founderDone[f.id] = false; });
+
+  // Switch to phase 2
+  document.getElementById('phase-select').style.display = 'none';
+  const phaseDebate = document.getElementById('phase-debate');
+  phaseDebate.classList.add('active');
+  document.getElementById('verdict-banner').classList.remove('visible');
+
+  buildDebateUI(topic);
+
+  // Launch all founders simultaneously
+  FOUNDERS.forEach(f => startFounderStream(f, topic));
+}
+
+async function startFounderStream(founder, topic) {
+  const dot = document.getElementById(`dot-${founder.id}`);
+  dot.classList.add('active');
+
+  try {
+    const response = await fetch('/api/debate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ topic: topic.label, founderId: founder.id, topicBrief: topic.brief })
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}`);
+    }
+
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = '';
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split('\n');
+      buffer = lines.pop();
+      for (const line of lines) {
+        if (line.startsWith('data: ')) {
+          try {
+            const event = JSON.parse(line.slice(6));
+            handleFounderEvent(founder.id, event);
+          } catch (_) { /* ignore parse errors */ }
+        }
+      }
+    }
+  } catch (err) {
+    // Show error in column, mark done
+    const argEl = document.getElementById(`argument-${founder.id}`);
+    if (argEl) {
+      argEl.innerHTML = `<div class="founder-error">Connection error: ${err.message}</div>`;
+    }
+    dot.classList.remove('active');
+    dot.classList.add('error');
+    markFounderDone(founder.id);
+  }
+}
+
+function handleFounderEvent(founderId, event) {
+  if (event.type === 'thinking') {
+    const section = document.getElementById(`thinking-section-${founderId}`);
+    const lbl = document.getElementById(`thinking-label-${founderId}`);
+    const txt = document.getElementById(`thinking-text-${founderId}`);
+    if (!section || !txt) return;
+    section.classList.add('visible');
+    if (!lbl.classList.contains('expanded')) {
+      lbl.classList.add('expanded');
+      txt.classList.add('expanded');
+    }
+    txt.textContent += event.delta;
+    txt.scrollTop = txt.scrollHeight;
+
+  } else if (event.type === 'text') {
+    founderArguments[founderId] += event.delta;
+    const argEl = document.getElementById(`argument-${founderId}`);
+    if (argEl) {
+      // Render without the [VOTE:...] marker
+      const display = founderArguments[founderId].replace(/\[VOTE:(FOR|AGAINST)\]/g, '').trim();
+      argEl.textContent = display;
+    }
+
+  } else if (event.type === 'vote') {
+    const voteEl = document.getElementById(`vote-${founderId}`);
+    if (voteEl) {
+      voteEl.className = `vote-chip ${event.value === 'FOR' ? 'for' : 'against'}`;
+      voteEl.textContent = event.value === 'FOR' ? '✓ FOR' : '✗ AGAINST';
+    }
+    voteTally[event.value] = (voteTally[event.value] || 0) + 1;
+    updateTally();
+
+  } else if (event.type === 'done') {
+    const dot = document.getElementById(`dot-${founderId}`);
+    if (dot) { dot.classList.remove('active'); dot.classList.add('done'); }
+    // Show speak button
+    const speakBtn = document.getElementById(`speak-${founderId}`);
+    if (speakBtn) speakBtn.classList.add('visible');
+    markFounderDone(founderId);
+
+  } else if (event.type === 'error') {
+    const argEl = document.getElementById(`argument-${founderId}`);
+    if (argEl) {
+      argEl.innerHTML = `<div class="founder-error">Error: ${event.message}</div>`;
+    }
+    const dot = document.getElementById(`dot-${founderId}`);
+    if (dot) { dot.classList.remove('active'); dot.classList.add('error'); }
+    markFounderDone(founderId);
+  }
+}
+
+function markFounderDone(founderId) {
+  founderDone[founderId] = true;
+  if (Object.values(founderDone).every(Boolean)) {
+    showVerdict();
+  }
+}
+
+function updateTally() {
+  document.getElementById('tally-for').textContent = `FOR: ${voteTally.FOR || 0}`;
+  document.getElementById('tally-against').textContent = `AGAINST: ${voteTally.AGAINST || 0}`;
+}
+
+function showVerdict() {
+  updateTally();
+  const forCount = voteTally.FOR || 0;
+  const againstCount = voteTally.AGAINST || 0;
+  let result;
+  if (forCount > againstCount) result = 'Motion Carries';
+  else if (againstCount > forCount) result = 'Motion Fails';
+  else result = 'Court Divided';
+
+  document.getElementById('verdict-result').textContent = result;
+  document.getElementById('verdict-banner').classList.add('visible');
+  document.getElementById('verdict-banner').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+async function speakFounder(founderId) {
+  const text = founderArguments[founderId];
+  if (!text) return;
+
+  const btn = document.getElementById(`speak-${founderId}`);
+  if (!btn) return;
+  btn.disabled = true;
+  btn.textContent = '⏳ Generating...';
+
+  try {
+    const res = await fetch('/api/voice', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ text, founderId })
+    });
+    const data = await res.json();
+
+    if (data.audio) {
+      const audio = new Audio(`data:${data.mimeType};base64,${data.audio}`);
+      audio.play();
+      btn.textContent = '🔊 Playing...';
+      audio.onended = () => {
+        btn.textContent = '▶ Speak';
+        btn.disabled = false;
+      };
+      audio.onerror = () => {
+        btn.textContent = '▶ Speak';
+        btn.disabled = false;
+      };
+    } else {
+      btn.textContent = 'Voice unavailable';
+      btn.disabled = false;
+    }
+  } catch (_) {
+    btn.textContent = 'Voice unavailable';
+    btn.disabled = false;
+  }
+}
+
+function resetToSelect() {
+  // Reset state
+  selectedTopicId = null;
+  founderArguments = {};
+  founderDone = {};
+  voteTally = { FOR: 0, AGAINST: 0 };
+
+  // Deselect topic chips
+  document.querySelectorAll('.topic-chip').forEach(c => c.classList.remove('selected'));
+  btnConvene.classList.remove('visible');
+
+  // Switch phases
+  document.getElementById('phase-debate').classList.remove('active');
+  document.getElementById('phase-select').style.display = '';
+
+  // Scroll to top
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+</script>
+</body>
+</html>
