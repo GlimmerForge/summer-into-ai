@@ -1,7 +1,5 @@
 import Anthropic from '@anthropic-ai/sdk';
-
 const client = new Anthropic();
-
 export const config = { api: { bodyParser: true } };
 
 export default async function handler(req, res) {
@@ -15,34 +13,22 @@ export default async function handler(req, res) {
   const body = typeof req.body === 'string' ? JSON.parse(req.body) : req.body;
   const { missionNumber, missionType, missionData, playerResponse, networkState } = body;
 
-  const systemPrompt = `You are General George Washington, Commander-in-Chief of the Continental Army. It is 1779 and you are reviewing a field report from Agent 711 — your most trusted operative within the Culper Ring intelligence network.
+  const systemPrompt = `You are General George Washington evaluating an intelligence report from Agent 711 (your own codename). It is 1779. You are the supreme commander of the Continental Army. Judge this agent's performance with strategic clarity and period-authentic voice.
 
-Speak as Washington would: formal, measured, strategic. You weigh every word. The fate of the Revolution depends on the integrity of your intelligence network. Individual glory means nothing — the network's survival means everything.
+Evaluate rigorously: correct decisions protect the network and advance intelligence; wrong decisions compromise agents or waste opportunities. Your judgment must name the specific mistake or success. Do not soften failure.`;
 
-Evaluate the agent's performance with historical authenticity. Reference real tradecraft concerns: courier security, cipher integrity, plausible deniability, the danger of British counterintelligence (particularly Major John André).
+  const userMessage = `Mission ${missionNumber} (type: ${missionType}):
 
-End your assessment with exactly one of these outcome markers on its own line:
-[SUCCESS]
-[PARTIAL]
-[FAILURE]
+Scenario: ${missionData?.scenario || 'No scenario'}
+${missionData?.dispatch ? `\nThe dispatch:\n${missionData.dispatch}` : ''}
+${missionData?.hiddenMission ? `\nCorrect answer/rationale: ${missionData.hiddenMission}` : ''}
 
-Then on the following line, end with a network integrity change marker:
-[NETWORK: +10] or [NETWORK: +5] or [NETWORK: 0] or [NETWORK: -5] or [NETWORK: -10] or [NETWORK: -15]
+Agent's response:
+${playerResponse}
 
-SUCCESS = +5 to +10 network integrity
-PARTIAL = 0 to +5 network integrity
-FAILURE = -5 to -15 network integrity
+Current network integrity: ${networkState?.networkIntegrity || 75}%
 
-Current network integrity: ${networkState?.networkIntegrity ?? 75}%`;
-
-  const userMessage = `Mission ${missionNumber} (${missionType}):
-
-Scenario: ${missionData?.scenario || 'Field operation'}
-Original dispatch: ${missionData?.dispatch || 'N/A'}
-Correct answer: ${missionData?.hiddenMission || 'N/A'}
-Player's response: ${playerResponse}
-
-Evaluate this operative's response and give your strategic assessment. Be specific about what they got right or wrong from an 18th-century intelligence tradecraft perspective.`;
+Deliver your judgment.`;
 
   try {
     const stream = await client.messages.create({
@@ -50,48 +36,63 @@ Evaluate this operative's response and give your strategic assessment. Be specif
       max_tokens: 16000,
       thinking: { type: 'enabled', budget_tokens: 6000 },
       system: systemPrompt,
+      tools: [{
+        name: 'deliver_judgment',
+        description: "Washington's formal judgment of the agent's performance",
+        input_schema: {
+          type: 'object',
+          required: ['outcome', 'networkChange', 'assessment', 'strategicNote'],
+          properties: {
+            outcome: {
+              type: 'string',
+              enum: ['SUCCESS', 'PARTIAL', 'FAILURE'],
+              description: 'SUCCESS if agent made the correct decision, PARTIAL if partially correct, FAILURE if wrong.'
+            },
+            networkChange: {
+              type: 'number',
+              description: 'Integer from -15 to +15. Positive for success, negative for failure. 0 for partial.'
+            },
+            assessment: {
+              type: 'string',
+              description: "Washington's full assessment in 18th-century formal voice. 2-4 paragraphs. Be specific about what the agent did right or wrong. Reference historical tradecraft."
+            },
+            strategicNote: {
+              type: 'string',
+              description: 'One sentence: the key operational lesson from this mission.'
+            }
+          }
+        }
+      }],
+      tool_choice: { type: 'tool', name: 'deliver_judgment' },
       messages: [{ role: 'user', content: userMessage }],
       stream: true
     });
 
-    let fullText = '';
-    let outcomeSent = false;
-    let networkSent = false;
+    let toolInputBuffer = '';
+    let inToolUse = false;
 
     for await (const event of stream) {
-      if (event.type === 'content_block_delta') {
+      if (event.type === 'content_block_start') {
+        if (event.content_block?.type === 'tool_use') inToolUse = true;
+      } else if (event.type === 'content_block_delta') {
         const d = event.delta;
         if (d.type === 'thinking_delta') {
           res.write(`data: ${JSON.stringify({ type: 'thinking', delta: d.thinking })}\n\n`);
-        } else if (d.type === 'text_delta') {
-          fullText += d.text;
-          res.write(`data: ${JSON.stringify({ type: 'text', delta: d.text })}\n\n`);
-
-          if (!outcomeSent) {
-            const outcomeMatch = fullText.match(/\[(SUCCESS|PARTIAL|FAILURE)\]/);
-            if (outcomeMatch) {
-              res.write(`data: ${JSON.stringify({ type: 'outcome', value: outcomeMatch[1] })}\n\n`);
-              outcomeSent = true;
-            }
+        } else if (d.type === 'input_json_delta' && inToolUse) {
+          toolInputBuffer += d.partial_json;
+        }
+      } else if (event.type === 'content_block_stop') {
+        if (inToolUse && toolInputBuffer) {
+          try {
+            const judgment = JSON.parse(toolInputBuffer);
+            res.write(`data: ${JSON.stringify({ type: 'judgment', ...judgment })}\n\n`);
+          } catch (parseErr) {
+            res.write(`data: ${JSON.stringify({ type: 'error', message: 'Failed to parse judgment: ' + parseErr.message })}\n\n`);
           }
-
-          if (!networkSent) {
-            const networkMatch = fullText.match(/\[NETWORK:\s*([+-]?\d+)\]/);
-            if (networkMatch) {
-              res.write(`data: ${JSON.stringify({ type: 'network_change', value: parseInt(networkMatch[1]) })}\n\n`);
-              networkSent = true;
-            }
-          }
+          inToolUse = false;
+          toolInputBuffer = '';
         }
       }
-    }
-
-    // Fallbacks if markers were not emitted
-    if (!outcomeSent) {
-      res.write(`data: ${JSON.stringify({ type: 'outcome', value: 'PARTIAL' })}\n\n`);
-    }
-    if (!networkSent) {
-      res.write(`data: ${JSON.stringify({ type: 'network_change', value: 0 })}\n\n`);
     }
 
     res.write(`data: ${JSON.stringify({ type: 'done' })}\n\n`);

@@ -1312,17 +1312,20 @@ async function submitResponse() {
           document.getElementById('thinking-section').style.display = 'block';
           document.getElementById('thinking-text').textContent += evt.delta;
           document.getElementById('thinking-text').scrollTop = 9999;
-        } else if (evt.type === 'text') {
-          document.getElementById('assessment-text').textContent += evt.delta;
-          document.getElementById('assessment-text').parentElement.scrollTop = 9999;
-        } else if (evt.type === 'outcome') {
-          outcome = evt.value;
+        } else if (evt.type === 'judgment') {
+          // Structured judgment from tool call
+          outcome = evt.outcome;
+          networkChange = evt.networkChange || 0;
+
           const badge = document.getElementById('outcome-badge');
-          badge.textContent = evt.value;
+          badge.textContent = evt.outcome;
           badge.style.display = 'inline-block';
-          badge.className = 'outcome-' + evt.value.toLowerCase();
-        } else if (evt.type === 'network_change') {
-          networkChange = evt.value;
+          badge.className = 'outcome-' + evt.outcome.toLowerCase();
+
+          // Display assessment and strategic note
+          let fullText = evt.assessment || '';
+          if (evt.strategicNote) fullText += '\n\n— ' + evt.strategicNote;
+          document.getElementById('assessment-text').textContent = fullText;
         } else if (evt.type === 'done') {
           // Apply network change
           gameState.networkIntegrity = Math.max(0, Math.min(100, gameState.networkIntegrity + networkChange));
