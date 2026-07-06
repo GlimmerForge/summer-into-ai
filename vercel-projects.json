@@ -90,5 +90,21 @@
   "projects/week-03-datapunk/demo-06-complaint-storm": {
     "projectId": "prj_6VpwN9PWzpzMgwb9VVOtL2F1LGO0",
     "orgId": "team_D79TvyBcfHAyncBLxxnY1foW"
+  },
+  "projects/week-04-built-on-yesterday/demo-01-money-trail": {
+    "projectId": "prj_jWMECWba4bmMwgayIZYmUChvYoO2",
+    "orgId": "team_D79TvyBcfHAyncBLxxnY1foW"
+  },
+  "projects/week-04-built-on-yesterday/demo-02-founders-court": {
+    "projectId": "prj_ow5lLrQWeGMueyvSN7fdPqccuBNB",
+    "orgId": "team_D79TvyBcfHAyncBLxxnY1foW"
+  },
+  "projects/week-04-built-on-yesterday/demo-03-side-effect-storm": {
+    "projectId": "prj_Voul2AAI4AQp55UadHZzv9RjqzGE",
+    "orgId": "team_D79TvyBcfHAyncBLxxnY1foW"
+  },
+  "projects/week-04-built-on-yesterday/demo-04-deep-cover": {
+    "projectId": "prj_hmfF8MOOUEoBf1aIiA0gv8Tkplou",
+    "orgId": "team_D79TvyBcfHAyncBLxxnY1foW"
   }
 }
