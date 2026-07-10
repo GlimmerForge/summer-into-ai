@@ -174,6 +174,30 @@
       gap: 0.5rem;
     }
 
+    .debate-header-right {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    #auto-speak-toggle {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--muted);
+      border-radius: 3px;
+      padding: 0.25rem 0.6rem;
+      font-size: 0.6rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: color .2s, border-color .2s;
+    }
+    #auto-speak-toggle.on { color: var(--amber); border-color: var(--amber); }
+
+    .founder-col.speaking .founder-name {
+      text-shadow: 0 0 14px rgba(212, 175, 55, 0.9);
+    }
+
     .debate-header-left {
       display: flex;
       flex-direction: column;
@@ -547,7 +571,10 @@
       <span class="debate-title-sm">The Founders' Court</span>
       <span class="debate-topic-name" id="debate-topic-name"></span>
     </div>
-    <div class="progress-dots" id="progress-dots"></div>
+    <div class="debate-header-right">
+      <button id="auto-speak-toggle" onclick="toggleAutoSpeak()" title="Read each founder's opening aloud as they finish">&#128266; AUTO-SPEAK ON</button>
+      <div class="progress-dots" id="progress-dots"></div>
+    </div>
   </div>
 
   <div class="founders-grid" id="founders-grid"></div>
@@ -759,6 +786,7 @@ function startDebate(topic) {
   founderRebuttals = {};
   founderDone = {};
   voteTally = { FOR: 0, AGAINST: 0 };
+  speakQueue.length = 0;
   FOUNDERS.forEach(f => { founderArguments[f.id] = ''; founderDone[f.id] = false; });
 
   // Switch to phase 2
@@ -901,6 +929,8 @@ function handleFounderEvent(founderId, event) {
       // Show speak button
       const speakBtn = document.getElementById(`speak-${founderId}`);
       if (speakBtn) speakBtn.classList.add('visible');
+      // Auto-speak the opening (sequential queue, like the original Convention)
+      enqueueAutoSpeak(founderId);
     }
     markFounderDone(founderId, round);
 
@@ -1044,6 +1074,73 @@ async function requestMarshallOpinion() {
   }
 }
 
+// ── Voice: shared playback + auto-speak queue ──
+let autoSpeak = true;
+const speakQueue = [];
+let speaking = false;
+
+function toggleAutoSpeak() {
+  autoSpeak = !autoSpeak;
+  const btn = document.getElementById('auto-speak-toggle');
+  btn.classList.toggle('on', autoSpeak);
+  btn.innerHTML = autoSpeak ? '&#128266; AUTO-SPEAK ON' : '&#128263; AUTO-SPEAK OFF';
+  if (!autoSpeak) speakQueue.length = 0;
+}
+
+// Fetch TTS and play; resolves when audio finishes (or fails silently)
+function playVoice(founderId, text, onStart) {
+  return new Promise(async (resolve) => {
+    const col = document.getElementById(`col-${founderId}`);
+    try {
+      const res = await fetch('/api/voice', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text, founderId })
+      });
+      const data = await res.json();
+      if (!data.audio) return resolve(false);
+
+      const audio = new Audio(`data:${data.mimeType};base64,${data.audio}`);
+      if (col) col.classList.add('speaking');
+      if (onStart) onStart();
+      const done = () => { if (col) col.classList.remove('speaking'); resolve(true); };
+      audio.onended = done;
+      audio.onerror = done;
+      audio.play().catch(done);
+    } catch (_) {
+      if (col) col.classList.remove('speaking');
+      resolve(false);
+    }
+  });
+}
+
+// Auto-speak: queue each founder's opening as they finish; play one at a time
+function enqueueAutoSpeak(founderId) {
+  if (!autoSpeak) return;
+  speakQueue.push(founderId);
+  processSpeakQueue();
+}
+
+async function processSpeakQueue() {
+  if (speaking || !speakQueue.length) return;
+  speaking = true;
+  const founderId = speakQueue.shift();
+
+  const full = (founderArguments[founderId] || '').replace(/\[VOTE:(FOR|AGAINST)\]/g, '').trim();
+  // Opening paragraph only, cut at a sentence boundary (~450 chars) — keeps TTS quota sane
+  let text = full.split(/\n\n/)[0] || full;
+  if (text.length > 450) {
+    const cut = text.slice(0, 450);
+    const end = Math.max(cut.lastIndexOf('. '), cut.lastIndexOf('! '), cut.lastIndexOf('? '));
+    text = end > 100 ? cut.slice(0, end + 1) : cut;
+  }
+
+  if (text && autoSpeak) await playVoice(founderId, text);
+  speaking = false;
+  processSpeakQueue();
+}
+
+// Manual Speak button: full argument
 async function speakFounder(founderId) {
   const text = founderArguments[founderId];
   if (!text) return;
@@ -1053,34 +1150,9 @@ async function speakFounder(founderId) {
   btn.disabled = true;
   btn.textContent = '⏳ Generating...';
 
-  try {
-    const res = await fetch('/api/voice', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ text, founderId })
-    });
-    const data = await res.json();
-
-    if (data.audio) {
-      const audio = new Audio(`data:${data.mimeType};base64,${data.audio}`);
-      audio.play();
-      btn.textContent = '🔊 Playing...';
-      audio.onended = () => {
-        btn.textContent = '▶ Speak';
-        btn.disabled = false;
-      };
-      audio.onerror = () => {
-        btn.textContent = '▶ Speak';
-        btn.disabled = false;
-      };
-    } else {
-      btn.textContent = 'Voice unavailable';
-      btn.disabled = false;
-    }
-  } catch (_) {
-    btn.textContent = 'Voice unavailable';
-    btn.disabled = false;
-  }
+  const ok = await playVoice(founderId, text, () => { btn.textContent = '🔊 Playing...'; });
+  btn.textContent = ok ? '▶ Speak' : 'Voice unavailable';
+  btn.disabled = false;
 }
 
 function resetToSelect() {
@@ -1094,6 +1166,7 @@ function resetToSelect() {
   founderRebuttals = {};
   founderDone = {};
   voteTally = { FOR: 0, AGAINST: 0 };
+  speakQueue.length = 0;
 
   // Deselect topic chips
   document.querySelectorAll('.topic-chip').forEach(c => c.classList.remove('selected'));

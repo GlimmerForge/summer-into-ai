@@ -208,7 +208,7 @@
               "content": [
                 {
                   "type": "text",
-                  "text": "ElevenLabs voice — each founder speaks their argument in a distinct voice"
+                  "text": "ElevenLabs auto-speak — founders read their openings aloud in sequence as they finish, with a toggle and per-founder Speak buttons for full arguments"
                 }
               ]
             }
@@ -326,11 +326,11 @@
                       "type": "strong"
                     }
                   ],
-                  "text": "ElevenLabs voice synthesis"
+                  "text": "ElevenLabs voice — auto-speak"
                 },
                 {
                   "type": "text",
-                  "text": " — each founder has a unique ElevenLabs voice ID. After their argument completes, click Speak to hear their verdict in their voice."
+                  "text": " — each founder has a unique voice. As each finishes their opening, their words are read aloud automatically in sequence (toggleable), just like the original Convention — or click Speak for the full argument."
                 }
               ]
             }

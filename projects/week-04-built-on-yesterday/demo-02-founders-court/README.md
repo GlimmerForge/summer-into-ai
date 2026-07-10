@@ -14,7 +14,7 @@ Three distinct AI roles, layered:
 
 Plus:
 - **Structured vote output** — each founder ends with `[VOTE:FOR]` or `[VOTE:AGAINST]`, parsed client-side into the tally.
-- **ElevenLabs TTS** — each founder has a distinct voice ID. Click "Speak" to hear the argument read aloud.
+- **ElevenLabs TTS with auto-speak** — each founder has a distinct voice ID. As each founder finishes their opening, it's read aloud automatically in sequence (toggleable in the header); the per-founder "Speak" button plays the full argument.
 
 ## Topics
 
