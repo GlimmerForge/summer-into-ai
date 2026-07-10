@@ -17,7 +17,7 @@ export default async function handler(req, res) {
 
 Evaluate rigorously: correct decisions protect the network and advance intelligence; wrong decisions compromise agents or waste opportunities. Your judgment must name the specific mistake or success. Do not soften failure.
 
-You MUST deliver your verdict by calling the deliver_judgment tool — never answer in plain text.`;
+Write your full assessment as text in period voice, 2-4 paragraphs, ending with a single-sentence operational lesson. State clearly whether the mission was a SUCCESS, PARTIAL success, or FAILURE.`;
 
   const userMessage = `Mission ${missionNumber} (type: ${missionType}):
 
@@ -33,11 +33,34 @@ Current network integrity: ${networkState?.networkIntegrity || 75}%
 Deliver your judgment.`;
 
   try {
+    // Pass 1: Washington deliberates with extended thinking (streamed live)
     const stream = await client.messages.create({
       model: 'claude-sonnet-4-6',
-      max_tokens: 16000,
-      thinking: { type: 'enabled', budget_tokens: 6000 },
+      max_tokens: 8000,
+      thinking: { type: 'enabled', budget_tokens: 4000 },
       system: systemPrompt,
+      messages: [{ role: 'user', content: userMessage }],
+      stream: true
+    });
+
+    let assessmentProse = '';
+    for await (const event of stream) {
+      if (event.type === 'content_block_delta') {
+        const d = event.delta;
+        if (d.type === 'thinking_delta') {
+          res.write(`data: ${JSON.stringify({ type: 'thinking', delta: d.thinking })}\n\n`);
+        } else if (d.type === 'text_delta') {
+          assessmentProse += d.text;
+        }
+      }
+    }
+
+    // Pass 2: structure the verdict — forced tool call, no thinking (thinking + forced tool
+    // is rejected by the API, and tool_choice auto skips the tool often enough to be unreliable)
+    const verdict = await client.messages.create({
+      model: 'claude-sonnet-4-6',
+      max_tokens: 2000,
+      system: "Convert General Washington's written assessment into the structured judgment. Preserve his verdict, reasoning, and 18th-century voice exactly.",
       tools: [{
         name: 'deliver_judgment',
         description: "Washington's formal judgment of the agent's performance",
@@ -48,7 +71,7 @@ Deliver your judgment.`;
             outcome: {
               type: 'string',
               enum: ['SUCCESS', 'PARTIAL', 'FAILURE'],
-              description: 'SUCCESS if agent made the correct decision, PARTIAL if partially correct, FAILURE if wrong.'
+              description: 'The verdict stated in the assessment.'
             },
             networkChange: {
               type: 'number',
@@ -56,7 +79,7 @@ Deliver your judgment.`;
             },
             assessment: {
               type: 'string',
-              description: "Washington's full assessment in 18th-century formal voice. 2-4 paragraphs. Be specific about what the agent did right or wrong. Reference historical tradecraft."
+              description: "Washington's full assessment in 18th-century formal voice, taken from the deliberation. 2-4 paragraphs."
             },
             strategicNote: {
               type: 'string',
@@ -65,36 +88,18 @@ Deliver your judgment.`;
           }
         }
       }],
-      tool_choice: { type: 'auto' },
-      messages: [{ role: 'user', content: userMessage }],
-      stream: true
+      tool_choice: { type: 'tool', name: 'deliver_judgment' },
+      messages: [{
+        role: 'user',
+        content: `Washington's assessment of mission ${missionNumber}:\n\n${assessmentProse}`
+      }]
     });
 
-    let toolInputBuffer = '';
-    let inToolUse = false;
-
-    for await (const event of stream) {
-      if (event.type === 'content_block_start') {
-        if (event.content_block?.type === 'tool_use') inToolUse = true;
-      } else if (event.type === 'content_block_delta') {
-        const d = event.delta;
-        if (d.type === 'thinking_delta') {
-          res.write(`data: ${JSON.stringify({ type: 'thinking', delta: d.thinking })}\n\n`);
-        } else if (d.type === 'input_json_delta' && inToolUse) {
-          toolInputBuffer += d.partial_json;
-        }
-      } else if (event.type === 'content_block_stop') {
-        if (inToolUse && toolInputBuffer) {
-          try {
-            const judgment = JSON.parse(toolInputBuffer);
-            res.write(`data: ${JSON.stringify({ type: 'judgment', ...judgment })}\n\n`);
-          } catch (parseErr) {
-            res.write(`data: ${JSON.stringify({ type: 'error', message: 'Failed to parse judgment: ' + parseErr.message })}\n\n`);
-          }
-          inToolUse = false;
-          toolInputBuffer = '';
-        }
-      }
+    const toolUse = verdict.content.find(b => b.type === 'tool_use');
+    if (toolUse) {
+      res.write(`data: ${JSON.stringify({ type: 'judgment', ...toolUse.input })}\n\n`);
+    } else {
+      res.write(`data: ${JSON.stringify({ type: 'error', message: 'Judgment could not be formalized.' })}\n\n`);
     }
 
     res.write(`data: ${JSON.stringify({ type: 'done' })}\n\n`);

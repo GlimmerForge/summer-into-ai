@@ -31,7 +31,7 @@ Evaluation criteria:
 
 Be a rigorous judge. The strongest advocate is not always on the winning side of the vote.
 
-You MUST deliver your ruling by calling the deliver_opinion tool — never answer in plain text.`;
+Write your deliberation as text: name the founder who argued best and why, cite at least two founders' specific claims, praise the sharpest rebuttal, and note the weakest argument.`;
 
   const userMessage = `The question before the court: ${topic}
 
@@ -41,11 +41,36 @@ ${transcript}
 Deliver your opinion on who argued best.`;
 
   try {
+    res.write(`data: ${JSON.stringify({ type: 'version', v: 'two-pass-1' })}\n\n`);
+
+    // Pass 1: Marshall deliberates with extended thinking (streamed live to the banner)
     const stream = await client.messages.create({
       model: 'claude-sonnet-4-6',
-      max_tokens: 16000,
-      thinking: { type: 'enabled', budget_tokens: 6000 },
+      max_tokens: 4500,
+      thinking: { type: 'enabled', budget_tokens: 3000 },
       system: systemPrompt,
+      messages: [{ role: 'user', content: userMessage }],
+      stream: true
+    });
+
+    let deliberation = '';
+    for await (const event of stream) {
+      if (event.type === 'content_block_delta') {
+        const d = event.delta;
+        if (d.type === 'thinking_delta') {
+          res.write(`data: ${JSON.stringify({ type: 'thinking', delta: d.thinking })}\n\n`);
+        } else if (d.type === 'text_delta') {
+          deliberation += d.text;
+        }
+      }
+    }
+
+    // Pass 2: structure the ruling — forced tool call, no thinking (thinking + forced tool
+    // is rejected by the API, and tool_choice auto skips the tool often enough to be unreliable)
+    const ruling = await client.messages.create({
+      model: 'claude-sonnet-4-6',
+      max_tokens: 1500,
+      system: "Convert the Chief Justice's deliberation into his structured formal opinion. Preserve his reasoning, his choice of best advocate, and his early-1800s judicial voice exactly.",
       tools: [{
         name: 'deliver_opinion',
         description: "Chief Justice Marshall's formal opinion on the debate",
@@ -56,7 +81,7 @@ Deliver your opinion on who argued best.`;
             winner: {
               type: 'string',
               enum: ['washington', 'franklin', 'hamilton', 'madison', 'jefferson'],
-              description: 'ID of the founder whose combined argument and rebuttal was most persuasive'
+              description: 'ID of the founder the deliberation names as most persuasive'
             },
             winnerName: {
               type: 'string',
@@ -73,36 +98,18 @@ Deliver your opinion on who argued best.`;
           }
         }
       }],
-      tool_choice: { type: 'auto' },
-      messages: [{ role: 'user', content: userMessage }],
-      stream: true
+      tool_choice: { type: 'tool', name: 'deliver_opinion' },
+      messages: [{
+        role: 'user',
+        content: `The question before the court: ${topic}\n\nThe Chief Justice's deliberation:\n${deliberation}`
+      }]
     });
 
-    let toolInputBuffer = '';
-    let inToolUse = false;
-
-    for await (const event of stream) {
-      if (event.type === 'content_block_start') {
-        if (event.content_block?.type === 'tool_use') inToolUse = true;
-      } else if (event.type === 'content_block_delta') {
-        const d = event.delta;
-        if (d.type === 'thinking_delta') {
-          res.write(`data: ${JSON.stringify({ type: 'thinking', delta: d.thinking })}\n\n`);
-        } else if (d.type === 'input_json_delta' && inToolUse) {
-          toolInputBuffer += d.partial_json;
-        }
-      } else if (event.type === 'content_block_stop') {
-        if (inToolUse && toolInputBuffer) {
-          try {
-            const opinion = JSON.parse(toolInputBuffer);
-            res.write(`data: ${JSON.stringify({ type: 'opinion', ...opinion })}\n\n`);
-          } catch (parseErr) {
-            res.write(`data: ${JSON.stringify({ type: 'error', message: 'Failed to parse opinion: ' + parseErr.message })}\n\n`);
-          }
-          inToolUse = false;
-          toolInputBuffer = '';
-        }
-      }
+    const toolUse = ruling.content.find(b => b.type === 'tool_use');
+    if (toolUse) {
+      res.write(`data: ${JSON.stringify({ type: 'opinion', ...toolUse.input })}\n\n`);
+    } else {
+      res.write(`data: ${JSON.stringify({ type: 'error', message: 'The Chief Justice failed to formalize his opinion.' })}\n\n`);
     }
 
     res.write(`data: ${JSON.stringify({ type: 'done' })}\n\n`);

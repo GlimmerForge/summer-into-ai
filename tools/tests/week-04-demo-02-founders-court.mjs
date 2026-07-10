@@ -108,7 +108,7 @@ export default async function test(page, { pass, fail, screenshot }) {
   try {
     await page.waitForFunction(
       () => (document.getElementById('marshall-opinion')?.textContent.trim().length || 0) > 100,
-      { timeout: 120000 }
+      { timeout: 240000 }
     );
     const winner = await page.textContent('#marshall-winner');
     pass(`Chief Justice ruled: ${winner.trim().slice(0, 80)}`);
