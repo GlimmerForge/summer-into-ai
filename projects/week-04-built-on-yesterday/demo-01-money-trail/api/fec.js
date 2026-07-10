@@ -110,18 +110,18 @@ export default async function handler(req, res) {
       ).catch(() => null);
 
       let contribData = await fecFetch(
-        `${FEC_BASE}/schedules/schedule_a/?committee_id=${committeeId}&api_key=${key}&sort=-contribution_receipt_amount&per_page=20&two_year_transaction_period=2024`,
+        `${FEC_BASE}/schedules/schedule_a/?committee_id=${committeeId}&api_key=${key}&sort=-contribution_receipt_amount&per_page=35&two_year_transaction_period=2024`,
         signal
       );
       if (!contribData.results?.length) {
         contribData = await fecFetch(
-          `${FEC_BASE}/schedules/schedule_a/?committee_id=${committeeId}&api_key=${key}&sort=-contribution_receipt_amount&per_page=20&two_year_transaction_period=2022`,
+          `${FEC_BASE}/schedules/schedule_a/?committee_id=${committeeId}&api_key=${key}&sort=-contribution_receipt_amount&per_page=35&two_year_transaction_period=2022`,
           signal
         );
       }
       if (!contribData.results?.length) {
         contribData = await fecFetch(
-          `${FEC_BASE}/schedules/schedule_a/?committee_id=${committeeId}&api_key=${key}&sort=-contribution_receipt_amount&per_page=20`,
+          `${FEC_BASE}/schedules/schedule_a/?committee_id=${committeeId}&api_key=${key}&sort=-contribution_receipt_amount&per_page=35`,
           signal
         );
       }
