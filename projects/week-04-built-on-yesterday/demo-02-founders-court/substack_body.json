@@ -323,14 +323,14 @@
             {
               "type": "link",
               "attrs": {
-                "href": "https://demo-02-founders-court.vercel.app",
+                "href": "https://week-4-demo-2-founders-court.vercel.app",
                 "target": "_blank",
                 "rel": "noopener noreferrer nofollow",
                 "class": null
               }
             }
           ],
-          "text": "demo-02-founders-court.vercel.app"
+          "text": "week-4-demo-2-founders-court.vercel.app"
         }
       ]
     },

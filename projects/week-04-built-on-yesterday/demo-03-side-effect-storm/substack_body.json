@@ -323,14 +323,14 @@
             {
               "type": "link",
               "attrs": {
-                "href": "https://demo-03-side-effect-storm.vercel.app",
+                "href": "https://week-4-demo-3-side-effect-storm.vercel.app",
                 "target": "_blank",
                 "rel": "noopener noreferrer nofollow",
                 "class": null
               }
             }
           ],
-          "text": "demo-03-side-effect-storm.vercel.app"
+          "text": "week-4-demo-3-side-effect-storm.vercel.app"
         }
       ]
     },

@@ -323,14 +323,14 @@
             {
               "type": "link",
               "attrs": {
-                "href": "https://demo-01-money-trail.vercel.app",
+                "href": "https://week-4-demo-1-money-trail.vercel.app",
                 "target": "_blank",
                 "rel": "noopener noreferrer nofollow",
                 "class": null
               }
             }
           ],
-          "text": "demo-01-money-trail.vercel.app"
+          "text": "week-4-demo-1-money-trail.vercel.app"
         }
       ]
     },
