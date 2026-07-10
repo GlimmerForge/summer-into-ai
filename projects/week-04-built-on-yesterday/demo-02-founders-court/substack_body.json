@@ -59,7 +59,7 @@
       "content": [
         {
           "type": "text",
-          "text": "The Convention let five Founding Fathers debate a single topic in one round of monologues. The Founders' Court runs two rounds: opening statements where each founder reasons live with extended thinking, then a rebuttal round where each founder reads all four opponents' arguments and writes a targeted response naming them by name. Hamilton doesn't just state his view — he reads Jefferson's argument, picks the part he most disagrees with, and attacks it directly."
+          "text": "The Convention let five Founding Fathers debate a single topic in one round of monologues. The Founders' Court runs two rounds — opening statements, then rebuttals where each founder reads all four opponents and attacks the strongest opposing claim by name — and then a third AI takes the bench: Chief Justice John Marshall reads the full transcript and rules on who argued best."
         }
       ]
     },
@@ -79,18 +79,18 @@
             {
               "type": "link",
               "attrs": {
-                "href": "https://advisoryhour.substack.com",
+                "href": "https://advisoryhour.substack.com/p/summer-into-ai-week2-submission-zezek",
                 "target": "_blank",
                 "rel": "noopener noreferrer nofollow",
                 "class": null
               }
             }
           ],
-          "text": "Other week-4 entries"
+          "text": "Eric's Zezek the Goblin (Week 2)"
         },
         {
           "type": "text",
-          "text": " added more topics or polish; Founders' Court added a second debate round that makes the founders actually argue with each other instead of past each other"
+          "text": " gave one AI character a persistent personality (a web-based goblin brain). Founders' Court runs five personality-anchored characters simultaneously and makes them fight — then adds a sixth AI whose only job is to judge the other five"
         }
       ]
     },
@@ -126,11 +126,11 @@
                       "type": "strong"
                     }
                   ],
-                  "text": "Parallel extended thinking streams"
+                  "text": "Round 1 — parallel extended thinking streams"
                 },
                 {
                   "type": "text",
-                  "text": " — all five founders stream simultaneously via SSE. Each column shows a collapsible Reasoning panel with live thinking tokens, so you watch Washington deliberate before he speaks."
+                  "text": " — all five founders stream simultaneously via SSE. Each column shows a collapsible Reasoning panel with live thinking tokens, so you watch Washington deliberate before he speaks. Each system prompt is anchored with three real quotes from that founder's writings."
                 }
               ]
             }
@@ -152,11 +152,37 @@
                       "type": "strong"
                     }
                   ],
-                  "text": "Round 2 rebuttal mechanic"
+                  "text": "Round 2 — targeted rebuttals"
                 },
                 {
                   "type": "text",
-                  "text": " — after all five complete their opening statements, the frontend collects all five texts and fires a second round of parallel streams. Each founder receives the other four arguments, uses extended thinking to identify the strongest opposing claim, then writes a targeted 1-2 paragraph rebuttal naming the opponent directly. \"Hamilton's assertion that commerce requires...\" — that kind of specific."
+                  "text": " — after all five finish, the frontend collects all five arguments and fires a second round of parallel streams. Each founder receives the other four arguments, picks the strongest opposing claim, and dismantles it by name. \"Hamilton's assertion that commerce requires...\" — that kind of specific."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "list_item",
+          "content": [
+            {
+              "type": "paragraph",
+              "attrs": {
+                "textAlign": null
+              },
+              "content": [
+                {
+                  "type": "text",
+                  "marks": [
+                    {
+                      "type": "strong"
+                    }
+                  ],
+                  "text": "The Chief Justice — AI judging AI"
+                },
+                {
+                  "type": "text",
+                  "text": " — when the rebuttals end, a new endpoint sends the full two-round transcript to Claude playing Chief Justice John Marshall. A forced tool call returns a structured opinion: the best advocate, why they won on argumentation quality, and a 2-3 paragraph judicial opinion in period voice. The winner's column is crowned gold. Three distinct AI roles: generate, rebut, judge."
                 }
               ]
             }
@@ -251,7 +277,7 @@
               "content": [
                 {
                   "type": "text",
-                  "text": "After round 1 completes, round 2 fires automatically. Watch each founder read the opposition and choose who to attack — the "
+                  "text": "After round 1 completes, round 2 fires automatically — the "
                 },
                 {
                   "type": "text",
@@ -264,7 +290,7 @@
                 },
                 {
                   "type": "text",
-                  "text": " section appears below each opening statement."
+                  "text": " section appears below each opening statement as founders attack each other by name."
                 }
               ]
             }
@@ -281,7 +307,20 @@
               "content": [
                 {
                   "type": "text",
-                  "text": "Click Speak on any founder after round 1 to hear their argument read aloud. The final verdict tallies all five votes."
+                  "text": "When the court adjourns, "
+                },
+                {
+                  "type": "text",
+                  "marks": [
+                    {
+                      "type": "strong"
+                    }
+                  ],
+                  "text": "Chief Justice Marshall"
+                },
+                {
+                  "type": "text",
+                  "text": " deliberates and rules on who argued best — watch for the gold crown on the winning founder's column."
                 }
               ]
             }

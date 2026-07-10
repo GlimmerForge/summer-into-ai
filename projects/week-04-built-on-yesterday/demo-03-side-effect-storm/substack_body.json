@@ -59,7 +59,7 @@
       "content": [
         {
           "type": "text",
-          "text": "Side Effect Oracle showed you one drug's FDA adverse event profile. Side Effect Storm loads up to three drugs simultaneously, overlays their adverse reaction profiles on a D3 spider chart, animates 24 months of reporting trends, and then fires Claude extended thinking to reason about dangerous combination risks using 10 million real FAERS reports as its evidence base."
+          "text": "Side Effect Oracle showed you one drug's FDA adverse event profile. Side Effect Storm loads up to three drugs simultaneously, overlays their adverse reaction profiles on a D3 spider chart, animates 24 months of reporting trends, fires Claude extended thinking to reason about dangerous combination risks — and then rates the whole combination on an animated storm-severity gauge, from LIGHT DRIZZLE to CATEGORY 4 HURRICANE."
         }
       ]
     },
@@ -79,18 +79,18 @@
             {
               "type": "link",
               "attrs": {
-                "href": "https://advisoryhour.substack.com",
+                "href": "https://advisoryhour.substack.com/p/summer-into-ai-eric-week3-submission-12d",
                 "target": "_blank",
                 "rel": "noopener noreferrer nofollow",
                 "class": null
               }
             }
           ],
-          "text": "Other week-4 entries"
+          "text": "Eric's Emission Factors (Week 3)"
         },
         {
           "type": "text",
-          "text": " built on a single data source; Side Effect Storm makes multi-drug comparison the core mechanic and surfaces combination risks that single-drug tools can't see"
+          "text": " took a dry federal dataset and made it explorable. Side Effect Storm does the same with FDA FAERS — but makes multi-drug comparison the core mechanic, so the AI surfaces combination risks that no single-drug view can show"
         }
       ]
     },
@@ -130,7 +130,7 @@
                 },
                 {
                   "type": "text",
-                  "text": " — for each drug, the API fetches top 15 adverse reactions, a seriousness breakdown (serious vs. not), 24 months of monthly event counts, and label warning text — all in parallel via Promise.all."
+                  "text": " — for each drug, the API fetches top 15 adverse reactions, a seriousness breakdown, 24 months of monthly event counts, and label warning text — all in parallel via Promise.all."
                 }
               ]
             }
@@ -182,7 +182,33 @@
                 },
                 {
                   "type": "text",
-                  "text": " — with 2+ drugs loaded, Claude receives all three full data profiles and uses 8,000 thinking tokens to identify dangerous combinations, shared risk factors, and specific populations at elevated risk. The reasoning streams live."
+                  "text": " — with 2+ drugs loaded, Claude receives all full data profiles and uses 8,000 thinking tokens to identify dangerous combinations, shared risk factors, and vulnerable populations. The reasoning streams live."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "list_item",
+          "content": [
+            {
+              "type": "paragraph",
+              "attrs": {
+                "textAlign": null
+              },
+              "content": [
+                {
+                  "type": "text",
+                  "marks": [
+                    {
+                      "type": "strong"
+                    }
+                  ],
+                  "text": "The storm gauge — structured AI output driving the UI"
+                },
+                {
+                  "type": "text",
+                  "text": " — after the prose analysis, a second forced tool call distills everything into { riskLevel 1-10, stormCategory, headline, keyInteraction }. The UI renders it as an animated severity bar. Ambien + Xanax scores a 9/10 CATEGORY 4 HURRICANE with the specific fatal interaction named. The AI's judgment becomes interface state, not just text."
                 }
               ]
             }
@@ -281,7 +307,20 @@
               "content": [
                 {
                   "type": "text",
-                  "text": "Try notorious combos: Ambien + Xanax, Adderall + Prozac, or the three worst-in-class drugs from different categories."
+                  "text": "Watch the "
+                },
+                {
+                  "type": "text",
+                  "marks": [
+                    {
+                      "type": "strong"
+                    }
+                  ],
+                  "text": "STORM SEVERITY"
+                },
+                {
+                  "type": "text",
+                  "text": " gauge fill when the analysis completes. Try notorious combos: Ambien + Xanax, Warfarin + Aspirin + Ibuprofen."
                 }
               ]
             }

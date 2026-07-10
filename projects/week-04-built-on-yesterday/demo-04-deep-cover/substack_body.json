@@ -79,18 +79,18 @@
             {
               "type": "link",
               "attrs": {
-                "href": "https://advisoryhour.substack.com",
+                "href": "https://advisoryhour.substack.com/p/summer-into-ai-week2-submission-independence",
                 "target": "_blank",
                 "rel": "noopener noreferrer nofollow",
                 "class": null
               }
             }
           ],
-          "text": "Other week-4 entries"
+          "text": "Independence Engines in Space (Week 2)"
         },
         {
           "type": "text",
-          "text": " extended their demos with more content; Deep Cover added a consequence system and a second AI interaction type (composing disinformation) that changes the game's strategy"
+          "text": " built a one-session creative AI experience around a Revolutionary theme. Deep Cover stretches the same period material across a five-mission campaign where the AI remembers your choices — state that persists is what turns a demo into a game"
         }
       ]
     },
@@ -130,7 +130,7 @@
                 },
                 {
                   "type": "text",
-                  "text": " — each of the five missions knows your previous decisions. Claude generates historically authentic cipher dispatches, disinformation scenarios, and moral dilemmas that respond to how you've managed the network so far."
+                  "text": " — each of the five missions knows your previous decisions. Claude generates historically authentic cipher dispatches, disinformation scenarios, and moral dilemmas that respond to how you've managed the network so far — delivered as structured tool calls, so the game state never breaks on a parsing error."
                 }
               ]
             }
@@ -156,7 +156,7 @@
                 },
                 {
                   "type": "text",
-                  "text": " — after each mission, Claude uses 6,000 thinking tokens to evaluate your response against 18th-century intelligence tradecraft. The reasoning panel shows Washington deliberating before his verdict. Each outcome updates the network integrity meter."
+                  "text": " — after each mission, Claude uses 6,000 thinking tokens to evaluate your response against 18th-century intelligence tradecraft, then delivers a structured verdict via forced tool call: outcome, network integrity change, full assessment in period voice, and the operational lesson. The reasoning panel shows Washington deliberating before his verdict."
                 }
               ]
             }
@@ -234,7 +234,7 @@
               "content": [
                 {
                   "type": "text",
-                  "text": "For DECODE missions: read the cipher dispatch, interpret it, and choose the operational response."
+                  "text": "For DECODE missions: read the cipher dispatch, write your interpretation, and choose the operational response."
                 }
               ]
             }
