@@ -125,6 +125,19 @@ if (cfg.competitor) {
   ));
 }
 
+// 3.5 Built on (week-4 theme): link the original + list what changed
+if (cfg.builtOn) {
+  content.push(h2('Built on yesterday — what changed'));
+  content.push(para(
+    textNode('The original: ', { bold: true }),
+    textNode(cfg.builtOn.label, { link: cfg.builtOn.url }),
+    ...(cfg.builtOn.note ? [textNode(` — ${cfg.builtOn.note}`)] : []),
+  ));
+  if (cfg.builtOn.changes?.length) {
+    content.push(bulletList(cfg.builtOn.changes.map(item => para(...runs(item)))));
+  }
+}
+
 // 4. How the AI works
 if (cfg.howAiWorks?.length) {
   content.push(h2('How the AI works'));
