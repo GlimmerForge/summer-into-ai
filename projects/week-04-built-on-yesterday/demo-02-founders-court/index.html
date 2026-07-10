@@ -244,8 +244,12 @@
     .founders-grid {
       display: grid;
       grid-template-columns: repeat(5, 1fr);
+      /* Force the single row to the container height so columns scroll internally */
+      grid-auto-rows: 100%;
       gap: 0.75rem;
-      flex: 1;
+      /* Cap to viewport so columns scroll instead of growing the page */
+      height: calc(100vh - 150px);
+      min-height: 420px;
     }
 
     .founder-col {
@@ -899,12 +903,17 @@ function handleFounderEvent(founderId, event) {
         // Render without the [VOTE:...] marker
         const display = founderArguments[founderId].replace(/\[VOTE:(FOR|AGAINST)\]/g, '').trim();
         argEl.textContent = display;
+        // Follow the stream inside the scrolling column
+        argEl.parentElement.scrollTop = argEl.parentElement.scrollHeight;
       }
     } else {
       // Round 2: stream into rebuttal element and capture for the Chief Justice
       founderRebuttals[founderId] = (founderRebuttals[founderId] || '') + event.delta;
       const rebEl = document.getElementById(`rebuttal-${founderId}`);
-      if (rebEl) rebEl.textContent += event.delta;
+      if (rebEl) {
+        rebEl.textContent += event.delta;
+        rebEl.parentElement.scrollTop = rebEl.parentElement.scrollHeight;
+      }
     }
 
   } else if (event.type === 'vote') {
@@ -1126,14 +1135,21 @@ async function processSpeakQueue() {
   speaking = true;
   const founderId = speakQueue.shift();
 
-  const full = (founderArguments[founderId] || '').replace(/\[VOTE:(FOR|AGAINST)\]/g, '').trim();
-  // Opening paragraph only, cut at a sentence boundary (~450 chars) — keeps TTS quota sane
-  let text = full.split(/\n\n/)[0] || full;
-  if (text.length > 450) {
-    const cut = text.slice(0, 450);
-    const end = Math.max(cut.lastIndexOf('. '), cut.lastIndexOf('! '), cut.lastIndexOf('? '));
-    text = end > 100 ? cut.slice(0, end + 1) : cut;
+  // Clean for TTS: drop vote marker, markdown symbols, and any header/title lines
+  const full = (founderArguments[founderId] || '')
+    .replace(/\[VOTE:(FOR|AGAINST)\]/g, '')
+    .replace(/^#{1,4}\s?.*$/gm, '')       // header lines
+    .replace(/[*#_>`]/g, '')              // stray markdown chars
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+
+  // Speak whole sentences up to ~500 chars — never stop mid-thought
+  let text = '';
+  for (const sentence of full.match(/[^.!?]+[.!?]+(\s|$)/g) || [full]) {
+    if (text.length + sentence.length > 500 && text.length > 0) break;
+    text += sentence;
   }
+  text = text.trim();
 
   if (text && autoSpeak) await playVoice(founderId, text);
   speaking = false;

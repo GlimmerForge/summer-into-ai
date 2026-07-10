@@ -82,6 +82,8 @@ The question: ${topicBrief}
 Instructions:
 - Reason carefully. Think through constitutional implications step by step.
 - Give a substantive argument of 3-4 paragraphs. Cite your own writings specifically.
+- Write in plain prose — NO markdown. No # headers, no ** or * emphasis, no bullet lists. Your words are displayed as plain text and read aloud by a voice engine; markdown symbols appear as literal clutter.
+- Begin speaking immediately as ${founder.name} — no title line, no preamble.
 - At the very end, on its own line, write exactly: [VOTE:FOR] or [VOTE:AGAINST]
 - Take a clear position. No hedging.`;
     userMessage = `State your opening position on: ${topic}`;
@@ -109,7 +111,7 @@ ${othersText}
 
 ---
 
-Choose the SINGLE argument that most directly challenges your position. Identify who made it and write a targeted 1-2 paragraph rebuttal. Be specific — quote or directly reference their claim, then tear it apart with your own documented principles. Name them. Start with something like "Hamilton's assertion that..." or "Jefferson would have us believe...". Do NOT add a new vote. Do NOT restate your full position — just attack the strongest opposing argument.`;
+Choose the SINGLE argument that most directly challenges your position. Identify who made it and write a targeted 1-2 paragraph rebuttal. Be specific — quote or directly reference their claim, then tear it apart with your own documented principles. Name them. Start with something like "Hamilton's assertion that..." or "Jefferson would have us believe...". Write in plain prose — NO markdown symbols (#, **, *). Do NOT add a new vote. Do NOT restate your full position — just attack the strongest opposing argument.`;
   }
 
   try {
