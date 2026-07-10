@@ -11,9 +11,11 @@ Two API endpoints:
 | Endpoint | Role |
 |----------|------|
 | `POST /api/drug` | Fetches FDA FAERS data for 1–3 drugs in parallel — top reactions, seriousness breakdown, 24-month trend, label warnings. No AI involved; pure FDA API. |
-| `POST /api/analyze` (SSE) | Sends all drug data to Claude with **extended thinking** enabled. Streams both the internal reasoning trace and the final clinical analysis. Claude identifies interaction risks, shared adverse event patterns, vulnerable populations, and top recommendations. |
+| `POST /api/analyze` (SSE) | Sends all drug data to Claude with **extended thinking** enabled. Streams both the internal reasoning trace and the final clinical analysis. Claude identifies interaction risks, shared adverse event patterns, vulnerable populations, and top recommendations. Then a second forced **tool call** distills the analysis into a structured storm-severity rating that drives the on-screen gauge. |
 
 Extended thinking (`budget_tokens: 8000`) gives Claude space to reason through cross-drug interaction mechanisms before presenting its conclusions. The reasoning trace is streamed live to the "REASONING TRACE" panel so you can watch it think.
+
+**Storm gauge** — after the prose analysis completes, Claude rates the combination 1–10 via a `set_storm_gauge` tool call (`{ riskLevel, stormCategory, headline, keyInteraction }`). The UI renders it as an animated severity bar with a weather-style category name ("TROPICAL STORM", "CATEGORY 4 HURRICANE") — the AI's judgment directly drives interface state, not just text.
 
 ## What It Shows
 

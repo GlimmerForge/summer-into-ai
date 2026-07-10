@@ -115,8 +115,8 @@ Choose the SINGLE argument that most directly challenges your position. Identify
   try {
     const stream = await client.messages.create({
       model: 'claude-sonnet-4-6',
-      max_tokens: round === 1 ? 16000 : 8000,
-      thinking: { type: 'enabled', budget_tokens: round === 1 ? 8000 : 5000 },
+      max_tokens: round === 1 ? 12000 : 4500,
+      thinking: { type: 'enabled', budget_tokens: round === 1 ? 6000 : 3000 },
       system: systemPrompt,
       messages: [{ role: 'user', content: userMessage }],
       stream: true

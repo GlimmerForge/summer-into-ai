@@ -429,6 +429,65 @@
       margin-bottom: 1rem;
     }
 
+    #marshall-section {
+      margin: 1rem auto 1.25rem;
+      max-width: 720px;
+      text-align: left;
+      border-top: 1px solid #3a3520;
+      padding-top: 1rem;
+    }
+
+    .marshall-header {
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 0.2em;
+      color: var(--amber);
+      text-align: center;
+      margin-bottom: 0.5rem;
+    }
+
+    .marshall-gavel { font-size: 0.9rem; }
+
+    #marshall-status {
+      font-size: 0.75rem;
+      font-style: italic;
+      color: var(--muted);
+      text-align: center;
+      margin-bottom: 0.5rem;
+    }
+
+    #marshall-thinking {
+      font-size: 0.65rem;
+      font-style: italic;
+      color: #6a6450;
+      max-height: 72px;
+      overflow-y: auto;
+      margin-bottom: 0.75rem;
+      white-space: pre-wrap;
+      display: none;
+    }
+    #marshall-thinking.visible { display: block; }
+
+    #marshall-winner {
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: var(--cream);
+      text-align: center;
+      margin-bottom: 0.5rem;
+    }
+    #marshall-winner .winner-name { color: var(--amber); }
+
+    #marshall-opinion {
+      font-size: 0.85rem;
+      line-height: 1.65;
+      color: var(--cream);
+      white-space: pre-wrap;
+    }
+
+    .founder-col.debate-winner {
+      box-shadow: 0 0 0 2px var(--amber), 0 0 24px rgba(212, 175, 55, 0.25);
+    }
+
     #btn-reset {
       background: transparent;
       border: 1px solid var(--amber);
@@ -501,6 +560,17 @@
       <span class="tally-against" id="tally-against">AGAINST: 0</span>
     </div>
     <div class="verdict-result" id="verdict-result"></div>
+
+    <div id="marshall-section">
+      <div class="marshall-header">
+        <span class="marshall-gavel">&#9878;</span> Chief Justice Marshall Presiding
+      </div>
+      <div id="marshall-status">The Chief Justice reviews the arguments&hellip;</div>
+      <div id="marshall-thinking"></div>
+      <div id="marshall-winner"></div>
+      <div id="marshall-opinion"></div>
+    </div>
+
     <button id="btn-reset">Hear Another Controversy</button>
   </div>
 </div>
@@ -579,6 +649,7 @@ let currentRound = 1;
 let founderArguments = {};
 let founderTexts = {};
 let founderVotes = {};
+let founderRebuttals = {};
 let founderDone = {};
 let voteTally = { FOR: 0, AGAINST: 0 };
 
@@ -685,6 +756,7 @@ function startDebate(topic) {
   founderArguments = {};
   founderTexts = {};
   founderVotes = {};
+  founderRebuttals = {};
   founderDone = {};
   voteTally = { FOR: 0, AGAINST: 0 };
   FOUNDERS.forEach(f => { founderArguments[f.id] = ''; founderDone[f.id] = false; });
@@ -725,6 +797,7 @@ async function startFounderStream(founder, topic, round = 1, priorArguments = []
     const reader = response.body.getReader();
     const decoder = new TextDecoder();
     let buffer = '';
+    let sawDoneEvent = false;
 
     while (true) {
       const { done, value } = await reader.read();
@@ -736,10 +809,23 @@ async function startFounderStream(founder, topic, round = 1, priorArguments = []
         if (line.startsWith('data: ')) {
           try {
             const event = JSON.parse(line.slice(6));
+            if (event.type === 'done' || event.type === 'error') sawDoneEvent = true;
             handleFounderEvent(founder.id, event);
           } catch (_) { /* ignore parse errors */ }
         }
       }
+    }
+
+    // Stream ended without a 'done' event (e.g. function timeout) — don't wedge the debate
+    if (!sawDoneEvent) {
+      dot.classList.remove('active');
+      dot.classList.add('done');
+      if (round === 1 && founderArguments[founder.id]) {
+        founderTexts[founder.id] = founderArguments[founder.id];
+        const speakBtn = document.getElementById(`speak-${founder.id}`);
+        if (speakBtn) speakBtn.classList.add('visible');
+      }
+      markFounderDone(founder.id, round);
     }
   } catch (err) {
     // Show error in column, mark done
@@ -787,7 +873,8 @@ function handleFounderEvent(founderId, event) {
         argEl.textContent = display;
       }
     } else {
-      // Round 2: stream into rebuttal element
+      // Round 2: stream into rebuttal element and capture for the Chief Justice
+      founderRebuttals[founderId] = (founderRebuttals[founderId] || '') + event.delta;
       const rebEl = document.getElementById(`rebuttal-${founderId}`);
       if (rebEl) rebEl.textContent += event.delta;
     }
@@ -886,6 +973,75 @@ function showVerdict() {
   document.getElementById('verdict-result').textContent = result;
   document.getElementById('verdict-banner').classList.add('visible');
   document.getElementById('verdict-banner').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+
+  requestMarshallOpinion();
+}
+
+async function requestMarshallOpinion() {
+  const statusEl = document.getElementById('marshall-status');
+  const thinkingEl = document.getElementById('marshall-thinking');
+  const winnerEl = document.getElementById('marshall-winner');
+  const opinionEl = document.getElementById('marshall-opinion');
+
+  statusEl.textContent = 'The Chief Justice reviews the arguments…';
+  thinkingEl.textContent = '';
+  winnerEl.innerHTML = '';
+  opinionEl.textContent = '';
+
+  const debate = FOUNDERS.map(f => ({
+    founderId: f.id,
+    name: f.name,
+    vote: founderVotes[f.id] || 'UNKNOWN',
+    argument: (founderTexts[f.id] || '').replace(/\[VOTE:(FOR|AGAINST)\]/g, '').trim(),
+    rebuttal: (founderRebuttals[f.id] || '').trim()
+  }));
+
+  try {
+    const res = await fetch('/api/verdict', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ topic: `${currentTopic.label} — ${currentTopic.brief}`, debate })
+    });
+
+    const reader = res.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = '';
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buffer += decoder.decode(value, { stream: true });
+
+      const lines = buffer.split('\n\n');
+      buffer = lines.pop();
+
+      for (const line of lines) {
+        if (!line.startsWith('data: ')) continue;
+        let ev;
+        try { ev = JSON.parse(line.slice(6)); } catch { continue; }
+
+        if (ev.type === 'thinking') {
+          thinkingEl.classList.add('visible');
+          thinkingEl.textContent += ev.delta;
+          thinkingEl.scrollTop = thinkingEl.scrollHeight;
+        } else if (ev.type === 'opinion') {
+          statusEl.textContent = 'Opinion of the Court';
+          thinkingEl.classList.remove('visible');
+          winnerEl.innerHTML = `Best advocate: <span class="winner-name">${ev.winnerName}</span> — ${ev.winnerReason}`;
+          opinionEl.textContent = ev.opinion;
+
+          // Crown the winning founder's column
+          document.querySelectorAll('.founder-col').forEach(c => c.classList.remove('debate-winner'));
+          const winCol = document.getElementById(`col-${ev.winner}`);
+          if (winCol) winCol.classList.add('debate-winner');
+        } else if (ev.type === 'error') {
+          statusEl.textContent = 'The Chief Justice declines to rule: ' + ev.message;
+        }
+      }
+    }
+  } catch (err) {
+    statusEl.textContent = 'The Chief Justice could not be reached.';
+  }
 }
 
 async function speakFounder(founderId) {
@@ -935,6 +1091,7 @@ function resetToSelect() {
   founderArguments = {};
   founderTexts = {};
   founderVotes = {};
+  founderRebuttals = {};
   founderDone = {};
   voteTally = { FOR: 0, AGAINST: 0 };
 

@@ -103,6 +103,12 @@ export default async function handler(req, res) {
       const committeeId = primaryCom.committee_id;
 
       // Step 3: Get top contributors — try 2024, fallback 2022, then no filter
+      // In parallel, fetch real fundraising totals (committees endpoint returns no total_receipts)
+      const totalsPromise = fecFetch(
+        `${FEC_BASE}/candidate/${candidateId}/totals/?api_key=${key}&election_full=true&per_page=5`,
+        signal
+      ).catch(() => null);
+
       let contribData = await fecFetch(
         `${FEC_BASE}/schedules/schedule_a/?committee_id=${committeeId}&api_key=${key}&sort=-contribution_receipt_amount&per_page=20&two_year_transaction_period=2024`,
         signal
@@ -121,13 +127,19 @@ export default async function handler(req, res) {
       }
       const contributions = contribData.results || [];
 
+      // Resolve real fundraising totals — latest election year first
+      const totalsData = await totalsPromise;
+      const latestTotals = (totalsData?.results || [])
+        .sort((a, b) => (b.candidate_election_year || 0) - (a.candidate_election_year || 0))[0];
+      const realTotalRaised = latestTotals?.receipts || primaryCom.total_receipts || 0;
+
       // Build candidate node
       const candidateNode = {
         id: candidateId,
         label: candidateName,
         type: 'candidate',
         party,
-        amount: primaryCom.total_receipts || 0,
+        amount: realTotalRaised,
         office: candidate.office,
         state: candidate.state
       };
@@ -187,8 +199,8 @@ export default async function handler(req, res) {
         }
       }
 
-      // Step 5: PAC traversal — fetch top 5 PAC donors' own contributors
-      const sortedPacs = [...pacMap.values()].sort((a, b) => b.amount - a.amount).slice(0, 5);
+      // Step 5: PAC traversal — fetch top 3 PAC donors' own contributors (keep calls low for DEMO_KEY)
+      const sortedPacs = [...pacMap.values()].sort((a, b) => b.amount - a.amount).slice(0, 3);
       const pacDonorMap = new Map();
 
       for (const pac of sortedPacs) {
@@ -196,21 +208,11 @@ export default async function handler(req, res) {
           let pd;
           try {
             pd = await fecFetch(
-              `${FEC_BASE}/schedules/schedule_a/?committee_id=${pac.committeeId}&api_key=${key}&sort=-contribution_receipt_amount&per_page=10&two_year_transaction_period=2024`,
+              `${FEC_BASE}/schedules/schedule_a/?committee_id=${pac.committeeId}&api_key=${key}&sort=-contribution_receipt_amount&per_page=10`,
               signal
             );
           } catch {
             pd = { results: [] };
-          }
-          if (!pd.results?.length) {
-            try {
-              pd = await fecFetch(
-                `${FEC_BASE}/schedules/schedule_a/?committee_id=${pac.committeeId}&api_key=${key}&sort=-contribution_receipt_amount&per_page=10`,
-                signal
-              );
-            } catch {
-              pd = { results: [] };
-            }
           }
 
           for (const c of pd.results || []) {
@@ -255,7 +257,7 @@ export default async function handler(req, res) {
       const allEdges = [...edgeMap.values()];
 
       // Meta stats
-      const totalRaised = primaryCom.total_receipts || 0;
+      const totalRaised = realTotalRaised;
       const allContributors = [...donorMap.values(), ...pacMap.values()];
       const topDonorNode = allContributors.sort((a, b) => b.amount - a.amount)[0];
       const topDonor = topDonorNode?.label || 'N/A';
@@ -367,7 +369,7 @@ export default async function handler(req, res) {
       return res.status(500).json({ error: 'Invalid search parameters. Try a different name.' });
     }
     if (status === 429 || (err.body && err.body.includes('rate limit'))) {
-      return res.status(429).json({ error: 'FEC API rate limit reached. DEMO_KEY allows ~20 req/hour — please wait.' });
+      return res.status(429).json({ error: 'FEC API rate limit reached (DEMO_KEY: ~20 req/hour). Set FEC_API_KEY env var with a free key from api.data.gov/signup — that raises the limit to 1,000/hour.' });
     }
     return res.status(500).json({ error: err.message });
   }

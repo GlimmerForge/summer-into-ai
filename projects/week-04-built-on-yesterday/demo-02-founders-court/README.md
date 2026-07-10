@@ -1,16 +1,20 @@
 # The Founders' Court
 
-Five founding fathers debate modern constitutional controversies — with extended thinking visible and ElevenLabs voice for each founder.
+Five founding fathers debate modern constitutional controversies in two rounds — opening arguments, then targeted rebuttals — with Chief Justice Marshall judging who argued best.
 
 An explicit upgrade of [The Convention (Week 2)](../../week-02-red-white-boom/demo-08-the-convention/).
 
 ## How AI Powers It
 
-- **Claude extended thinking** — each founder's internal reasoning chain streams live in a collapsible "Reasoning" panel before their argument appears. You see _how_ Madison thinks about AI rights.
-- **Parallel Claude instances** — all 5 founders reason simultaneously. Five independent Claude calls, each grounded in real historical quotes from that founder's writings.
-- **Historical evidence injection** — each system prompt includes 3 actual quotes from that founder, anchoring their 18th-century reasoning.
-- **Structured vote output** — each founder ends with `[VOTE:FOR]` or `[VOTE:AGAINST]`, parsed client-side to show a tally and final verdict.
-- **ElevenLabs TTS** — each founder has a distinct voice ID. After arguments stream, click "Speak" to hear the argument read aloud.
+Three distinct AI roles, layered:
+
+1. **Advocates (generate)** — all 5 founders reason simultaneously with Claude extended thinking. Each reasoning chain streams live in a collapsible "Reasoning" panel; each system prompt includes 3 real quotes from that founder's writings.
+2. **Adversaries (rebut)** — after round 1, each founder receives the other four arguments, uses extended thinking to pick the strongest opposing claim, and writes a rebuttal naming its author directly.
+3. **Judge (evaluate)** — `api/verdict.js`: Chief Justice John Marshall reads the full two-round transcript and delivers a structured opinion via forced tool call — best advocate, why they won, and a judicial opinion referencing specific claims. The winning founder's column is crowned gold.
+
+Plus:
+- **Structured vote output** — each founder ends with `[VOTE:FOR]` or `[VOTE:AGAINST]`, parsed client-side into the tally.
+- **ElevenLabs TTS** — each founder has a distinct voice ID. Click "Speak" to hear the argument read aloud.
 
 ## Topics
 

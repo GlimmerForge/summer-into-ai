@@ -42,11 +42,15 @@ If no entry exists, create the project via the Vercel API (no GitHub link — pr
 cd projects/week-NN/demo-NN && VERCEL_PROJECT_ID=prj_xxx VERCEL_ORG_ID=team_xxx npx vercel deploy --prod --yes
 ```
 
-**Shared env vars — manual step required after API project creation:**
-Projects created via API do NOT automatically inherit the team's shared env vars (`ANTHROPIC_API_KEY`, `ELEVENLABS_API_KEY`). After creating each project:
-1. Go to vercel.com/jake-straits-projects/[project-name]/settings/environment-variables
-2. Click **Add** → select the shared `ANTHROPIC_API_KEY` (and `ELEVENLABS_API_KEY` if used)
-3. Redeploy after linking
+**Shared env vars — automated after project creation:**
+Projects created via API do NOT inherit the team's shared env vars. Run immediately after creating each project:
+```bash
+node tools/add-vercel-env.mjs --project prj_xxx                        # always: ANTHROPIC_API_KEY
+node tools/add-vercel-env.mjs --project prj_xxx --elevenlabs           # add if demo uses ElevenLabs
+node tools/add-vercel-env.mjs --project prj_xxx --fec                  # add if demo uses FEC API
+node tools/add-vercel-env.mjs --project prj_xxx --replicate            # add if demo uses Replicate
+```
+This reads real key values from `.env.shared` at repo root (gitignored — fill it in once, reuse forever). Then redeploy so the new vars take effect.
 
 Also add to `deploy.yml` inputs and run section so the project can be redeployed via GitHub Actions in the future.
 
@@ -62,6 +66,19 @@ After deploy succeeds, get the actual production URL (never guess):
 node tools/get-vercel-url.mjs --demo projects/week-NN-slug/demo-NN-slug
 ```
 Use this URL everywhere — in the Substack body, in the README, in the report to the user.
+
+### Phase 4.5 — Smoke test the live demo
+
+Run the Playwright smoke test against the production URL before taking screenshots:
+```bash
+node tools/test-demo.mjs \
+  --url https://ACTUAL_URL_FROM_PHASE_4 \
+  --demo week-NN-demo-NN-slug
+```
+- If all checks pass: proceed to screenshots
+- If any check fails: diagnose from the output + failure screenshots in `/tmp/demo-tests/`, fix the issue, redeploy, and re-run before continuing
+
+Test suites live in `tools/tests/`. Every new demo MUST have a matching test file written as part of the build step (see Step 7 sub-agent brief below). The file name is always `week-NN-demo-NN-slug.mjs` — e.g. `week-04-demo-01-money-trail.mjs`.
 
 ### Phase 5 — Screenshots
 
@@ -290,6 +307,7 @@ Call the **Agent tool with `isolation: "worktree"`** for each demo simultaneousl
 > - `.gitignore` — `node_modules/`, `.env.local`, `.vercel/`, `server.js` — **never commit server.js** — Vercel detects it and treats the project as a Node.js server, breaking static file serving
 > - `.env.local` — `ANTHROPIC_API_KEY=your_key_here` (placeholder only)
 > - `README.md` — title, one-line description, how AI powers it, local dev instructions, Vercel deploy instructions
+> - `tools/tests/week-[NN]-demo-[NN]-[slug].mjs` — Playwright smoke test for this demo. Export a default `async function(page, { pass, fail, screenshot })`. Test the critical user path: trigger the primary AI call, wait for the result, assert it's substantive. See existing files in `tools/tests/` for the pattern. Filename must match exactly so `test-demo.mjs --demo week-NN-demo-NN-slug` finds it.
 >
 > Write complete, working code. When done, commit all files with a clear message.
 

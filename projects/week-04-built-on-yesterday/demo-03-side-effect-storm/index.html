@@ -299,6 +299,64 @@
     color: var(--text-dim);
   }
 
+  /* Storm severity gauge — driven by structured AI tool output */
+  #storm-gauge {
+    margin: 12px 0 4px;
+    padding: 12px 14px;
+    border: 1px solid var(--green-dim);
+    background: #0a0f0a;
+  }
+
+  .gauge-row {
+    display: flex;
+    align-items: baseline;
+    gap: 14px;
+    margin-bottom: 8px;
+  }
+
+  .gauge-label {
+    font-size: 10px;
+    letter-spacing: 3px;
+    color: var(--green);
+  }
+
+  .gauge-category {
+    font-size: 14px;
+    font-weight: 700;
+    letter-spacing: 2px;
+  }
+
+  .gauge-level {
+    margin-left: auto;
+    font-size: 14px;
+    font-weight: 700;
+  }
+
+  .gauge-track {
+    height: 10px;
+    background: #111;
+    border: 1px solid #222;
+    margin-bottom: 8px;
+    overflow: hidden;
+  }
+
+  .gauge-fill {
+    height: 100%;
+    width: 0%;
+    transition: width 1.2s ease, background 1.2s ease;
+  }
+
+  .gauge-headline {
+    font-size: 12px;
+    color: #ddd;
+    margin-bottom: 4px;
+  }
+
+  .gauge-interaction {
+    font-size: 11px;
+    color: var(--warning);
+  }
+
   .analysis-body {
     display: none;
     grid-template-columns: 1fr 2fr;
@@ -511,6 +569,19 @@
     <div class="analysis-header">
       <div class="analysis-title">// CLAUDE EXTENDED THINKING — CLINICAL INTERACTION ANALYSIS</div>
     </div>
+
+    <!-- Storm gauge — populated by structured AI tool call after analysis -->
+    <div id="storm-gauge" style="display:none;">
+      <div class="gauge-row">
+        <span class="gauge-label">STORM SEVERITY</span>
+        <span class="gauge-category" id="gauge-category">—</span>
+        <span class="gauge-level" id="gauge-level">0/10</span>
+      </div>
+      <div class="gauge-track"><div class="gauge-fill" id="gauge-fill"></div></div>
+      <div class="gauge-headline" id="gauge-headline"></div>
+      <div class="gauge-interaction" id="gauge-interaction"></div>
+    </div>
+
     <div class="analysis-body" id="analysis-body">
       <div class="thinking-panel">
         <div class="thinking-label">REASONING TRACE</div>
@@ -677,7 +748,7 @@ function drawRadar(drugs) {
   const svg = d3.select('#radar-svg');
   svg.selectAll('*').remove();
 
-  const W = document.getElementById('panel-radar').clientWidth - 28;
+  const W = Math.max(300, document.getElementById('panel-radar').clientWidth - 28);
   const H = Math.max(360, Math.min(480, W));
   svg.attr('viewBox', `0 0 ${W} ${H}`).attr('height', H);
 
@@ -841,7 +912,7 @@ function drawSeverity(drugs) {
   const svg = d3.select('#severity-svg');
   svg.selectAll('*').remove();
 
-  const W = document.getElementById('panel-severity').clientWidth - 28;
+  const W = Math.max(300, document.getElementById('panel-severity').clientWidth - 28);
   const barH = 32;
   const margin = { left: 90, right: 60, top: 10, bottom: 10 };
   const H = drugs.length * (barH + 14) + margin.top + margin.bottom + 30;
@@ -919,7 +990,7 @@ function drawSparklines(drugs) {
   const svg = d3.select('#sparkline-svg');
   svg.selectAll('*').remove();
 
-  const W = document.getElementById('panel-sparklines').clientWidth - 28;
+  const W = Math.max(300, document.getElementById('panel-sparklines').clientWidth - 28);
   const perH = 60;
   const margin = { left: 50, right: 16, top: 8, bottom: 8 };
   const H = drugs.length * perH + margin.top + margin.bottom + 20;
@@ -1041,6 +1112,7 @@ async function analyzeCombo() {
   document.getElementById('analyze-combo-btn').disabled = true;
   document.getElementById('analysis-section').style.display = 'block';
   document.getElementById('analysis-body').classList.add('visible');
+  document.getElementById('storm-gauge').style.display = 'none';
 
   const thinkingEl = document.getElementById('thinking-text');
   const analysisEl = document.getElementById('analysis-text');
@@ -1100,6 +1172,8 @@ async function analyzeCombo() {
             // Render markdown headers as styled text
             analysisEl.textContent = analysisAccum;
             analysisEl.parentElement.scrollTop = 99999;
+          } else if (evt.type === 'gauge') {
+            renderStormGauge(evt);
           } else if (evt.type === 'done') {
             setStatus('// Analysis complete');
             thinkingEl.className = '';
@@ -1118,6 +1192,35 @@ async function analyzeCombo() {
   } finally {
     document.getElementById('analyze-combo-btn').disabled = false;
   }
+}
+
+function renderStormGauge(g) {
+  const level = Math.max(1, Math.min(10, Math.round(g.riskLevel || 1)));
+  // Color scale: green (1) → yellow (5) → orange (7) → red (10)
+  const color = level <= 3 ? '#00ff88' : level <= 5 ? '#ffdd00' : level <= 7 ? '#ffaa00' : '#ff3344';
+
+  const gauge = document.getElementById('storm-gauge');
+  gauge.style.display = 'block';
+
+  const cat = document.getElementById('gauge-category');
+  cat.textContent = g.stormCategory || '—';
+  cat.style.color = color;
+
+  const lvl = document.getElementById('gauge-level');
+  lvl.textContent = `${level}/10`;
+  lvl.style.color = color;
+
+  const fill = document.getElementById('gauge-fill');
+  // Kick off the transition from 0 on next frame
+  requestAnimationFrame(() => {
+    fill.style.width = `${level * 10}%`;
+    fill.style.background = color;
+  });
+
+  document.getElementById('gauge-headline').textContent = g.headline || '';
+  document.getElementById('gauge-interaction').textContent = g.keyInteraction ? `⚠ ${g.keyInteraction}` : '';
+
+  gauge.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 }
 
 // ============================================================
