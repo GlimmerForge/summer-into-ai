@@ -28,7 +28,7 @@ export default async function test(page, { pass, fail, screenshot }) {
       () => {
         const cards = document.getElementById('drug-cards');
         return cards && cards.children.length > 0;
-      },
+      }, null,
       { timeout: 30000 }
     );
     const cardCount = await page.evaluate(() => document.getElementById('drug-cards').children.length);
@@ -56,7 +56,7 @@ export default async function test(page, { pass, fail, screenshot }) {
   // Wait for ANALYZE COMBO button to be enabled, then click
   try {
     await page.waitForFunction(
-      () => !document.getElementById('analyze-combo-btn')?.disabled,
+      () => !document.getElementById('analyze-combo-btn')?.disabled, null,
       { timeout: 10000 }
     );
     pass('ANALYZE COMBO button enabled');
@@ -73,7 +73,7 @@ export default async function test(page, { pass, fail, screenshot }) {
       () => {
         const section = document.getElementById('analysis-section');
         return section && section.style.display !== 'none';
-      },
+      }, null,
       { timeout: 10000 }
     );
     pass('Analysis section appeared');
@@ -89,7 +89,7 @@ export default async function test(page, { pass, fail, screenshot }) {
         const el = document.getElementById('analysis-text');
         const t = el?.textContent?.trim() || '';
         return t.length > 100 && !t.includes('Waiting');
-      },
+      }, null,
       { timeout: 90000 }
     );
     const analysisText = await page.textContent('#analysis-text');
@@ -113,7 +113,7 @@ export default async function test(page, { pass, fail, screenshot }) {
   try {
     await page.waitForFunction(
       () => document.getElementById('storm-gauge')?.style.display !== 'none' &&
-            document.getElementById('gauge-level')?.textContent !== '0/10',
+            document.getElementById('gauge-level')?.textContent !== '0/10', null,
       { timeout: 150000 }
     );
     const cat = await page.textContent('#gauge-category');

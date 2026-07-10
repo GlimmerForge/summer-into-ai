@@ -32,7 +32,7 @@ Analyze the provided drug data and deliver a structured clinical assessment cove
 
 Be specific — always cite actual reaction counts and percentages from the data. This is real FAERS data representing real patient reports. Treat it seriously.
 
-Format your response with clear section headers using ## markdown headers. Keep each section concise but substantive.`;
+Format: your output renders as PLAIN TEXT in a terminal-style panel — markdown symbols appear as literal clutter. Do NOT use #, ##, **, tables, pipes, or emoji. Write section titles in UPPERCASE on their own line, followed by the section text. Keep each section concise but substantive.`;
 
   const drugSummary = drugs.map(d => ({
     name: d.name,

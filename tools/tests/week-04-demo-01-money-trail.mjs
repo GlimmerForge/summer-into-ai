@@ -19,7 +19,7 @@ export default async function test(page, { pass, fail, screenshot }) {
       () => {
         const overlay = document.getElementById('loading-a');
         return overlay && (overlay.style.display === 'none' || overlay.classList.contains('hidden'));
-      },
+      }, null,
       { timeout: 45000 }
     );
   } catch {
@@ -29,7 +29,7 @@ export default async function test(page, { pass, fail, screenshot }) {
   // Check SVG circles appeared (D3 renders nodes as <circle> elements)
   try {
     await page.waitForFunction(
-      () => document.querySelectorAll('#svg-a circle').length >= 3,
+      () => document.querySelectorAll('#svg-a circle').length >= 3, null,
       { timeout: 45000 }
     );
     const circleCount = await page.evaluate(() => document.querySelectorAll('#svg-a circle').length);
@@ -62,7 +62,7 @@ export default async function test(page, { pass, fail, screenshot }) {
   // Wait for Oracle to start thinking (dot activates)
   try {
     await page.waitForFunction(
-      () => document.getElementById('thinking-dot')?.classList.contains('active'),
+      () => document.getElementById('thinking-dot')?.classList.contains('active'), null,
       { timeout: 15000 }
     );
     pass('Oracle extended thinking started');
@@ -79,7 +79,7 @@ export default async function test(page, { pass, fail, screenshot }) {
         if (!msgs.length) return false;
         const last = msgs[msgs.length - 1];
         return last.textContent.trim().length > 80;
-      },
+      }, null,
       { timeout: 90000 }
     );
     const msgs = await page.locator('#chat-messages .msg.oracle').all();

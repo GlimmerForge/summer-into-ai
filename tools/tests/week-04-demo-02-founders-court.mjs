@@ -8,7 +8,7 @@ export default async function test(page, { pass, fail, screenshot }) {
   // Wait for topic chips to render (populated by JS on load)
   try {
     await page.waitForFunction(
-      () => document.querySelectorAll('#topics-grid .topic-chip').length > 0,
+      () => document.querySelectorAll('#topics-grid .topic-chip').length > 0, null,
       { timeout: 10000 }
     );
     const chipCount = await page.locator('#topics-grid .topic-chip').count();
@@ -28,7 +28,7 @@ export default async function test(page, { pass, fail, screenshot }) {
   // Wait for debate phase to appear
   try {
     await page.waitForFunction(
-      () => document.getElementById('phase-debate')?.style.display !== 'none',
+      () => document.getElementById('phase-debate')?.style.display !== 'none', null,
       { timeout: 10000 }
     );
     pass('Debate phase started');
@@ -43,7 +43,7 @@ export default async function test(page, { pass, fail, screenshot }) {
       () => {
         const args = document.querySelectorAll('[id^="argument-"]');
         return Array.from(args).some(el => el.textContent.trim().length > 200);
-      },
+      }, null,
       { timeout: 120000 }
     );
     pass('At least one founder argument streamed');
@@ -62,7 +62,7 @@ export default async function test(page, { pass, fail, screenshot }) {
         const votes = document.querySelectorAll('[id^="vote-"]');
         const filled = Array.from(votes).filter(el => el.textContent.includes('FOR') || el.textContent.includes('AGAINST'));
         return filled.length >= 3; // at least 3 of 5 voted
-      },
+      }, null,
       { timeout: 180000 }
     );
     const voteEls = await page.locator('[id^="vote-"]').all();
@@ -95,7 +95,7 @@ export default async function test(page, { pass, fail, screenshot }) {
   // Round 2 + Chief Justice: wait for the verdict banner, then Marshall's opinion
   try {
     await page.waitForFunction(
-      () => document.getElementById('verdict-banner')?.classList.contains('visible'),
+      () => document.getElementById('verdict-banner')?.classList.contains('visible'), null,
       { timeout: 360000 }
     );
     pass('Verdict banner appeared after round 2');
@@ -107,7 +107,7 @@ export default async function test(page, { pass, fail, screenshot }) {
 
   try {
     await page.waitForFunction(
-      () => (document.getElementById('marshall-opinion')?.textContent.trim().length || 0) > 100,
+      () => (document.getElementById('marshall-opinion')?.textContent.trim().length || 0) > 100, null,
       { timeout: 240000 }
     );
     const winner = await page.textContent('#marshall-winner');

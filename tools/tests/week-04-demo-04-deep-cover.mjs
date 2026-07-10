@@ -14,7 +14,7 @@ export default async function test(page, { pass, fail, screenshot }) {
       () => {
         const g = document.getElementById('game-screen');
         return g && g.style.display !== 'none';
-      },
+      }, null,
       { timeout: 10000 }
     );
     pass('Game screen appeared');
@@ -30,7 +30,7 @@ export default async function test(page, { pass, fail, screenshot }) {
         const mc = document.getElementById('mission-content');
         const sc = document.getElementById('scenario-text');
         return mc && mc.style.display !== 'none' && sc && sc.textContent.trim().length > 30;
-      },
+      }, null,
       { timeout: 45000 }
     );
     const scenarioText = await page.textContent('#scenario-text');
@@ -84,7 +84,7 @@ export default async function test(page, { pass, fail, screenshot }) {
 
   // Wait for submit button to become enabled before clicking
   await page.waitForFunction(
-    () => !document.getElementById('submit-btn')?.disabled,
+    () => !document.getElementById('submit-btn')?.disabled, null,
     { timeout: 5000 }
   ).catch(() => {});
 
@@ -103,7 +103,7 @@ export default async function test(page, { pass, fail, screenshot }) {
       () => {
         const panel = document.getElementById('judgment-panel');
         return panel && panel.style.display !== 'none';
-      },
+      }, null,
       { timeout: 10000 }
     );
     pass('Washington judgment panel appeared');
@@ -123,7 +123,7 @@ export default async function test(page, { pass, fail, screenshot }) {
           badge.textContent.includes('PARTIAL') ||
           badge.textContent.includes('FAILURE')
         );
-      },
+      }, null,
       { timeout: 90000 }
     );
     const outcome = await page.textContent('#outcome-badge');
