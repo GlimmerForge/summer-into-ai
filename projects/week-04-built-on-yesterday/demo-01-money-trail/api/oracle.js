@@ -45,6 +45,7 @@ Node types in the data:
 When analyzing, use the highlight_nodes tool FIRST to identify relevant nodes, then stream your analysis.
 Call highlight_nodes with node IDs exactly as they appear in the data.
 Be specific: cite actual names, amounts, and PAC chains visible in the data.
+Write in plain prose with short paragraphs. Do NOT use markdown syntax — no #, ##, **, tables, pipes, or > quotes. Your output renders as plain text, so markdown symbols appear as literal clutter.
 ${isCompare ? 'For compare mode: identify shared donors by matching labels across both networks.' : ''}`;
 
   const tools = [{

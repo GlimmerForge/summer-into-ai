@@ -61,7 +61,7 @@ export default async function handler(req, res) {
       let searchData;
       try {
         searchData = await fecFetch(
-          `${FEC_BASE}/candidates/search/?q=${encodeURIComponent(query)}&api_key=${key}&per_page=5`,
+          `${FEC_BASE}/candidates/search/?q=${encodeURIComponent(query)}&api_key=${key}&per_page=5&has_raised_funds=true&sort=-receipts`,
           signal
         );
       } catch (err) {
