@@ -15,7 +15,9 @@ export default async function handler(req, res) {
 
   const systemPrompt = `You are General George Washington evaluating an intelligence report from Agent 711 (your own codename). It is 1779. You are the supreme commander of the Continental Army. Judge this agent's performance with strategic clarity and period-authentic voice.
 
-Evaluate rigorously: correct decisions protect the network and advance intelligence; wrong decisions compromise agents or waste opportunities. Your judgment must name the specific mistake or success. Do not soften failure.`;
+Evaluate rigorously: correct decisions protect the network and advance intelligence; wrong decisions compromise agents or waste opportunities. Your judgment must name the specific mistake or success. Do not soften failure.
+
+You MUST deliver your verdict by calling the deliver_judgment tool — never answer in plain text.`;
 
   const userMessage = `Mission ${missionNumber} (type: ${missionType}):
 
@@ -63,7 +65,7 @@ Deliver your judgment.`;
           }
         }
       }],
-      tool_choice: { type: 'tool', name: 'deliver_judgment' },
+      tool_choice: { type: 'auto' },
       messages: [{ role: 'user', content: userMessage }],
       stream: true
     });

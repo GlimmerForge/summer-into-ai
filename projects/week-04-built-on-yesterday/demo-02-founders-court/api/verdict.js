@@ -29,7 +29,9 @@ Evaluation criteria:
 - Constitutional reasoning quality
 - Rhetorical force
 
-Be a rigorous judge. The strongest advocate is not always on the winning side of the vote.`;
+Be a rigorous judge. The strongest advocate is not always on the winning side of the vote.
+
+You MUST deliver your ruling by calling the deliver_opinion tool — never answer in plain text.`;
 
   const userMessage = `The question before the court: ${topic}
 
@@ -71,7 +73,7 @@ Deliver your opinion on who argued best.`;
           }
         }
       }],
-      tool_choice: { type: 'tool', name: 'deliver_opinion' },
+      tool_choice: { type: 'auto' },
       messages: [{ role: 'user', content: userMessage }],
       stream: true
     });
