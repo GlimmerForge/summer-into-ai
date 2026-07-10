@@ -59,7 +59,7 @@
       "content": [
         {
           "type": "text",
-          "text": "The Convention let five Founding Fathers debate a single topic in a single round. The Founders' Court upgrades the whole experience: six modern constitutional controversies, extended thinking rendered live in each founder's column so you can watch Hamilton and Jefferson actually reason before they argue, and ElevenLabs voices so Madison sounds like Madison."
+          "text": "The Convention let five Founding Fathers debate a single topic in one round of monologues. The Founders' Court runs two rounds: opening statements where each founder reasons live with extended thinking, then a rebuttal round where each founder reads all four opponents' arguments and writes a targeted response naming them by name. Hamilton doesn't just state his view — he reads Jefferson's argument, picks the part he most disagrees with, and attacks it directly."
         }
       ]
     },
@@ -90,7 +90,7 @@
         },
         {
           "type": "text",
-          "text": " upgraded visual polish; Founders' Court upgraded the AI depth — making the reasoning itself part of the show"
+          "text": " added more topics or polish; Founders' Court added a second debate round that makes the founders actually argue with each other instead of past each other"
         }
       ]
     },
@@ -130,7 +130,7 @@
                 },
                 {
                   "type": "text",
-                  "text": " — all five founders stream simultaneously via SSE. Each column shows a collapsible 'Reasoning' panel that expands when thinking tokens arrive, so you see Washington deliberating in real time before he speaks."
+                  "text": " — all five founders stream simultaneously via SSE. Each column shows a collapsible Reasoning panel with live thinking tokens, so you watch Washington deliberate before he speaks."
                 }
               ]
             }
@@ -152,11 +152,11 @@
                       "type": "strong"
                     }
                   ],
-                  "text": "Vote detection mid-stream"
+                  "text": "Round 2 rebuttal mechanic"
                 },
                 {
                   "type": "text",
-                  "text": " — Claude is instructed to embed [VOTE:FOR] or [VOTE:AGAINST] in its text. The frontend parses these as they stream and immediately updates the tally board."
+                  "text": " — after all five complete their opening statements, the frontend collects all five texts and fires a second round of parallel streams. Each founder receives the other four arguments, uses extended thinking to identify the strongest opposing claim, then writes a targeted 1-2 paragraph rebuttal naming the opponent directly. \"Hamilton's assertion that commerce requires...\" — that kind of specific."
                 }
               ]
             }
@@ -182,7 +182,7 @@
                 },
                 {
                   "type": "text",
-                  "text": " — each founder has a unique ElevenLabs voice ID. After their argument completes, click SPEAK to hear their verdict in their voice."
+                  "text": " — each founder has a unique ElevenLabs voice ID. After their argument completes, click Speak to hear their verdict in their voice."
                 }
               ]
             }
@@ -217,7 +217,7 @@
               "content": [
                 {
                   "type": "text",
-                  "text": "Pick one of six modern constitutional controversies — from AI regulation to term limits."
+                  "text": "Pick one of six modern constitutional controversies — AI rights, digital surveillance, executive power, and more."
                 }
               ]
             }
@@ -234,7 +234,7 @@
               "content": [
                 {
                   "type": "text",
-                  "text": "Watch all five founders stream their arguments simultaneously. Click any 'Reasoning' panel to expand the extended thinking."
+                  "text": "Watch all five founders stream their opening arguments simultaneously. Click any Reasoning panel to expand the extended thinking."
                 }
               ]
             }
@@ -251,7 +251,7 @@
               "content": [
                 {
                   "type": "text",
-                  "text": "The tally board at the top updates live as each "
+                  "text": "After round 1 completes, round 2 fires automatically. Watch each founder read the opposition and choose who to attack — the "
                 },
                 {
                   "type": "text",
@@ -260,11 +260,11 @@
                       "type": "strong"
                     }
                   ],
-                  "text": "[VOTE]"
+                  "text": "REBUTTAL"
                 },
                 {
                   "type": "text",
-                  "text": " is detected in the stream."
+                  "text": " section appears below each opening statement."
                 }
               ]
             }
@@ -281,7 +281,7 @@
               "content": [
                 {
                   "type": "text",
-                  "text": "Click SPEAK on any founder to hear their verdict read aloud. The final verdict reveals how the republic would have ruled."
+                  "text": "Click Speak on any founder after round 1 to hear their argument read aloud. The final verdict tallies all five votes."
                 }
               ]
             }
