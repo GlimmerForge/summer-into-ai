@@ -444,12 +444,23 @@
     border-top: 1px solid var(--border);
     padding-top: 6px;
     line-height: 1.6;
+    cursor: pointer;
   }
   .drug-card-warning::before {
-    content: '⚠ LABEL WARNING: ';
+    content: '▾ ⚠ LABEL WARNING: ';
     font-weight: 700;
     letter-spacing: 1px;
   }
+  .drug-card-warning.collapsed {
+    display: -webkit-box;
+    -webkit-line-clamp: 1;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  .drug-card-warning.collapsed::before {
+    content: '▸ ⚠ LABEL WARNING: ';
+  }
+  .drug-card-warning:hover { filter: brightness(1.25); }
 
   /* Inputs changed since last fetch — displayed data is stale */
   .stale { opacity: 0.4; filter: grayscale(0.6); transition: opacity .3s; }
@@ -735,7 +746,7 @@ function renderCards(drugs) {
         <div class="drug-card-stat"><span>Total Events</span><span class="val">${formatNum(drug.totalEvents)}</span></div>
         <div class="drug-card-stat"><span>Serious Rate</span><span class="val ${isHighRisk ? 'drug-card-serious' : ''}">${drug.seriousPercent}%${isHighRisk ? ' &#x26a0;' : ''}</span></div>
         <div class="drug-card-stat"><span>Top Reaction</span><span class="val">${drug.topReactions[0]?.term || 'N/A'}</span></div>
-        ${drug.labelWarning ? `<div class="drug-card-warning">${drug.labelWarning.slice(0,140)}…</div>` : ''}`;
+        ${drug.labelWarning ? `<div class="drug-card-warning collapsed" onclick="this.classList.toggle('collapsed')" title="Click to expand/collapse">${drug.labelWarning}…</div>` : ''}`;
     }
     container.appendChild(card);
   });

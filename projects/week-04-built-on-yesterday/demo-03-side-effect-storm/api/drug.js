@@ -112,7 +112,7 @@ async function fetchDrugData(rawName) {
       if (first) {
         const warnings = first.warnings || first.warnings_and_cautions || first.boxed_warning || [];
         const text = Array.isArray(warnings) ? warnings.join(' ') : String(warnings);
-        result.labelWarning = text.slice(0, 200);
+        result.labelWarning = text.slice(0, 900);
       }
     }
   } catch (_) { /* non-fatal */ }
