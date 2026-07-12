@@ -194,6 +194,14 @@
     }
     #auto-speak-toggle.on { color: var(--amber); border-color: var(--amber); }
 
+    #voice-status {
+      font-size: 0.62rem;
+      font-style: italic;
+      color: var(--muted);
+      letter-spacing: 0.05em;
+    }
+    #voice-status.live { color: var(--amber); }
+
     .speech-card.speaking { border-left-color: var(--amber); }
     .speech-card.speaking .founder-name {
       text-shadow: 0 0 14px rgba(212, 175, 55, 0.9);
@@ -629,7 +637,8 @@
       <span class="debate-topic-name" id="debate-topic-name"></span>
     </div>
     <div class="debate-header-right">
-      <button id="auto-speak-toggle" onclick="toggleAutoSpeak()" title="Read each founder's opening aloud as they finish">&#128266; AUTO-SPEAK ON</button>
+      <span id="voice-status"></span>
+      <button id="auto-speak-toggle" onclick="toggleAutoSpeak()" title="Founders speak their opening lines; Marshall announces the ruling">&#128266; AUTO-SPEAK ON</button>
       <div class="progress-dots" id="progress-dots"></div>
     </div>
   </div>
@@ -1202,6 +1211,13 @@ let autoSpeak = true;
 const speakQueue = [];
 let speaking = false;
 
+function setVoiceStatus(text, live) {
+  const el = document.getElementById('voice-status');
+  if (!el) return;
+  el.textContent = text ? (live ? `🔊 ${text}` : text) : '';
+  el.classList.toggle('live', !!live);
+}
+
 function toggleAutoSpeak() {
   autoSpeak = !autoSpeak;
   const btn = document.getElementById('auto-speak-toggle');
@@ -1233,6 +1249,8 @@ function playVoice(founderId, text, onStart) {
       const statusCard = document.getElementById(`status-${founderId}`);
       if (col) col.classList.add('speaking');
       if (statusCard) statusCard.classList.add('speaking-now');
+      setVoiceStatus(founderId === 'marshall' ? 'Chief Justice Marshall delivers the ruling'
+        : `${(FOUNDERS.find(f => f.id === founderId) || {}).name || ''} speaking`, true);
       if (onStart) onStart();
 
       let finished = false;
@@ -1244,6 +1262,10 @@ function playVoice(founderId, text, onStart) {
         if (currentAudio === audio) currentAudio = null;
         if (col) col.classList.remove('speaking');
         if (statusCard) statusCard.classList.remove('speaking-now');
+        // Label the coming silence so it doesn't read as breakage
+        setVoiceStatus(speakQueue.length ? 'next speaker preparing…'
+          : founderId === 'marshall' ? ''
+          : 'voices rest — the court deliberates in text', false);
         resolve(true);
       };
       audio.onended = done;
