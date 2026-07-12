@@ -877,10 +877,21 @@ async function startFounderStream(founder, topic, round = 1, priorArguments = []
   const dot = document.getElementById(`dot-${founder.id}`);
   dot.classList.add('active');
 
+  // Inactivity watchdog: if the stream goes silent for 75s, abort it so the
+  // debate can never wedge waiting on a hung connection.
+  const controller = new AbortController();
+  let inactivityTimer = null;
+  const resetInactivity = () => {
+    clearTimeout(inactivityTimer);
+    inactivityTimer = setTimeout(() => controller.abort(new Error('stream stalled — no data for 75s')), 75000);
+  };
+
   try {
+    resetInactivity();
     const response = await fetch('/api/debate', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
+      signal: controller.signal,
       body: JSON.stringify({
         topic: topic.label,
         founderId: founder.id,
@@ -901,6 +912,7 @@ async function startFounderStream(founder, topic, round = 1, priorArguments = []
 
     while (true) {
       const { done, value } = await reader.read();
+      resetInactivity();
       if (done) break;
       buffer += decoder.decode(value, { stream: true });
       const lines = buffer.split('\n');
@@ -928,14 +940,29 @@ async function startFounderStream(founder, topic, round = 1, priorArguments = []
       markFounderDone(founder.id, round);
     }
   } catch (err) {
-    // Show error in column, mark done
-    const argEl = document.getElementById(`argument-${founder.id}`);
-    if (argEl) {
-      argEl.innerHTML = `<div class="founder-error">Connection error: ${err.message}</div>`;
+    // If we already have substantial text, keep it and continue the debate
+    const partial = round === 1 ? (founderArguments[founder.id] || '') : (founderRebuttals[founder.id] || '');
+    if (partial.length > 200) {
+      setFounderState(founder.id, round === 1 ? 'opening delivered' : 'rested');
+      dot.classList.remove('active');
+      dot.classList.add('done');
+      if (round === 1) {
+        founderTexts[founder.id] = partial;
+        const speakBtn = document.getElementById(`speak-${founder.id}`);
+        if (speakBtn) speakBtn.classList.add('visible');
+      }
+    } else {
+      const argEl = document.getElementById(`argument-${founder.id}`);
+      if (argEl) {
+        argEl.innerHTML = `<div class="founder-error">Connection error: ${err.message}</div>`;
+      }
+      setFounderState(founder.id, 'lost connection');
+      dot.classList.remove('active');
+      dot.classList.add('error');
     }
-    dot.classList.remove('active');
-    dot.classList.add('error');
     markFounderDone(founder.id, round);
+  } finally {
+    clearTimeout(inactivityTimer);
   }
 }
 
@@ -1177,7 +1204,10 @@ function toggleAutoSpeak() {
   if (!autoSpeak) speakQueue.length = 0;
 }
 
-// Fetch TTS and play; resolves when audio finishes (or fails silently)
+// Fetch TTS and play; resolves when audio finishes (or fails silently).
+// Held in a global so the playing element can't be garbage-collected mid-speech.
+let currentAudio = null;
+
 function playVoice(founderId, text, onStart) {
   return new Promise(async (resolve) => {
     const col = document.getElementById(`col-${founderId}`);
@@ -1190,18 +1220,35 @@ function playVoice(founderId, text, onStart) {
       const data = await res.json();
       if (!data.audio) return resolve(false);
 
+      if (currentAudio) { try { currentAudio.pause(); } catch {} }
       const audio = new Audio(`data:${data.mimeType};base64,${data.audio}`);
+      currentAudio = audio;
+
       const statusCard = document.getElementById(`status-${founderId}`);
       if (col) col.classList.add('speaking');
       if (statusCard) statusCard.classList.add('speaking-now');
       if (onStart) onStart();
+
+      let finished = false;
+      let watchdog = null;
       const done = () => {
+        if (finished) return;
+        finished = true;
+        clearTimeout(watchdog);
+        if (currentAudio === audio) currentAudio = null;
         if (col) col.classList.remove('speaking');
         if (statusCard) statusCard.classList.remove('speaking-now');
         resolve(true);
       };
       audio.onended = done;
       audio.onerror = done;
+      // Safety net: never let a hung audio wedge the speak queue
+      watchdog = setTimeout(done, 120000);
+      audio.onloadedmetadata = () => {
+        clearTimeout(watchdog);
+        const cap = (isFinite(audio.duration) ? audio.duration * 1000 : 90000) + 8000;
+        watchdog = setTimeout(done, cap);
+      };
       audio.play().catch(done);
     } catch (_) {
       if (col) col.classList.remove('speaking');
