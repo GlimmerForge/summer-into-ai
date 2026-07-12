@@ -1,0 +1,705 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SITUATION ROOM — Global Crisis Command</title>
+<style>
+  :root {
+    --bg: #04070c;
+    --panel: #0a1018;
+    --panel2: #0d1520;
+    --line: #1c2a3a;
+    --green: #35e07f;
+    --dim: #5f7a8f;
+    --amber: #ffb347;
+    --red: #ff3b3b;
+    --cyan: #3fd0ff;
+    --text: #c8d8e4;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { height: 100%; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Courier New', ui-monospace, monospace;
+    font-size: 14px;
+    overflow-x: hidden;
+  }
+  body::after {
+    content: '';
+    position: fixed; inset: 0;
+    background: repeating-linear-gradient(0deg, rgba(0,0,0,0.14) 0 1px, transparent 1px 3px);
+    pointer-events: none; z-index: 50;
+  }
+
+  /* ---------- header ---------- */
+  header {
+    display: flex; align-items: center; gap: 16px; flex-wrap: wrap;
+    padding: 12px 18px;
+    border-bottom: 1px solid var(--line);
+    background: linear-gradient(180deg, #0b1420, #060b12);
+  }
+  .logo {
+    font-size: 20px; font-weight: bold; letter-spacing: 4px; color: var(--green);
+    text-shadow: 0 0 12px rgba(53,224,127,0.5);
+  }
+  .builton {
+    font-size: 11px; letter-spacing: 1px; color: var(--amber);
+    border: 1px solid rgba(255,179,71,0.4);
+    padding: 3px 8px; border-radius: 3px;
+    background: rgba(255,179,71,0.06);
+  }
+  .hstats { margin-left: auto; display: flex; gap: 20px; font-size: 12px; }
+  .hstat { text-align: right; }
+  .hstat .lbl { color: var(--dim); font-size: 10px; letter-spacing: 2px; }
+  .hstat .val { color: var(--green); font-size: 16px; font-weight: bold; }
+  .hstat .val.warn { color: var(--amber); }
+
+  /* ---------- layout ---------- */
+  main {
+    display: grid;
+    grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
+    gap: 14px; padding: 14px 18px;
+    max-width: 1500px; margin: 0 auto;
+  }
+  @media (max-width: 980px) { main { grid-template-columns: 1fr; } }
+
+  .panel {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    padding: 14px;
+    position: relative;
+  }
+  .panel-title {
+    font-size: 11px; letter-spacing: 3px; color: var(--dim);
+    border-bottom: 1px solid var(--line);
+    padding-bottom: 8px; margin-bottom: 10px;
+    display: flex; justify-content: space-between; align-items: center;
+  }
+
+  /* ---------- map ---------- */
+  #map-wrap { position: sticky; top: 14px; align-self: start; }
+  #worldmap { width: 100%; height: auto; display: block; background: #050b13; border-radius: 4px; }
+  .land { fill: #10202e; stroke: #24445c; stroke-width: 1; }
+  .grid-line { stroke: #10202e; stroke-width: 0.6; }
+  .quake-dot { fill: var(--cyan); opacity: 0.65; }
+  .threat-marker { fill: var(--red); }
+  .threat-ring { fill: none; stroke: var(--red); stroke-width: 1.5; animation: ping 1.8s ease-out infinite; transform-origin: center; }
+  @keyframes ping { 0% { opacity: 0.9; } 100% { opacity: 0; } }
+  .threat-label { fill: #ff8080; font-size: 13px; font-family: inherit; font-weight: bold; }
+  #map-legend { display: flex; gap: 18px; margin-top: 8px; font-size: 11px; color: var(--dim); }
+  .leg-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 5px; vertical-align: middle; }
+  #feed-line { margin-top: 8px; font-size: 11px; color: var(--dim); letter-spacing: 1px; min-height: 15px; }
+
+  /* ---------- briefing ---------- */
+  #headline {
+    color: var(--red); font-size: 17px; font-weight: bold; letter-spacing: 2px;
+    text-transform: uppercase; margin-bottom: 10px;
+    text-shadow: 0 0 10px rgba(255,59,59,0.4);
+  }
+  #situation { line-height: 1.55; color: var(--text); white-space: pre-wrap; }
+  #situation::after { content: '▊'; color: var(--green); animation: blink 0.9s steps(1) infinite; }
+  #situation.done::after { content: ''; }
+  @keyframes blink { 50% { opacity: 0; } }
+  #recommendation { margin-top: 10px; color: var(--amber); font-size: 13px; line-height: 1.5; }
+  #recommendation::before { content: 'ANALYST REC // '; color: var(--dim); font-size: 10px; letter-spacing: 2px; }
+
+  /* ---------- threats ---------- */
+  .threat-card {
+    border: 1px solid var(--line);
+    background: var(--panel2);
+    border-radius: 5px; padding: 10px 12px; margin-bottom: 10px;
+    display: grid; grid-template-columns: 1fr auto; gap: 6px 12px; align-items: center;
+  }
+  .threat-card.critical { border-color: rgba(255,59,59,0.55); animation: klaxon 1.4s ease-in-out infinite; }
+  @keyframes klaxon {
+    0%, 100% { box-shadow: 0 0 0 rgba(255,59,59,0); }
+    50% { box-shadow: 0 0 14px rgba(255,59,59,0.35); }
+  }
+  .t-name { font-weight: bold; color: #e8f2f8; letter-spacing: 1px; }
+  .t-name .t-id { color: var(--red); margin-right: 8px; }
+  .t-region { grid-column: 1; font-size: 11px; color: var(--dim); letter-spacing: 1px; }
+  .t-sev { grid-column: 1; display: flex; align-items: center; gap: 8px; font-size: 11px; color: var(--dim); }
+  .sev-bar { display: flex; gap: 2px; }
+  .sev-seg { width: 10px; height: 8px; background: #16222e; }
+  .sev-seg.on-low { background: var(--green); }
+  .sev-seg.on-mid { background: var(--amber); }
+  .sev-seg.on-high { background: var(--red); }
+  .alloc {
+    grid-column: 2; grid-row: 1 / span 3;
+    display: flex; flex-direction: column; align-items: center; gap: 4px;
+  }
+  .alloc-count { font-size: 24px; font-weight: bold; color: var(--green); min-width: 40px; text-align: center; }
+  .alloc-btns { display: flex; gap: 6px; }
+  .alloc-btn {
+    width: 34px; height: 30px; font-size: 18px; font-family: inherit;
+    background: #10202e; color: var(--green);
+    border: 1px solid var(--line); border-radius: 4px; cursor: pointer;
+  }
+  .alloc-btn:hover:not(:disabled) { background: #16324a; border-color: var(--green); }
+  .alloc-btn:disabled { opacity: 0.3; cursor: default; }
+  .alloc-lbl { font-size: 9px; color: var(--dim); letter-spacing: 2px; }
+
+  /* ---------- execute row ---------- */
+  #execute-row { display: flex; align-items: center; gap: 16px; margin-top: 4px; }
+  #pool-readout { font-size: 12px; color: var(--dim); letter-spacing: 1px; }
+  #pool-readout b { color: var(--amber); font-size: 18px; }
+  #execute-btn {
+    margin-left: auto;
+    font-family: inherit; font-size: 15px; font-weight: bold; letter-spacing: 3px;
+    padding: 12px 28px; cursor: pointer;
+    color: #06110a; background: var(--green);
+    border: none; border-radius: 4px;
+    box-shadow: 0 0 16px rgba(53,224,127,0.35);
+  }
+  #execute-btn:hover:not(:disabled) { background: #52f096; }
+  #execute-btn:disabled { opacity: 0.35; cursor: default; box-shadow: none; }
+
+  /* ---------- outcome ---------- */
+  #outcome-panel { border-color: rgba(255,179,71,0.4); }
+  .outcome-row { display: flex; gap: 10px; align-items: baseline; margin-bottom: 8px; line-height: 1.45; }
+  .oc-badge {
+    flex: 0 0 auto; font-size: 10px; font-weight: bold; letter-spacing: 1px;
+    padding: 2px 7px; border-radius: 3px; border: 1px solid;
+  }
+  .oc-CONTAINED { color: var(--green); border-color: var(--green); }
+  .oc-MITIGATED { color: #9ee06a; border-color: #9ee06a; }
+  .oc-PARTIAL { color: var(--amber); border-color: var(--amber); }
+  .oc-UNCHECKED { color: #ff7b47; border-color: #ff7b47; }
+  .oc-CATASTROPHIC { color: var(--red); border-color: var(--red); }
+  #judge-stats { display: flex; gap: 26px; margin: 14px 0; }
+  .jstat .lbl { font-size: 10px; letter-spacing: 2px; color: var(--dim); }
+  .jstat .val { font-size: 28px; font-weight: bold; color: var(--green); }
+  #score-value.mid { color: var(--amber); }
+  #score-value.low { color: var(--red); }
+  #assessment { line-height: 1.55; color: var(--text); }
+  #complication { margin-top: 12px; padding: 9px 12px; border-left: 3px solid var(--red); background: rgba(255,59,59,0.07); color: #ffb0b0; line-height: 1.5; font-size: 13px; }
+  #next-btn {
+    margin-top: 14px; width: 100%;
+    font-family: inherit; font-size: 14px; font-weight: bold; letter-spacing: 3px;
+    padding: 12px; cursor: pointer;
+    color: var(--amber); background: transparent;
+    border: 1px solid var(--amber); border-radius: 4px;
+  }
+  #next-btn:hover { background: rgba(255,179,71,0.1); }
+
+  /* ---------- overlays ---------- */
+  .overlay {
+    position: fixed; inset: 0; z-index: 60;
+    background: rgba(3,6,10,0.94);
+    display: flex; align-items: center; justify-content: center;
+    text-align: center; padding: 20px;
+  }
+  .overlay-inner { max-width: 620px; }
+  .overlay h1 { color: var(--green); letter-spacing: 8px; font-size: 34px; margin-bottom: 6px; text-shadow: 0 0 18px rgba(53,224,127,0.5); }
+  .overlay .sub { color: var(--dim); font-size: 13px; line-height: 1.7; margin: 14px 0 26px; }
+  .overlay .sub b { color: var(--amber); }
+  .big-btn {
+    font-family: inherit; font-size: 17px; font-weight: bold; letter-spacing: 4px;
+    padding: 15px 44px; cursor: pointer;
+    color: #06110a; background: var(--green);
+    border: none; border-radius: 4px;
+    box-shadow: 0 0 24px rgba(53,224,127,0.4);
+  }
+  .big-btn:hover { background: #52f096; }
+  #rank-title { color: var(--amber); font-size: 26px; letter-spacing: 3px; margin: 10px 0; text-shadow: 0 0 14px rgba(255,179,71,0.5); }
+  #final-score { font-size: 54px; font-weight: bold; color: var(--green); }
+  #final-detail { color: var(--dim); margin: 14px 0 26px; line-height: 1.6; font-size: 13px; }
+  .hidden { display: none !important; }
+
+  /* ---------- loading ---------- */
+  #loading { text-align: center; padding: 40px 0; color: var(--green); letter-spacing: 2px; }
+  .spinner { display: inline-block; margin-bottom: 12px; width: 34px; height: 34px; border: 2px solid var(--line); border-top-color: var(--green); border-radius: 50%; animation: spin 0.9s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  #error-box { color: var(--red); border: 1px solid var(--red); padding: 10px 12px; border-radius: 4px; margin-top: 10px; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">◉ SITUATION ROOM</div>
+  <div class="builton">BUILT ON: EARTH PULSE (WEEK 3)</div>
+  <div class="hstats">
+    <div class="hstat"><div class="lbl">ROUND</div><div class="val" id="hud-round">—</div></div>
+    <div class="hstat"><div class="lbl">UNITS IN RESERVE</div><div class="val warn" id="hud-units">—</div></div>
+    <div class="hstat"><div class="lbl">SHIFT SCORE</div><div class="val" id="hud-score">0</div></div>
+  </div>
+</header>
+
+<main>
+  <!-- LEFT: MAP -->
+  <div id="map-wrap">
+    <div class="panel">
+      <div class="panel-title"><span>GLOBAL THREAT BOARD</span><span id="map-clock"></span></div>
+      <svg id="worldmap" viewBox="0 0 1000 500" preserveAspectRatio="xMidYMid meet"></svg>
+      <div id="map-legend">
+        <span><span class="leg-dot" style="background:var(--cyan)"></span>LIVE SEISMIC EVENT (USGS)</span>
+        <span><span class="leg-dot" style="background:var(--red)"></span>ACTIVE THREAT</span>
+      </div>
+      <div id="feed-line"></div>
+    </div>
+  </div>
+
+  <!-- RIGHT: CONSOLE -->
+  <div id="console">
+    <div class="panel" id="briefing-panel">
+      <div class="panel-title"><span>CRISIS BRIEFING // WATCHFLOOR AI</span><span id="brief-round"></span></div>
+      <div id="loading"><div class="spinner"></div><div id="loading-msg">CONTACTING WATCHFLOOR…</div></div>
+      <div id="briefing-content" class="hidden">
+        <div id="headline"></div>
+        <div id="situation"></div>
+        <div id="recommendation"></div>
+      </div>
+      <div id="error-box" class="hidden"></div>
+    </div>
+
+    <div class="panel hidden" id="threats-panel" style="margin-top:14px">
+      <div class="panel-title"><span>THREAT BOARD — ALLOCATE RESPONSE UNITS</span></div>
+      <div id="threats"></div>
+      <div id="execute-row">
+        <div id="pool-readout">RESERVE: <b id="pool-count">10</b> UNITS</div>
+        <button id="execute-btn">▶ EXECUTE RESPONSE</button>
+      </div>
+    </div>
+
+    <div class="panel hidden" id="outcome-panel" style="margin-top:14px">
+      <div class="panel-title"><span>AFTER-ACTION REPORT</span></div>
+      <div id="outcomes"></div>
+      <div id="judge-stats">
+        <div class="jstat"><div class="lbl">ROUND SCORE</div><div class="val" id="score-value">—</div></div>
+        <div class="jstat"><div class="lbl">CASUALTIES AVERTED</div><div class="val" id="casualties-value" style="color:var(--cyan)">—</div></div>
+      </div>
+      <div id="assessment"></div>
+      <div id="complication" class="hidden"></div>
+      <button id="next-btn">NEXT ROUND ▶</button>
+    </div>
+  </div>
+</main>
+
+<!-- START OVERLAY -->
+<div class="overlay" id="boot">
+  <div class="overlay-inner">
+    <h1>SITUATION ROOM</h1>
+    <div class="builton" style="display:inline-block">BUILT ON: EARTH PULSE (WEEK 3)</div>
+    <div class="sub">
+      Earth Pulse watched the planet. You <b>command the response</b>.<br><br>
+      Live feeds — USGS seismic, NOAA space weather, global weather stations — stream into the
+      WATCHFLOOR AI, which escalates real signals into a crisis briefing. You are the
+      <b>Flight Director</b>: allocate a shift pool of <b>10 response units</b> across the threats,
+      over <b>3 rounds</b>. The pool does not replenish. The AI judges every call you make.
+    </div>
+    <button class="big-btn" id="start-btn">START SHIFT</button>
+  </div>
+</div>
+
+<!-- FINAL OVERLAY -->
+<div class="overlay hidden" id="final">
+  <div class="overlay-inner">
+    <div class="panel-title" style="justify-content:center;border:none">SHIFT COMPLETE — PERFORMANCE REVIEW</div>
+    <div id="final-score">0</div>
+    <div style="color:var(--dim);font-size:11px;letter-spacing:2px">/ 300 POSSIBLE</div>
+    <div id="rank-title">—</div>
+    <div id="final-detail"></div>
+    <button class="big-btn" id="restart-btn">NEW SHIFT</button>
+  </div>
+</div>
+
+<script>
+'use strict';
+
+/* ============ state ============ */
+const TOTAL_POOL = 10;
+const state = {
+  round: 0,
+  pool: TOTAL_POOL,
+  totalScore: 0,
+  totalCasualties: 0,
+  briefing: null,
+  alloc: {},
+  complication: null,
+  busy: false,
+};
+
+const $ = (id) => document.getElementById(id);
+
+/* ============ world map ============ */
+// Coarse continent outlines as [lon, lat] polygons — enough for a war-room feel.
+const CONTINENTS = [
+  // North America
+  [[-166,68],[-158,71],[-140,70],[-125,72],[-110,73],[-95,74],[-85,70],[-80,62],[-70,60],[-60,52],[-65,45],[-70,42],[-75,36],[-80,31],[-81,25],[-84,30],[-90,29],[-97,26],[-97,20],[-95,16],[-85,12],[-80,9],[-83,8],[-92,15],[-105,20],[-110,23],[-117,33],[-124,40],[-124,48],[-135,58],[-152,60],[-165,62]],
+  // South America
+  [[-80,9],[-75,10],[-72,12],[-60,8],[-52,5],[-44,-3],[-35,-8],[-39,-15],[-41,-22],[-48,-28],[-58,-34],[-62,-41],[-66,-47],[-69,-52],[-71,-54],[-73,-46],[-71,-37],[-70,-30],[-70,-18],[-77,-12],[-81,-5],[-80,1]],
+  // Africa
+  [[-6,35],[10,37],[20,32],[32,31],[35,28],[43,12],[51,12],[48,5],[40,-3],[35,-12],[33,-20],[30,-30],[20,-35],[18,-32],[15,-25],[12,-15],[9,-5],[9,4],[4,6],[-8,5],[-13,9],[-17,15],[-16,22],[-10,30]],
+  // Eurasia
+  [[-9,36],[-9,43],[-2,48],[5,49],[3,52],[8,55],[5,58],[10,59],[18,56],[21,55],[24,58],[28,60],[24,65],[26,71],[40,68],[60,69],[75,73],[95,76],[110,74],[130,72],[150,70],[170,67],[178,65],[170,60],[160,60],[155,53],[140,54],[135,44],[130,42],[122,39],[122,32],[115,23],[108,17],[105,10],[103,2],[100,8],[98,12],[92,20],[88,22],[80,15],[77,8],[72,20],[66,25],[57,26],[52,25],[48,28],[35,27],[33,31],[27,37],[22,38],[15,40],[10,44],[5,43],[-2,40]],
+  // Australia
+  [[114,-22],[122,-18],[131,-12],[137,-12],[142,-11],[146,-19],[150,-23],[153,-28],[150,-37],[144,-38],[140,-38],[135,-35],[129,-32],[124,-33],[115,-34],[113,-26]],
+  // Greenland
+  [[-45,60],[-42,62],[-40,65],[-32,68],[-22,70],[-20,75],[-30,80],[-45,82],[-58,76],[-55,70],[-52,65]],
+];
+
+const SVG_NS = 'http://www.w3.org/2000/svg';
+const W = 1000, H = 500;
+const proj = (lon, lat) => [((lon + 180) / 360) * W, ((90 - lat) / 180) * H];
+
+function el(tag, attrs) {
+  const e = document.createElementNS(SVG_NS, tag);
+  for (const k in attrs) e.setAttribute(k, attrs[k]);
+  return e;
+}
+
+function drawBaseMap() {
+  const svg = $('worldmap');
+  svg.textContent = '';
+  // graticule
+  for (let lon = -150; lon <= 150; lon += 30) {
+    const [x] = proj(lon, 0);
+    svg.appendChild(el('line', { x1: x, y1: 0, x2: x, y2: H, class: 'grid-line' }));
+  }
+  for (let lat = -60; lat <= 60; lat += 30) {
+    const [, y] = proj(0, lat);
+    svg.appendChild(el('line', { x1: 0, y1: y, x2: W, y2: y, class: 'grid-line' }));
+  }
+  // continents
+  for (const poly of CONTINENTS) {
+    const pts = poly.map(([lon, lat]) => proj(lon, lat).map((n) => n.toFixed(1)).join(',')).join(' ');
+    svg.appendChild(el('polygon', { points: pts, class: 'land' }));
+  }
+  // marker layers
+  svg.appendChild(el('g', { id: 'quake-layer' }));
+  svg.appendChild(el('g', { id: 'threat-layer' }));
+}
+
+function plotQuakes(quakes) {
+  const layer = $('quake-layer');
+  layer.textContent = '';
+  for (const q of quakes || []) {
+    const [x, y] = proj(q.lon, q.lat);
+    const r = Math.max(1.6, Math.min(9, q.mag * 1.5));
+    const dot = el('circle', { cx: x, cy: y, r, class: 'quake-dot' });
+    const title = document.createElementNS(SVG_NS, 'title');
+    title.textContent = `M${q.mag} — ${q.place}`;
+    dot.appendChild(title);
+    layer.appendChild(dot);
+  }
+}
+
+function plotThreats(threats) {
+  const layer = $('threat-layer');
+  layer.textContent = '';
+  for (const t of threats || []) {
+    const [x, y] = proj(t.lon, t.lat);
+    layer.appendChild(el('circle', { cx: x, cy: y, r: 5, class: 'threat-marker' }));
+    const ring = el('circle', { cx: x, cy: y, r: 14, class: 'threat-ring' });
+    layer.appendChild(ring);
+    const label = el('text', { x: x + 10, y: y - 8, class: 'threat-label' });
+    label.textContent = t.id;
+    layer.appendChild(label);
+  }
+}
+
+/* ============ HUD ============ */
+function updateHud() {
+  $('hud-round').textContent = state.round ? `${state.round}/3` : '—';
+  $('hud-units').textContent = state.pool;
+  $('hud-score').textContent = state.totalScore;
+  $('brief-round').textContent = state.round ? `ROUND ${state.round} OF 3` : '';
+}
+
+setInterval(() => {
+  $('map-clock').textContent = new Date().toUTCString().replace('GMT', 'UTC');
+}, 1000);
+
+/* ============ typewriter ============ */
+let typeTimer = null;
+function typewrite(elId, text, speed = 6) {
+  clearInterval(typeTimer);
+  const node = $(elId);
+  node.classList.remove('done');
+  node.textContent = '';
+  let i = 0;
+  typeTimer = setInterval(() => {
+    i = Math.min(text.length, i + speed);
+    node.textContent = text.slice(0, i);
+    if (i >= text.length) { clearInterval(typeTimer); node.classList.add('done'); }
+  }, 30);
+}
+
+/* ============ round flow ============ */
+async function loadBriefing() {
+  state.busy = true;
+  state.alloc = {};
+  $('briefing-content').classList.add('hidden');
+  $('threats-panel').classList.add('hidden');
+  $('outcome-panel').classList.add('hidden');
+  $('error-box').classList.add('hidden');
+  $('loading').classList.remove('hidden');
+  $('loading-msg').textContent = 'PULLING LIVE FEEDS: USGS / NOAA SWPC / OPEN-METEO…';
+  updateHud();
+
+  try {
+    const r = await fetch('/api/briefing', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ round: state.round, complication: state.complication }),
+    });
+    const payload = await r.json();
+    if (!r.ok) throw new Error(payload.error || `briefing failed (${r.status})`);
+
+    state.briefing = payload.briefing;
+    for (const t of state.briefing.threats) state.alloc[t.id] = 0;
+
+    // map
+    plotQuakes(payload.data.quakes);
+    plotThreats(state.briefing.threats);
+    const bits = [];
+    if (payload.data.quakeCount != null) bits.push(`USGS: ${payload.data.quakeCount} EVENTS 24H, MAX M${payload.data.maxMag}`);
+    if (payload.data.kp != null) bits.push(`NOAA KP ${payload.data.kp}`);
+    const okCities = (payload.data.cities || []).filter((c) => c.temp != null).length;
+    if (okCities) bits.push(`${okCities}/5 WX STATIONS ONLINE`);
+    $('feed-line').textContent = bits.join('  •  ') || 'FEEDS DEGRADED — OPERATING ON PARTIAL DATA';
+
+    // briefing text
+    $('loading').classList.add('hidden');
+    $('briefing-content').classList.remove('hidden');
+    $('headline').textContent = state.briefing.headline;
+    typewrite('situation', state.briefing.situation);
+    $('recommendation').textContent = state.briefing.recommendation;
+
+    renderThreats();
+    $('threats-panel').classList.remove('hidden');
+  } catch (err) {
+    $('loading').classList.add('hidden');
+    $('error-box').classList.remove('hidden');
+    $('error-box').textContent = 'WATCHFLOOR LINK FAILURE: ' + err.message + ' — refresh to retry.';
+  } finally {
+    state.busy = false;
+  }
+}
+
+function severityClass(s) { return s >= 8 ? 'on-high' : s >= 5 ? 'on-mid' : 'on-low'; }
+
+function renderThreats() {
+  const wrap = $('threats');
+  wrap.textContent = '';
+  for (const t of state.briefing.threats) {
+    const card = document.createElement('div');
+    card.className = 'threat-card' + (t.severity >= 8 ? ' critical' : '');
+    card.dataset.tid = t.id;
+
+    const name = document.createElement('div');
+    name.className = 't-name';
+    const idSpan = document.createElement('span');
+    idSpan.className = 't-id';
+    idSpan.textContent = t.id;
+    name.appendChild(idSpan);
+    name.appendChild(document.createTextNode(t.name));
+
+    const region = document.createElement('div');
+    region.className = 't-region';
+    region.textContent = 'REGION: ' + t.region;
+
+    const sev = document.createElement('div');
+    sev.className = 't-sev';
+    sev.appendChild(document.createTextNode('SEVERITY ' + t.severity + '/10'));
+    const bar = document.createElement('div');
+    bar.className = 'sev-bar';
+    for (let i = 0; i < 10; i++) {
+      const seg = document.createElement('div');
+      seg.className = 'sev-seg' + (i < t.severity ? ' ' + severityClass(t.severity) : '');
+      bar.appendChild(seg);
+    }
+    sev.appendChild(bar);
+
+    const alloc = document.createElement('div');
+    alloc.className = 'alloc';
+    const count = document.createElement('div');
+    count.className = 'alloc-count';
+    count.id = 'alloc-' + t.id;
+    count.textContent = '0';
+    const btns = document.createElement('div');
+    btns.className = 'alloc-btns';
+    const minus = document.createElement('button');
+    minus.className = 'alloc-btn alloc-minus';
+    minus.textContent = '−';
+    minus.addEventListener('click', () => adjust(t.id, -1));
+    const plus = document.createElement('button');
+    plus.className = 'alloc-btn alloc-plus';
+    plus.textContent = '+';
+    plus.addEventListener('click', () => adjust(t.id, +1));
+    btns.appendChild(minus);
+    btns.appendChild(plus);
+    const lbl = document.createElement('div');
+    lbl.className = 'alloc-lbl';
+    lbl.textContent = 'UNITS';
+    alloc.appendChild(count);
+    alloc.appendChild(btns);
+    alloc.appendChild(lbl);
+
+    card.appendChild(name);
+    card.appendChild(alloc);
+    card.appendChild(region);
+    card.appendChild(sev);
+    wrap.appendChild(card);
+  }
+  refreshPool();
+}
+
+function committedThisRound() {
+  return Object.values(state.alloc).reduce((a, b) => a + b, 0);
+}
+
+function adjust(tid, delta) {
+  if (state.busy) return;
+  const cur = state.alloc[tid] || 0;
+  if (delta > 0 && committedThisRound() >= state.pool) return;
+  state.alloc[tid] = Math.max(0, cur + delta);
+  $('alloc-' + tid).textContent = state.alloc[tid];
+  refreshPool();
+}
+
+function refreshPool() {
+  const left = state.pool - committedThisRound();
+  $('pool-count').textContent = left;
+  document.querySelectorAll('.alloc-plus').forEach((b) => (b.disabled = left <= 0));
+  document.querySelectorAll('.alloc-minus').forEach((b) => {
+    const tid = b.closest('.threat-card').dataset.tid;
+    b.disabled = (state.alloc[tid] || 0) <= 0;
+  });
+}
+
+async function executeResponse() {
+  if (state.busy || !state.briefing) return;
+  state.busy = true;
+  const btn = $('execute-btn');
+  btn.disabled = true;
+  btn.textContent = '… WATCHFLOOR ADJUDICATING';
+
+  const spent = committedThisRound();
+
+  try {
+    const r = await fetch('/api/execute', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        round: state.round,
+        threats: state.briefing.threats,
+        allocations: state.alloc,
+        unitsRemaining: state.pool - spent,
+        totalPool: TOTAL_POOL,
+        situation: state.briefing.situation,
+      }),
+    });
+    const payload = await r.json();
+    if (!r.ok) throw new Error(payload.error || `judgment failed (${r.status})`);
+
+    const j = payload.judgment;
+    state.pool -= spent;
+    state.totalScore += j.score;
+    state.totalCasualties += j.casualtiesAverted;
+    state.complication = j.nextComplication;
+    updateHud();
+    renderJudgment(j);
+  } catch (err) {
+    alert('Judgment failed: ' + err.message);
+  } finally {
+    state.busy = false;
+    btn.disabled = false;
+    btn.textContent = '▶ EXECUTE RESPONSE';
+  }
+}
+
+function renderJudgment(j) {
+  $('threats-panel').classList.add('hidden');
+  const wrap = $('outcomes');
+  wrap.textContent = '';
+  const byId = Object.fromEntries(state.briefing.threats.map((t) => [t.id, t]));
+  for (const o of j.outcomes) {
+    const row = document.createElement('div');
+    row.className = 'outcome-row';
+    const badge = document.createElement('span');
+    const cls = ['CONTAINED','MITIGATED','PARTIAL','UNCHECKED','CATASTROPHIC'].includes(o.result) ? o.result : 'PARTIAL';
+    badge.className = 'oc-badge oc-' + cls;
+    badge.textContent = o.result;
+    const txt = document.createElement('span');
+    const t = byId[o.threatId];
+    txt.textContent = (t ? t.id + ' ' + t.name + ' — ' : '') + o.detail;
+    row.appendChild(badge);
+    row.appendChild(txt);
+    wrap.appendChild(row);
+  }
+
+  const sv = $('score-value');
+  sv.textContent = j.score;
+  sv.className = 'val' + (j.score >= 70 ? '' : j.score >= 40 ? ' mid' : ' low');
+  $('casualties-value').textContent = j.casualtiesAverted.toLocaleString();
+  $('assessment').textContent = j.assessment;
+
+  const comp = $('complication');
+  if (state.round < 3 && j.nextComplication) {
+    comp.classList.remove('hidden');
+    comp.textContent = 'INCOMING COMPLICATION: ' + j.nextComplication;
+  } else {
+    comp.classList.add('hidden');
+  }
+
+  $('next-btn').textContent = state.round < 3 ? 'NEXT ROUND ▶' : 'END SHIFT — PERFORMANCE REVIEW ▶';
+  $('outcome-panel').classList.remove('hidden');
+  $('outcome-panel').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+function nextRound() {
+  if (state.round >= 3) return showFinal();
+  state.round += 1;
+  updateHud();
+  loadBriefing();
+}
+
+/* ============ final ============ */
+function rankFor(score) {
+  if (score >= 260) return 'DISTINGUISHED DIRECTOR';
+  if (score >= 210) return 'SENIOR FLIGHT DIRECTOR';
+  if (score >= 150) return 'WATCH OFFICER';
+  if (score >= 80) return 'DESK ANALYST';
+  return 'RELIEVED OF DUTY';
+}
+
+function showFinal() {
+  $('final-score').textContent = state.totalScore;
+  $('rank-title').textContent = rankFor(state.totalScore);
+  $('final-detail').textContent =
+    `Across 3 rounds you committed ${TOTAL_POOL - state.pool} of ${TOTAL_POOL} response units, ` +
+    `averted an estimated ${state.totalCasualties.toLocaleString()} casualties, ` +
+    `and left ${state.pool} unit(s) in reserve. Every crisis this shift was seeded by real, live planetary data.`;
+  $('final').classList.remove('hidden');
+}
+
+function resetShift() {
+  state.round = 1;
+  state.pool = TOTAL_POOL;
+  state.totalScore = 0;
+  state.totalCasualties = 0;
+  state.briefing = null;
+  state.alloc = {};
+  state.complication = null;
+  $('final').classList.add('hidden');
+  updateHud();
+  loadBriefing();
+}
+
+/* ============ wire up ============ */
+drawBaseMap();
+updateHud();
+$('start-btn').addEventListener('click', () => {
+  $('boot').classList.add('hidden');
+  resetShift();
+});
+$('execute-btn').addEventListener('click', executeResponse);
+$('next-btn').addEventListener('click', nextRound);
+$('restart-btn').addEventListener('click', resetShift);
+</script>
+</body>
+</html>
