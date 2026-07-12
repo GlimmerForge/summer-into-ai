@@ -1,9 +1,16 @@
 export const config = { api: { bodyParser: true } };
 
+// Cast for maximum contrast (all from the account's current voice list):
+// Washington: Adam — dominant, firm commander
+// Franklin:   Bill — old, wise, balanced (the sage)
+// Hamilton:   Liam — young, energetic (the firebrand)
+// Madison:    Charlie — deep, confident (the scholar)
+// Jefferson:  Callum — husky character voice
+// Marshall:   Daniel — steady British broadcaster (the bench)
 const VOICE_IDS = {
   washington: 'pNInz6obpgDQGcFmaJgB',
-  franklin: 'ErXwobaYiN019PkySvjV',
-  hamilton: 'VR6AewLTigWG4xSOukaG',
+  franklin: 'pqHfZKP75CvOlQylNhV4',
+  hamilton: 'TX3LPaxmHKxFdv7VOQHJ',
   madison: 'IKne3meq5aSn9XLyUdCD',
   jefferson: 'N2lVS1w4EtoT3dr4eOWO',
   marshall: 'onwK4e9ZLuTAKqWW03F9'
