@@ -17,8 +17,8 @@
     --green-dimmer: #00331a;
     --danger: #ff4444;
     --warning: #ffaa00;
-    --text: #aaccbb;
-    --text-dim: #557766;
+    --text: #cfe6da;
+    --text-dim: #8fb3a3;
     --font: 'Courier New', Courier, monospace;
     --drug1: #00ff88;
     --drug2: #ff6b35;
@@ -29,7 +29,7 @@
     background: var(--bg);
     color: var(--text);
     font-family: var(--font);
-    font-size: 13px;
+    font-size: 14px;
     min-height: 100vh;
     overflow-x: hidden;
   }
@@ -380,13 +380,13 @@
     opacity: 0.6;
   }
   #thinking-text {
-    font-size: 11px;
-    color: #334455;
+    font-size: 12.5px;
+    color: #5d7e91;
     font-style: italic;
     line-height: 1.6;
     white-space: pre-wrap;
   }
-  #thinking-text.active { color: #446677; }
+  #thinking-text.active { color: #74a0b8; }
 
   .result-panel {
     border: 1px solid var(--border);
@@ -402,7 +402,7 @@
     margin-bottom: 8px;
   }
   #analysis-text {
-    font-size: 12px;
+    font-size: 14px;
     color: var(--text);
     line-height: 1.7;
     white-space: pre-wrap;
@@ -438,14 +438,17 @@
   .drug-card-stat .val { color: var(--text); }
   .drug-card-serious { color: var(--danger) !important; }
   .drug-card-warning {
-    font-size: 10px;
-    color: var(--text-dim);
+    font-size: 11.5px;
+    color: var(--warning);
     margin-top: 8px;
     border-top: 1px solid var(--border);
     padding-top: 6px;
-    font-style: italic;
-    line-height: 1.5;
-    opacity: 0.7;
+    line-height: 1.6;
+  }
+  .drug-card-warning::before {
+    content: '⚠ LABEL WARNING: ';
+    font-weight: 700;
+    letter-spacing: 1px;
   }
 
   /* Tooltip */
@@ -494,17 +497,20 @@
     <div class="drug-inputs">
       <div class="drug-slot">
         <label class="d1">DRUG 1</label>
-        <input type="text" id="drug1" class="d1" placeholder="e.g. Lipitor" autocomplete="off" />
+        <input type="text" id="drug1" class="d1" placeholder="e.g. Lipitor" autocomplete="off" list="drug-suggest-1" />
+        <datalist id="drug-suggest-1"></datalist>
         <button class="clear-btn" onclick="clearDrug(1)" title="Clear">&#x2715;</button>
       </div>
       <div class="drug-slot">
         <label class="d2">DRUG 2</label>
-        <input type="text" id="drug2" class="d2" placeholder="optional" autocomplete="off" />
+        <input type="text" id="drug2" class="d2" placeholder="optional" autocomplete="off" list="drug-suggest-2" />
+        <datalist id="drug-suggest-2"></datalist>
         <button class="clear-btn" onclick="clearDrug(2)" title="Clear">&#x2715;</button>
       </div>
       <div class="drug-slot">
         <label class="d3">DRUG 3</label>
-        <input type="text" id="drug3" class="d3" placeholder="optional" autocomplete="off" />
+        <input type="text" id="drug3" class="d3" placeholder="optional" autocomplete="off" list="drug-suggest-3" />
+        <datalist id="drug-suggest-3"></datalist>
         <button class="clear-btn" onclick="clearDrug(3)" title="Clear">&#x2715;</button>
       </div>
     </div>
@@ -724,7 +730,7 @@ function renderCards(drugs) {
         <div class="drug-card-stat"><span>Total Events</span><span class="val">${formatNum(drug.totalEvents)}</span></div>
         <div class="drug-card-stat"><span>Serious Rate</span><span class="val ${isHighRisk ? 'drug-card-serious' : ''}">${drug.seriousPercent}%${isHighRisk ? ' &#x26a0;' : ''}</span></div>
         <div class="drug-card-stat"><span>Top Reaction</span><span class="val">${drug.topReactions[0]?.term || 'N/A'}</span></div>
-        ${drug.labelWarning ? `<div class="drug-card-warning">"${drug.labelWarning.slice(0,120)}..."</div>` : ''}`;
+        ${drug.labelWarning ? `<div class="drug-card-warning">${drug.labelWarning.slice(0,140)}…</div>` : ''}`;
     }
     container.appendChild(card);
   });
@@ -1230,6 +1236,30 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('drug1').value = 'Lipitor';
   document.getElementById('drug2').value = 'Metformin';
   fetchDrugData();
+});
+
+// Drug-name autocomplete: suggest real FAERS brand names as you type
+const acTimers = {};
+[1, 2, 3].forEach(n => {
+  const input = document.getElementById('drug' + n);
+  input.addEventListener('input', () => {
+    clearTimeout(acTimers[n]);
+    const q = input.value.trim();
+    if (q.length < 2) return;
+    acTimers[n] = setTimeout(async () => {
+      try {
+        const url = 'https://api.fda.gov/drug/event.json?search=patient.drug.openfda.brand_name:'
+          + encodeURIComponent(q) + '*&count=patient.drug.openfda.brand_name.exact&limit=25';
+        const res = await fetch(url);
+        const j = await res.json();
+        const Q = q.toUpperCase();
+        // openFDA counts co-reported drugs too — keep only names matching what was typed
+        const terms = [...new Set((j.results || []).map(r => r.term).filter(t => t.includes(Q)))].slice(0, 8);
+        document.getElementById('drug-suggest-' + n).innerHTML =
+          terms.map(t => `<option value="${t.replace(/"/g, '&quot;')}">`).join('');
+      } catch (_) { /* suggestions are best-effort */ }
+    }, 300);
+  });
 });
 
 // Enter key triggers fetch
