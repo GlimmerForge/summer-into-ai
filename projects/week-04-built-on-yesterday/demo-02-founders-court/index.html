@@ -1181,6 +1181,12 @@ async function requestMarshallOpinion() {
             document.getElementById(id)?.classList.add('debate-winner');
           }
           setFounderState(ev.winner, '★ best advocate');
+
+          // The Chief Justice announces his ruling aloud
+          if (autoSpeak) {
+            const ruling = `Order. This court has reached its judgment. Best advocate: ${ev.winnerName}. ${ev.winnerReason}`;
+            playVoice('marshall', ruling);
+          }
         } else if (ev.type === 'error') {
           statusEl.textContent = 'The Chief Justice declines to rule: ' + ev.message;
         }
@@ -1234,7 +1240,7 @@ function playVoice(founderId, text, onStart) {
       const done = () => {
         if (finished) return;
         finished = true;
-        clearTimeout(watchdog);
+        clearInterval(watchdog);
         if (currentAudio === audio) currentAudio = null;
         if (col) col.classList.remove('speaking');
         if (statusCard) statusCard.classList.remove('speaking-now');
@@ -1242,13 +1248,21 @@ function playVoice(founderId, text, onStart) {
       };
       audio.onended = done;
       audio.onerror = done;
-      // Safety net: never let a hung audio wedge the speak queue
-      watchdog = setTimeout(done, 120000);
-      audio.onloadedmetadata = () => {
-        clearTimeout(watchdog);
-        const cap = (isFinite(audio.duration) ? audio.duration * 1000 : 90000) + 8000;
-        watchdog = setTimeout(done, cap);
-      };
+      // Safety net: bail only if playback PROGRESS freezes for 20s (truly hung).
+      // Never cut a clip that is still advancing — predicted durations lie for VBR MP3s.
+      let lastTime = -1;
+      let stagnantSince = Date.now();
+      watchdog = setInterval(() => {
+        if (finished) return clearInterval(watchdog);
+        if (audio.ended) return done();
+        if (audio.currentTime !== lastTime) {
+          lastTime = audio.currentTime;
+          stagnantSince = Date.now();
+        } else if (Date.now() - stagnantSince > 20000) {
+          try { audio.pause(); } catch {}
+          done();
+        }
+      }, 4000);
       audio.play().catch(done);
     } catch (_) {
       if (col) col.classList.remove('speaking');
@@ -1277,10 +1291,11 @@ async function processSpeakQueue() {
     .replace(/\n{3,}/g, '\n\n')
     .trim();
 
-  // Speak whole sentences up to ~900 chars (2-4 sentences) — never stop mid-thought
+  // Speak the opening hook only — 1-2 complete sentences (~300 chars).
+  // Full arguments are on the per-founder Speak button; Marshall voices the verdict.
   let text = '';
   for (const sentence of full.match(/[^.!?]+[.!?]+(\s|$)/g) || [full]) {
-    if (text.length + sentence.length > 900 && text.length > 0) break;
+    if (text.length + sentence.length > 300 && text.length > 0) break;
     text += sentence;
   }
   text = text.trim();

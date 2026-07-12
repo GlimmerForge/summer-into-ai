@@ -5,7 +5,8 @@ const VOICE_IDS = {
   franklin: 'ErXwobaYiN019PkySvjV',
   hamilton: 'VR6AewLTigWG4xSOukaG',
   madison: 'IKne3meq5aSn9XLyUdCD',
-  jefferson: 'N2lVS1w4EtoT3dr4eOWO'
+  jefferson: 'N2lVS1w4EtoT3dr4eOWO',
+  marshall: 'onwK4e9ZLuTAKqWW03F9'
 };
 
 export default async function handler(req, res) {
