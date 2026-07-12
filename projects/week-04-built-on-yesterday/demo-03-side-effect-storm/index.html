@@ -451,6 +451,9 @@
     letter-spacing: 1px;
   }
 
+  /* Inputs changed since last fetch — displayed data is stale */
+  .stale { opacity: 0.4; filter: grayscale(0.6); transition: opacity .3s; }
+
   /* Tooltip */
   .tooltip {
     position: fixed;
@@ -657,6 +660,8 @@ async function fetchDrugData() {
     return;
   }
 
+  document.getElementById('drug-cards').classList.remove('stale');
+  document.getElementById('viz-grid').classList.remove('stale');
   document.getElementById('analyze-data-btn').disabled = true;
   document.getElementById('viz-grid').style.display = 'none';
   document.getElementById('analysis-section').style.display = 'none';
@@ -1243,6 +1248,12 @@ const acTimers = {};
 [1, 2, 3].forEach(n => {
   const input = document.getElementById('drug' + n);
   input.addEventListener('input', () => {
+    // Displayed data no longer matches the inputs — make that visible
+    if (document.getElementById('drug-cards').children.length) {
+      document.getElementById('drug-cards').classList.add('stale');
+      document.getElementById('viz-grid').classList.add('stale');
+      setStatus('// Drug list changed — click ANALYZE DATA to refresh', 'loading');
+    }
     clearTimeout(acTimers[n]);
     const q = input.value.trim();
     if (q.length < 2) return;
