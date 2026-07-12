@@ -1277,10 +1277,10 @@ async function processSpeakQueue() {
     .replace(/\n{3,}/g, '\n\n')
     .trim();
 
-  // Speak whole sentences up to ~500 chars — never stop mid-thought
+  // Speak whole sentences up to ~900 chars (2-4 sentences) — never stop mid-thought
   let text = '';
   for (const sentence of full.match(/[^.!?]+[.!?]+(\s|$)/g) || [full]) {
-    if (text.length + sentence.length > 500 && text.length > 0) break;
+    if (text.length + sentence.length > 900 && text.length > 0) break;
     text += sentence;
   }
   text = text.trim();
