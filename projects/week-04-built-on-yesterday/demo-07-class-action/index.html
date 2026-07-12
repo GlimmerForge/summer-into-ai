@@ -1,0 +1,731 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Class Action — Litigate the Complaint Storm</title>
+<style>
+  :root {
+    --bg: #14100c;
+    --panel: #1e1812;
+    --panel-2: #262019;
+    --ink: #e8ddc8;
+    --ink-dim: #a89980;
+    --gold: #c9a227;
+    --gold-bright: #e8c554;
+    --red: #c0392b;
+    --red-bright: #e74c3c;
+    --green: #27ae60;
+    --green-bright: #2ecc71;
+    --border: #3d3223;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: Georgia, 'Times New Roman', serif;
+    min-height: 100vh;
+    background-image: radial-gradient(ellipse at 50% -10%, #2a2116 0%, var(--bg) 60%);
+  }
+  .wrap { max-width: 960px; margin: 0 auto; padding: 24px 16px 80px; }
+
+  header { text-align: center; margin-bottom: 28px; }
+  .built-on {
+    display: inline-block;
+    font-family: 'Courier New', monospace;
+    font-size: 11px;
+    letter-spacing: 1px;
+    color: var(--ink-dim);
+    border: 1px solid var(--border);
+    padding: 4px 12px;
+    border-radius: 3px;
+    margin-bottom: 14px;
+    text-transform: uppercase;
+  }
+  .built-on b { color: var(--gold); }
+  h1 {
+    font-size: 44px;
+    letter-spacing: 4px;
+    color: var(--gold-bright);
+    text-transform: uppercase;
+    text-shadow: 0 2px 12px rgba(201,162,39,.25);
+  }
+  .tagline { color: var(--ink-dim); font-style: italic; margin-top: 8px; font-size: 15px; }
+  .rule { width: 180px; height: 2px; background: linear-gradient(90deg, transparent, var(--gold), transparent); margin: 16px auto 0; }
+
+  .phase { display: none; }
+  .phase.active { display: block; animation: fadeUp .5s ease; }
+  @keyframes fadeUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
+
+  .phase-label {
+    font-family: 'Courier New', monospace;
+    font-size: 12px;
+    letter-spacing: 3px;
+    color: var(--gold);
+    text-transform: uppercase;
+    margin-bottom: 14px;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 8px;
+  }
+
+  .panel {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 22px;
+    margin-bottom: 20px;
+  }
+
+  /* Phase 1 — search */
+  .search-row { display: flex; gap: 10px; margin-top: 8px; }
+  #company-input {
+    flex: 1;
+    background: var(--panel-2);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    color: var(--ink);
+    font-family: inherit;
+    font-size: 17px;
+    padding: 13px 16px;
+  }
+  #company-input:focus { outline: none; border-color: var(--gold); }
+  .btn {
+    background: linear-gradient(180deg, #d4af37, #a8821c);
+    color: #17120a;
+    border: none;
+    border-radius: 4px;
+    font-family: 'Courier New', monospace;
+    font-weight: bold;
+    font-size: 14px;
+    letter-spacing: 1.5px;
+    padding: 13px 26px;
+    cursor: pointer;
+    text-transform: uppercase;
+    transition: filter .15s, opacity .15s;
+  }
+  .btn:hover:not(:disabled) { filter: brightness(1.12); }
+  .btn:disabled { opacity: .4; cursor: not-allowed; }
+  .btn.secondary { background: var(--panel-2); color: var(--ink-dim); border: 1px solid var(--border); }
+  .suggestions { margin-top: 12px; color: var(--ink-dim); font-size: 13px; }
+  .suggestions span {
+    cursor: pointer; text-decoration: underline; color: var(--gold);
+    margin-right: 10px;
+  }
+
+  .status {
+    font-family: 'Courier New', monospace;
+    font-size: 13px;
+    color: var(--gold);
+    margin-top: 14px;
+    min-height: 18px;
+  }
+  .status.error { color: var(--red-bright); }
+  .spinner {
+    display: inline-block; width: 12px; height: 12px;
+    border: 2px solid var(--border); border-top-color: var(--gold);
+    border-radius: 50%; animation: spin .8s linear infinite;
+    vertical-align: -2px; margin-right: 8px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* Phase 2 — patterns */
+  .case-header { display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
+  .case-title { font-size: 22px; color: var(--gold-bright); }
+  .case-meta { font-family: 'Courier New', monospace; font-size: 12px; color: var(--ink-dim); }
+  .instruction { color: var(--ink-dim); font-style: italic; margin-bottom: 16px; font-size: 14px; }
+
+  #patterns-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 14px; }
+  .pattern-card {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 16px;
+    cursor: pointer;
+    position: relative;
+    transition: border-color .15s, transform .15s, box-shadow .15s;
+  }
+  .pattern-card:hover { border-color: var(--gold); transform: translateY(-2px); }
+  .pattern-card.selected {
+    border-color: var(--gold-bright);
+    box-shadow: 0 0 0 1px var(--gold-bright), 0 4px 20px rgba(201,162,39,.15);
+  }
+  .exhibit-tag {
+    position: absolute; top: -10px; right: 12px;
+    background: var(--gold-bright); color: #17120a;
+    font-family: 'Courier New', monospace; font-weight: bold; font-size: 11px;
+    letter-spacing: 1px; padding: 3px 10px; border-radius: 3px;
+    display: none;
+  }
+  .pattern-card.selected .exhibit-tag { display: block; }
+  .pattern-title { font-size: 17px; color: var(--ink); margin-bottom: 8px; }
+  .pattern-stats { display: flex; gap: 14px; font-family: 'Courier New', monospace; font-size: 12px; color: var(--ink-dim); margin-bottom: 10px; }
+  .strength-bar { height: 6px; background: var(--panel-2); border-radius: 3px; overflow: hidden; margin-bottom: 10px; }
+  .strength-fill { height: 100%; background: linear-gradient(90deg, var(--red), var(--gold), var(--green)); }
+  .pattern-theory { font-size: 13px; color: var(--gold); font-style: italic; margin-bottom: 10px; }
+  .pattern-quote {
+    font-size: 12.5px; color: var(--ink-dim);
+    border-left: 2px solid var(--border);
+    padding-left: 10px; font-style: italic;
+    max-height: 70px; overflow: hidden;
+  }
+  .proceed-row { text-align: center; margin-top: 22px; }
+  #select-count { font-family: 'Courier New', monospace; font-size: 12px; color: var(--ink-dim); display: block; margin-bottom: 10px; }
+
+  /* Phase 3 — defense */
+  .attorney-card { display: flex; align-items: center; gap: 14px; margin-bottom: 16px; }
+  .attorney-avatar {
+    width: 52px; height: 52px; border-radius: 50%;
+    background: linear-gradient(135deg, #3a2f20, #14100c);
+    border: 2px solid var(--red);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 26px;
+  }
+  .attorney-name { color: var(--red-bright); font-size: 17px; }
+  .attorney-role { font-family: 'Courier New', monospace; font-size: 11px; color: var(--ink-dim); letter-spacing: 1px; text-transform: uppercase; }
+
+  .thinking-box { margin-bottom: 16px; border: 1px dashed var(--border); border-radius: 4px; }
+  .thinking-toggle {
+    width: 100%; text-align: left; background: none; border: none; cursor: pointer;
+    color: var(--ink-dim); font-family: 'Courier New', monospace; font-size: 12px;
+    letter-spacing: 1px; padding: 10px 14px;
+  }
+  .thinking-toggle:hover { color: var(--gold); }
+  #thinking-text {
+    display: none;
+    padding: 0 14px 14px;
+    font-family: 'Courier New', monospace;
+    font-size: 12px; line-height: 1.6;
+    color: #7d7161;
+    white-space: pre-wrap;
+    max-height: 220px; overflow-y: auto;
+  }
+  #thinking-text.open { display: block; }
+
+  #defense-text {
+    font-size: 16px; line-height: 1.75;
+    white-space: pre-wrap;
+    min-height: 60px;
+    border-left: 3px solid var(--red);
+    padding-left: 16px;
+  }
+  .cursor { display: inline-block; width: 8px; height: 17px; background: var(--red-bright); animation: blink 1s steps(1) infinite; vertical-align: -2px; }
+  @keyframes blink { 50% { opacity: 0; } }
+
+  /* Rebuttal */
+  #rebuttal-section { display: none; margin-top: 24px; }
+  #rebuttal-input {
+    width: 100%;
+    background: var(--panel-2);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    color: var(--ink);
+    font-family: inherit;
+    font-size: 15px;
+    line-height: 1.6;
+    padding: 14px;
+    min-height: 110px;
+    resize: vertical;
+  }
+  #rebuttal-input:focus { outline: none; border-color: var(--gold); }
+  .rebuttal-hint { color: var(--ink-dim); font-size: 13px; font-style: italic; margin: 8px 0 12px; }
+
+  /* Phase 4 — verdict */
+  #damages-display { text-align: center; margin: 10px 0 26px; }
+  .damages-label { font-family: 'Courier New', monospace; font-size: 12px; letter-spacing: 3px; color: var(--ink-dim); text-transform: uppercase; }
+  #damages-counter {
+    font-size: 56px;
+    color: var(--gold-bright);
+    font-weight: bold;
+    text-shadow: 0 2px 18px rgba(201,162,39,.35);
+    font-variant-numeric: tabular-nums;
+  }
+  .verdict-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 14px; margin-bottom: 20px; }
+  .verdict-card { background: var(--panel); border-radius: 6px; padding: 16px; border: 1px solid var(--border); }
+  .verdict-card.sustained { border-color: var(--green); }
+  .verdict-card.dismissed { border-color: var(--red); }
+  .verdict-exhibit { font-family: 'Courier New', monospace; font-size: 11px; letter-spacing: 1px; color: var(--ink-dim); margin-bottom: 6px; }
+  .verdict-ruling { font-size: 20px; font-weight: bold; letter-spacing: 2px; margin-bottom: 8px; }
+  .verdict-card.sustained .verdict-ruling { color: var(--green-bright); }
+  .verdict-card.dismissed .verdict-ruling { color: var(--red-bright); }
+  .verdict-reason { font-size: 13.5px; color: var(--ink-dim); line-height: 1.6; }
+  #jury-statement {
+    font-size: 16px; line-height: 1.75; font-style: italic;
+    border-left: 3px solid var(--gold); padding-left: 16px;
+  }
+  .retry-row { text-align: center; margin-top: 26px; }
+
+  footer { text-align: center; margin-top: 50px; color: #5d5344; font-size: 12px; font-family: 'Courier New', monospace; }
+  footer a { color: var(--gold); }
+
+  @media (max-width: 600px) {
+    h1 { font-size: 30px; letter-spacing: 2px; }
+    #damages-counter { font-size: 38px; }
+    .search-row { flex-direction: column; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="built-on">Built on: <b>Complaint Storm (Week 3)</b></div>
+    <h1>Class Action</h1>
+    <div class="tagline">The storm of complaints is now a lawsuit — and you're lead counsel for the plaintiffs.</div>
+    <div class="rule"></div>
+  </header>
+
+  <!-- PHASE 1: DISCOVERY -->
+  <section class="phase active" id="phase-search">
+    <div class="phase-label">Phase I — Discovery</div>
+    <div class="panel">
+      <p style="margin-bottom:6px;">Name the defendant. We'll subpoena the CFPB's federal complaint database and have AI co-counsel cluster the evidence into candidate exhibits.</p>
+      <div class="search-row">
+        <input id="company-input" type="text" placeholder="e.g. Wells Fargo, Equifax, Coinbase..." autocomplete="off">
+        <button class="btn" id="discover-btn">File Discovery</button>
+      </div>
+      <div class="suggestions">Try:
+        <span data-co="Equifax">Equifax</span>
+        <span data-co="Wells Fargo">Wells Fargo</span>
+        <span data-co="Coinbase">Coinbase</span>
+        <span data-co="Navient">Navient</span>
+      </div>
+      <div class="status" id="search-status"></div>
+    </div>
+  </section>
+
+  <!-- PHASE 2: BUILD YOUR CASE -->
+  <section class="phase" id="phase-patterns">
+    <div class="phase-label">Phase II — Build Your Case</div>
+    <div class="case-header">
+      <div class="case-title" id="case-title"></div>
+      <div class="case-meta" id="case-meta"></div>
+    </div>
+    <p class="instruction">AI co-counsel found these patterns in the real complaint data. Choose exactly <b style="color:var(--gold-bright)">3</b> as your exhibits. Strategy matters: a few devastating patterns, or breadth across many complaints?</p>
+    <div id="patterns-grid"></div>
+    <div class="proceed-row">
+      <span id="select-count">0 of 3 exhibits selected</span>
+      <button class="btn" id="proceed-btn" disabled>Proceed to Trial</button>
+    </div>
+  </section>
+
+  <!-- PHASE 3: TRIAL -->
+  <section class="phase" id="phase-trial">
+    <div class="phase-label">Phase III — Trial</div>
+    <div class="panel">
+      <div class="attorney-card">
+        <div class="attorney-avatar">&#9878;</div>
+        <div>
+          <div class="attorney-name">Defense Counsel</div>
+          <div class="attorney-role">Retained by the defendant &mdash; billing $2,400/hr</div>
+        </div>
+      </div>
+      <div class="thinking-box">
+        <button class="thinking-toggle" id="thinking-toggle">&#9654; Defense strategy notes (privileged &mdash; intercepted)</button>
+        <div id="thinking-text"></div>
+      </div>
+      <div id="defense-text"></div>
+      <div class="status" id="trial-status"></div>
+    </div>
+
+    <div id="rebuttal-section">
+      <div class="panel">
+        <div class="phase-label" style="border:none;padding:0;margin-bottom:10px;">Your Closing Rebuttal</div>
+        <p class="rebuttal-hint">The jury is listening. Answer the defense's specific attacks on your exhibits — a rebuttal that ignores them will cost you the verdict.</p>
+        <textarea id="rebuttal-input" placeholder="Counsel claims Exhibit B lacks damages, but the narratives describe..."></textarea>
+        <div style="text-align:right;margin-top:12px;">
+          <button class="btn" id="rebuttal-btn">Submit Closing Argument</button>
+        </div>
+        <div class="status" id="jury-status"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- PHASE 4: VERDICT -->
+  <section class="phase" id="phase-verdict">
+    <div class="phase-label">Phase IV — Verdict</div>
+    <div class="panel" id="verdict-section">
+      <div id="damages-display">
+        <div class="damages-label">Class Damages Awarded</div>
+        <div id="damages-counter">$0</div>
+      </div>
+      <div class="verdict-cards" id="verdict-cards"></div>
+      <div class="phase-label" style="border:none;padding:0;margin-bottom:8px;">The Jury Foreperson Reads</div>
+      <div id="jury-statement"></div>
+      <div class="retry-row">
+        <button class="btn secondary" id="retry-btn">Try a New Case</button>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    CLASS ACTION &mdash; Week 4: Built on Yesterday &middot; real complaint data from the
+    <a href="https://www.consumerfinance.gov/data-research/consumer-complaints/" target="_blank" rel="noopener">CFPB Consumer Complaint Database</a>
+    &middot; evolved from Complaint Storm (Week 3)
+  </footer>
+</div>
+
+<script>
+(function () {
+  'use strict';
+
+  var state = {
+    companyName: '',
+    total: 0,
+    patterns: [],
+    selected: [],       // array of pattern ids, in selection order
+    exhibits: [],       // built at proceed time
+    defenseArgument: ''
+  };
+
+  function $(id) { return document.getElementById(id); }
+
+  function showPhase(id) {
+    var phases = document.querySelectorAll('.phase');
+    for (var i = 0; i < phases.length; i++) phases[i].classList.remove('active');
+    $(id).classList.add('active');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  function setStatus(el, msg, isError, spin) {
+    el.className = 'status' + (isError ? ' error' : '');
+    el.textContent = '';
+    if (spin) {
+      var s = document.createElement('span');
+      s.className = 'spinner';
+      el.appendChild(s);
+    }
+    el.appendChild(document.createTextNode(msg));
+  }
+
+  // ---------- PHASE 1: discovery ----------
+  var suggestionEls = document.querySelectorAll('.suggestions span');
+  for (var i = 0; i < suggestionEls.length; i++) {
+    suggestionEls[i].addEventListener('click', function () {
+      $('company-input').value = this.getAttribute('data-co');
+    });
+  }
+
+  $('company-input').addEventListener('keydown', function (e) {
+    if (e.key === 'Enter') discover();
+  });
+  $('discover-btn').addEventListener('click', discover);
+
+  function discover() {
+    var company = $('company-input').value.trim();
+    if (!company) return;
+    $('discover-btn').disabled = true;
+    setStatus($('search-status'), 'Subpoenaing the CFPB database and clustering evidence... (this can take up to a minute)', false, true);
+
+    fetch('/api/discover', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ company: company })
+    })
+      .then(function (r) { return r.json().then(function (j) { return { ok: r.ok, j: j }; }); })
+      .then(function (res) {
+        $('discover-btn').disabled = false;
+        if (!res.ok || res.j.error) {
+          setStatus($('search-status'), res.j.error || 'Discovery failed. Try again.', true, false);
+          return;
+        }
+        if (!res.j.patterns || !res.j.patterns.length) {
+          setStatus($('search-status'), 'No usable patterns found. Try another company.', true, false);
+          return;
+        }
+        state.companyName = res.j.companyName;
+        state.total = res.j.total;
+        state.patterns = res.j.patterns;
+        state.selected = [];
+        renderPatterns();
+        setStatus($('search-status'), '', false, false);
+        showPhase('phase-patterns');
+      })
+      .catch(function () {
+        $('discover-btn').disabled = false;
+        setStatus($('search-status'), 'Network error reaching the courthouse. Try again.', true, false);
+      });
+  }
+
+  // ---------- PHASE 2: exhibit selection ----------
+  function renderPatterns() {
+    $('case-title').textContent = 'Class v. ' + state.companyName;
+    $('case-meta').textContent = state.total.toLocaleString() + ' complaints on federal record';
+
+    var grid = $('patterns-grid');
+    grid.textContent = '';
+
+    state.patterns.forEach(function (p) {
+      var card = document.createElement('div');
+      card.className = 'pattern-card';
+      card.setAttribute('data-id', p.id);
+
+      var tag = document.createElement('div');
+      tag.className = 'exhibit-tag';
+      card.appendChild(tag);
+
+      var title = document.createElement('div');
+      title.className = 'pattern-title';
+      title.textContent = p.title;
+      card.appendChild(title);
+
+      var stats = document.createElement('div');
+      stats.className = 'pattern-stats';
+      var c1 = document.createElement('span');
+      c1.textContent = p.complaintCount + ' complaints';
+      var c2 = document.createElement('span');
+      c2.textContent = 'strength ' + p.strength + '/10';
+      stats.appendChild(c1); stats.appendChild(c2);
+      card.appendChild(stats);
+
+      var bar = document.createElement('div');
+      bar.className = 'strength-bar';
+      var fill = document.createElement('div');
+      fill.className = 'strength-fill';
+      fill.style.width = (Math.max(1, Math.min(10, p.strength)) * 10) + '%';
+      bar.appendChild(fill);
+      card.appendChild(bar);
+
+      var theory = document.createElement('div');
+      theory.className = 'pattern-theory';
+      theory.textContent = p.legalTheory;
+      card.appendChild(theory);
+
+      var quote = document.createElement('div');
+      quote.className = 'pattern-quote';
+      quote.textContent = '"' + p.sampleNarrative + '"';
+      card.appendChild(quote);
+
+      card.addEventListener('click', function () { toggleSelect(p.id); });
+      grid.appendChild(card);
+    });
+
+    updateSelectionUI();
+  }
+
+  function toggleSelect(id) {
+    var idx = state.selected.indexOf(id);
+    if (idx >= 0) {
+      state.selected.splice(idx, 1);
+    } else {
+      if (state.selected.length >= 3) return; // max 3
+      state.selected.push(id);
+    }
+    updateSelectionUI();
+  }
+
+  function updateSelectionUI() {
+    var letters = ['A', 'B', 'C'];
+    var cards = document.querySelectorAll('.pattern-card');
+    for (var i = 0; i < cards.length; i++) {
+      var id = cards[i].getAttribute('data-id');
+      var pos = state.selected.indexOf(id);
+      if (pos >= 0) {
+        cards[i].classList.add('selected');
+        cards[i].querySelector('.exhibit-tag').textContent = 'EXHIBIT ' + letters[pos];
+      } else {
+        cards[i].classList.remove('selected');
+      }
+    }
+    $('select-count').textContent = state.selected.length + ' of 3 exhibits selected';
+    $('proceed-btn').disabled = state.selected.length !== 3;
+  }
+
+  $('proceed-btn').addEventListener('click', function () {
+    var letters = ['A', 'B', 'C'];
+    state.exhibits = state.selected.map(function (id, i) {
+      var p = state.patterns.filter(function (x) { return x.id === id; })[0];
+      return {
+        exhibitLetter: letters[i],
+        id: p.id,
+        title: p.title,
+        complaintCount: p.complaintCount,
+        strength: p.strength,
+        sampleNarrative: p.sampleNarrative,
+        legalTheory: p.legalTheory
+      };
+    });
+    showPhase('phase-trial');
+    runDefense();
+  });
+
+  // ---------- PHASE 3: defense stream ----------
+  $('thinking-toggle').addEventListener('click', function () {
+    var t = $('thinking-text');
+    t.classList.toggle('open');
+    this.innerHTML = (t.classList.contains('open') ? '&#9660;' : '&#9654;') +
+      ' Defense strategy notes (privileged &mdash; intercepted)';
+  });
+
+  function runDefense() {
+    var defenseEl = $('defense-text');
+    var thinkingEl = $('thinking-text');
+    defenseEl.textContent = '';
+    thinkingEl.textContent = '';
+    state.defenseArgument = '';
+    $('rebuttal-section').style.display = 'none';
+    setStatus($('trial-status'), 'Defense counsel is preparing the attack...', false, true);
+
+    var cursor = document.createElement('span');
+    cursor.className = 'cursor';
+    defenseEl.appendChild(cursor);
+
+    var gotDone = false;
+    var gotError = false;
+
+    fetch('/api/defense', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        companyName: state.companyName,
+        total: state.total,
+        exhibits: state.exhibits
+      })
+    }).then(function (r) {
+      if (!r.ok || !r.body) throw new Error('stream failed');
+      var reader = r.body.getReader();
+      var decoder = new TextDecoder();
+      var buf = '';
+
+      function pump() {
+        return reader.read().then(function (chunk) {
+          if (chunk.done) return finish();
+          buf += decoder.decode(chunk.value, { stream: true });
+          var parts = buf.split('\n\n');
+          buf = parts.pop();
+          parts.forEach(function (part) {
+            var line = part.split('\n').filter(function (l) { return l.indexOf('data: ') === 0; })[0];
+            if (!line) return;
+            var ev;
+            try { ev = JSON.parse(line.slice(6)); } catch (e) { return; }
+            if (ev.type === 'thinking') {
+              thinkingEl.appendChild(document.createTextNode(ev.delta));
+              if (thinkingEl.classList.contains('open')) thinkingEl.scrollTop = thinkingEl.scrollHeight;
+            } else if (ev.type === 'text') {
+              state.defenseArgument += ev.delta;
+              defenseEl.insertBefore(document.createTextNode(ev.delta), cursor);
+              setStatus($('trial-status'), 'Defense counsel is speaking...', false, false);
+            } else if (ev.type === 'error') {
+              gotError = true;
+              setStatus($('trial-status'), ev.message, true, false);
+            } else if (ev.type === 'done') {
+              gotDone = true;
+            }
+          });
+          return pump();
+        });
+      }
+      return pump();
+    }).catch(function () {
+      finish();
+    });
+
+    function finish() {
+      if (cursor.parentNode) cursor.parentNode.removeChild(cursor);
+      if (gotError && !state.defenseArgument) {
+        // hard failure — allow retry by going back
+        setStatus($('trial-status'), ($('trial-status').textContent || 'Defense failed.') + ' Reload to retry.', true, false);
+        return;
+      }
+      if (!gotDone && !state.defenseArgument) {
+        // stall guard: stream closed with nothing — treat as failure
+        setStatus($('trial-status'), 'The stream from defense counsel dropped. Reload to retry.', true, false);
+        return;
+      }
+      setStatus($('trial-status'), 'The defense rests.', false, false);
+      $('rebuttal-section').style.display = 'block';
+      $('rebuttal-input').focus();
+    }
+  }
+
+  // ---------- Rebuttal → jury ----------
+  $('rebuttal-btn').addEventListener('click', function () {
+    var rebuttal = $('rebuttal-input').value.trim();
+    $('rebuttal-btn').disabled = true;
+    setStatus($('jury-status'), 'The jury is deliberating...', false, true);
+
+    fetch('/api/jury', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        companyName: state.companyName,
+        total: state.total,
+        exhibits: state.exhibits,
+        defenseArgument: state.defenseArgument,
+        rebuttal: rebuttal
+      })
+    })
+      .then(function (r) { return r.json().then(function (j) { return { ok: r.ok, j: j }; }); })
+      .then(function (res) {
+        $('rebuttal-btn').disabled = false;
+        if (!res.ok || res.j.error) {
+          setStatus($('jury-status'), res.j.error || 'Jury deadlocked. Try again.', true, false);
+          return;
+        }
+        setStatus($('jury-status'), '', false, false);
+        renderVerdict(res.j);
+        showPhase('phase-verdict');
+      })
+      .catch(function () {
+        $('rebuttal-btn').disabled = false;
+        setStatus($('jury-status'), 'Network error. Try again.', true, false);
+      });
+  });
+
+  // ---------- PHASE 4: verdict ----------
+  function renderVerdict(v) {
+    var cardsEl = $('verdict-cards');
+    cardsEl.textContent = '';
+    (v.verdictPerExhibit || []).forEach(function (r) {
+      var ex = state.exhibits.filter(function (e) { return e.exhibitLetter === r.exhibit; })[0];
+      var card = document.createElement('div');
+      card.className = 'verdict-card ' + (r.ruling === 'SUSTAINED' ? 'sustained' : 'dismissed');
+
+      var label = document.createElement('div');
+      label.className = 'verdict-exhibit';
+      label.textContent = 'EXHIBIT ' + r.exhibit + (ex ? ' — ' + ex.title : '');
+      card.appendChild(label);
+
+      var ruling = document.createElement('div');
+      ruling.className = 'verdict-ruling';
+      ruling.textContent = r.ruling;
+      card.appendChild(ruling);
+
+      var reason = document.createElement('div');
+      reason.className = 'verdict-reason';
+      reason.textContent = r.reason;
+      card.appendChild(reason);
+
+      cardsEl.appendChild(card);
+    });
+
+    $('jury-statement').textContent = v.juryStatement || '';
+    animateDamages(v.damagesAwarded || 0);
+  }
+
+  function animateDamages(target) {
+    var el = $('damages-counter');
+    var duration = 2200;
+    var start = null;
+    function step(ts) {
+      if (!start) start = ts;
+      var t = Math.min(1, (ts - start) / duration);
+      var eased = 1 - Math.pow(1 - t, 3);
+      var val = Math.round(target * eased);
+      el.textContent = '$' + val.toLocaleString();
+      if (t < 1) requestAnimationFrame(step);
+    }
+    requestAnimationFrame(step);
+  }
+
+  $('retry-btn').addEventListener('click', function () {
+    state = { companyName: '', total: 0, patterns: [], selected: [], exhibits: [], defenseArgument: '' };
+    $('company-input').value = '';
+    $('rebuttal-input').value = '';
+    $('damages-counter').textContent = '$0';
+    setStatus($('search-status'), '', false, false);
+    setStatus($('jury-status'), '', false, false);
+    showPhase('phase-search');
+  });
+})();
+</script>
+</body>
+</html>
