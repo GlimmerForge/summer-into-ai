@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SWORN TESTIMONY — Cross-Examine the Dossier</title>
+<style>
+  :root {
+    --bg: #0c0e11;
+    --panel: #14171c;
+    --panel-2: #1a1e25;
+    --ink: #cfd3d9;
+    --dim: #7a8290;
+    --manila: #d4c49a;
+    --red: #c23b3b;
+    --green: #3f9d5a;
+    --amber: #d09a3c;
+    --line: #2a2f38;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: 'Courier New', Courier, monospace;
+    min-height: 100vh;
+    background-image: repeating-linear-gradient(0deg, transparent, transparent 3px, rgba(255,255,255,0.008) 3px, rgba(255,255,255,0.008) 4px);
+  }
+  .wrap { max-width: 900px; margin: 0 auto; padding: 24px 16px 80px; }
+
+  /* Header */
+  header { border: 2px solid var(--line); background: var(--panel); padding: 20px 24px; position: relative; overflow: hidden; }
+  .stamp {
+    position: absolute; top: 14px; right: 18px;
+    border: 3px double var(--red); color: var(--red);
+    padding: 4px 12px; font-weight: bold; letter-spacing: 3px;
+    transform: rotate(8deg); font-size: 13px; opacity: 0.85;
+    pointer-events: none;
+  }
+  h1 { font-size: 26px; letter-spacing: 4px; color: var(--manila); }
+  .sub { color: var(--dim); margin-top: 6px; font-size: 13px; }
+  .built-on {
+    display: inline-block; margin-top: 12px; padding: 3px 10px;
+    border: 1px solid var(--manila); color: var(--manila);
+    font-size: 11px; letter-spacing: 1px;
+  }
+  .redact { display: inline-block; background: #000; color: #000; user-select: none; }
+
+  /* ZIP entry */
+  #entry-panel { margin-top: 20px; border: 2px solid var(--line); background: var(--panel); padding: 24px; }
+  .field-label { font-size: 11px; letter-spacing: 2px; color: var(--dim); margin-bottom: 8px; }
+  .entry-row { display: flex; gap: 10px; flex-wrap: wrap; }
+  #zip-input {
+    background: var(--panel-2); border: 1px solid var(--line); color: var(--manila);
+    font-family: inherit; font-size: 22px; letter-spacing: 6px; padding: 10px 14px; width: 180px;
+  }
+  #zip-input:focus { outline: 1px solid var(--manila); }
+  button {
+    background: var(--manila); color: #1a1508; border: none; font-family: inherit;
+    font-weight: bold; letter-spacing: 2px; padding: 12px 22px; cursor: pointer; font-size: 13px;
+  }
+  button:hover:not(:disabled) { background: #e7d9af; }
+  button:disabled { opacity: 0.45; cursor: not-allowed; }
+  #entry-error { color: var(--red); margin-top: 10px; font-size: 13px; min-height: 18px; }
+
+  /* Loading */
+  #loading-panel { display: none; margin-top: 20px; border: 2px dashed var(--line); padding: 28px; text-align: center; color: var(--dim); }
+  .blink { animation: blink 1.1s steps(2) infinite; }
+  @keyframes blink { 50% { opacity: 0.2; } }
+
+  /* Dossier */
+  #dossier-section { display: none; margin-top: 20px; }
+  .file-head {
+    background: var(--manila); color: #241c08; padding: 8px 16px;
+    font-weight: bold; letter-spacing: 2px; font-size: 12px;
+    display: flex; justify-content: space-between; flex-wrap: wrap; gap: 6px;
+  }
+  .file-body { border: 2px solid var(--manila); border-top: none; background: var(--panel); padding: 22px; position: relative; }
+  .file-body .stamp { top: 10px; right: 12px; transform: rotate(-7deg); }
+  #dossier-text { white-space: pre-wrap; line-height: 1.65; font-size: 14px; }
+  .exhibits { margin-top: 18px; border-top: 1px dashed var(--line); padding-top: 14px; display: flex; gap: 18px; flex-wrap: wrap; font-size: 12px; color: var(--dim); }
+  .exhibits b { color: var(--ink); }
+
+  /* Courtroom */
+  #court-section { display: none; margin-top: 26px; }
+  .court-head {
+    display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;
+    border: 2px solid var(--line); border-bottom: none; background: var(--panel-2); padding: 12px 16px;
+  }
+  .court-title { letter-spacing: 3px; font-size: 13px; color: var(--manila); }
+  #score-box { border: 1px solid var(--red); color: var(--red); padding: 5px 12px; font-size: 12px; letter-spacing: 1px; }
+  #score-box b { font-size: 15px; }
+  #transcript { border: 2px solid var(--line); background: var(--panel); padding: 18px; min-height: 120px; max-height: 60vh; overflow-y: auto; }
+  .turn { margin-bottom: 20px; }
+  .speaker { font-size: 11px; letter-spacing: 2px; color: var(--dim); margin-bottom: 5px; }
+  .counsel-q { color: var(--ink); border-left: 3px solid var(--dim); padding-left: 12px; }
+  .witness-answer { color: var(--manila); border-left: 3px solid var(--manila); padding-left: 12px; line-height: 1.6; white-space: pre-wrap; }
+  .cursor::after { content: '▋'; animation: blink 0.8s steps(2) infinite; }
+
+  /* Verdict badges */
+  .verdict-wrap { margin-top: 10px; margin-left: 15px; }
+  .verdict-badge {
+    display: inline-block; padding: 4px 12px; font-size: 11px; font-weight: bold;
+    letter-spacing: 2px; border: 2px solid; margin-bottom: 6px;
+  }
+  .verdict-badge.pending { border-color: var(--dim); color: var(--dim); }
+  .verdict-badge.SUPPORTED { border-color: var(--green); color: var(--green); background: rgba(63,157,90,0.08); }
+  .verdict-badge.UNVERIFIED { border-color: var(--amber); color: var(--amber); background: rgba(208,154,60,0.08); }
+  .verdict-badge.CONTRADICTED { border-color: var(--red); color: var(--red); background: rgba(194,59,59,0.1); animation: flash 0.6s ease 2; }
+  @keyframes flash { 50% { background: rgba(194,59,59,0.35); } }
+  .verdict-detail { font-size: 12px; color: var(--dim); line-height: 1.55; }
+  .verdict-detail .ev { color: var(--ink); }
+
+  /* Ask bar */
+  .ask-bar { display: flex; gap: 10px; border: 2px solid var(--line); border-top: none; background: var(--panel-2); padding: 14px 16px; flex-wrap: wrap; }
+  #question-input {
+    flex: 1; min-width: 240px; background: var(--panel); border: 1px solid var(--line); color: var(--ink);
+    font-family: inherit; font-size: 14px; padding: 11px 14px;
+  }
+  #question-input:focus { outline: 1px solid var(--manila); }
+  .hints { margin-top: 10px; font-size: 12px; color: var(--dim); line-height: 1.7; }
+  .hint-q { color: var(--manila); cursor: pointer; text-decoration: underline dotted; }
+  .hint-q:hover { color: #e7d9af; }
+  footer { margin-top: 34px; color: var(--dim); font-size: 11px; text-align: center; letter-spacing: 1px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="stamp">CLASSIFIED</div>
+    <h1>SWORN TESTIMONY</h1>
+    <div class="sub">FEDERAL RECORDS TRIBUNAL &mdash; DOCKET <span class="redact">NO-7741-B</span> &mdash; THE PEOPLE v. <span class="redact">THE RECORD</span></div>
+    <div class="sub">The dossier has been subpoenaed. It will take the stand. It may not tell the truth.</div>
+    <div class="built-on">BUILT ON: FOIA GHOST (WEEK 3)</div>
+  </header>
+
+  <div id="entry-panel">
+    <div class="field-label">ENTER ZIP CODE UNDER EXAMINATION</div>
+    <div class="entry-row">
+      <input id="zip-input" maxlength="5" inputmode="numeric" placeholder="90210" autocomplete="off">
+      <button id="open-file-btn">OPEN CASE FILE</button>
+    </div>
+    <div id="entry-error"></div>
+    <div class="hints">
+      The clerk will pull real federal records for this ZIP: Census income and poverty, EPA Toxic Release Inventory facilities, FEMA disaster declarations. Then you cross-examine the file itself. Roughly one answer in three contains a fabrication. The Verifier audits every answer against the raw record &mdash; expose a <b style="color:var(--red)">CONTRADICTED</b> claim to score.
+    </div>
+  </div>
+
+  <div id="loading-panel">
+    <div class="blink">RETRIEVING FEDERAL RECORDS: CENSUS ACS &middot; EPA TRI &middot; FEMA DECLARATIONS...</div>
+    <div style="margin-top:8px;font-size:12px;">The custodian of records is preparing the case file.</div>
+  </div>
+
+  <div id="dossier-section">
+    <div class="file-head">
+      <span>CASE FILE &mdash; ZIP <span id="file-zip"></span> (<span id="file-loc"></span>)</span>
+      <span>EXHIBIT A &mdash; READ INTO THE RECORD</span>
+    </div>
+    <div class="file-body">
+      <div class="stamp">SUBPOENAED</div>
+      <div id="dossier-text"></div>
+      <div class="exhibits" id="exhibit-row"></div>
+    </div>
+  </div>
+
+  <div id="court-section">
+    <div class="court-head">
+      <span class="court-title">CROSS-EXAMINATION IN PROGRESS</span>
+      <span id="score-box">FABRICATIONS EXPOSED: <b id="score-count">0</b></span>
+    </div>
+    <div id="transcript"></div>
+    <div class="ask-bar">
+      <input id="question-input" placeholder="Ask the dossier a question, counselor..." autocomplete="off">
+      <button id="ask-btn">EXAMINE</button>
+    </div>
+    <div class="hints">
+      Try: <span class="hint-q">How many toxic release facilities operate in this ZIP, and name them.</span> &middot;
+      <span class="hint-q">What is the median household income here, and how does it compare nationally?</span> &middot;
+      <span class="hint-q">How many federal disaster declarations has this county seen in five years?</span> &middot;
+      <span class="hint-q">Do any facilities in this ZIP report carcinogens or PFAS chemicals?</span>
+    </div>
+  </div>
+
+  <footer>SUMMER INTO AI 2026 &mdash; WEEK 4: BUILT ON YESTERDAY &mdash; ALL TESTIMONY AUDITED BY AN INDEPENDENT VERIFIER MODEL</footer>
+</div>
+
+<script>
+(function () {
+  const $ = (id) => document.getElementById(id);
+
+  let rawData = null;          // the fetched federal record — the ground truth
+  let history = [];            // chat history sent to the witness
+  let score = 0;
+  let busy = false;
+
+  // ── Open case file ─────────────────────────────────────────────────────────
+  async function openCaseFile() {
+    const zip = $('zip-input').value.trim();
+    $('entry-error').textContent = '';
+    if (!/^\d{5}$/.test(zip)) {
+      $('entry-error').textContent = 'OBJECTION: a ZIP code is five digits, counselor.';
+      return;
+    }
+    $('open-file-btn').disabled = true;
+    $('loading-panel').style.display = 'block';
+    $('dossier-section').style.display = 'none';
+    $('court-section').style.display = 'none';
+
+    try {
+      const resp = await fetch('/api/dossier', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ zip }),
+      });
+      const data = await resp.json();
+      if (!resp.ok) throw new Error(data.error || 'Failed to open case file');
+
+      rawData = data.rawData;
+      history = [];
+      score = 0;
+      $('score-count').textContent = '0';
+      $('transcript').innerHTML = '';
+
+      $('file-zip').textContent = rawData.zip;
+      $('file-loc').textContent = rawData.city + ', ' + rawData.state;
+      $('dossier-text').textContent = data.caseFile;
+
+      const ex = [];
+      if (rawData.census && rawData.census.medianIncome != null)
+        ex.push('<span>MEDIAN INCOME <b>$' + rawData.census.medianIncome.toLocaleString() + '</b></span>');
+      if (rawData.census && rawData.census.povertyRate != null)
+        ex.push('<span>POVERTY <b>' + rawData.census.povertyRate + '%</b></span>');
+      if (rawData.epa)
+        ex.push('<span>TRI FACILITIES <b>' + rawData.epa.totalFacilities + '</b></span>');
+      if (rawData.fema)
+        ex.push('<span>DISASTER DECLARATIONS <b>' + rawData.fema.disasterCount + '</b></span>');
+      $('exhibit-row').innerHTML = ex.join('');
+
+      $('dossier-section').style.display = 'block';
+      $('court-section').style.display = 'block';
+      addSystemLine('THE CLERK: The witness — the case file itself — is sworn in. Counsel may proceed.');
+      $('question-input').focus();
+    } catch (err) {
+      $('entry-error').textContent = 'RECORDS RETRIEVAL FAILED: ' + err.message;
+    } finally {
+      $('loading-panel').style.display = 'none';
+      $('open-file-btn').disabled = false;
+    }
+  }
+
+  function addSystemLine(text) {
+    const div = document.createElement('div');
+    div.className = 'turn';
+    div.innerHTML = '<div class="speaker"></div>';
+    const body = document.createElement('div');
+    body.style.color = 'var(--dim)';
+    body.style.fontStyle = 'italic';
+    body.style.fontSize = '12px';
+    body.textContent = text;
+    div.appendChild(body);
+    $('transcript').appendChild(div);
+    scrollTranscript();
+  }
+
+  function scrollTranscript() {
+    const t = $('transcript');
+    t.scrollTop = t.scrollHeight;
+  }
+
+  // ── Cross-examination ──────────────────────────────────────────────────────
+  async function examine() {
+    if (busy || !rawData) return;
+    const q = $('question-input').value.trim();
+    if (!q) return;
+    busy = true;
+    $('ask-btn').disabled = true;
+    $('question-input').value = '';
+
+    // Counsel turn
+    const qTurn = document.createElement('div');
+    qTurn.className = 'turn';
+    qTurn.innerHTML = '<div class="speaker">COUNSEL</div>';
+    const qBody = document.createElement('div');
+    qBody.className = 'counsel-q';
+    qBody.textContent = q;
+    qTurn.appendChild(qBody);
+    $('transcript').appendChild(qTurn);
+
+    // Witness turn (streams in)
+    const aTurn = document.createElement('div');
+    aTurn.className = 'turn';
+    aTurn.innerHTML = '<div class="speaker">THE DOSSIER (SWORN)</div>';
+    const aBody = document.createElement('div');
+    aBody.className = 'witness-answer cursor';
+    aTurn.appendChild(aBody);
+    $('transcript').appendChild(aTurn);
+    scrollTranscript();
+
+    history.push({ role: 'user', content: q });
+
+    let answer = '';
+    try {
+      answer = await streamWitness(aBody);
+    } catch (err) {
+      aBody.textContent = '[THE WITNESS IS UNRESPONSIVE: ' + err.message + ']';
+    }
+    aBody.classList.remove('cursor');
+
+    if (answer.trim()) {
+      history.push({ role: 'assistant', content: answer });
+      await verifyAnswer(q, answer, aTurn);
+    } else {
+      // Failed turn — don't poison history with an empty assistant message
+      history.pop();
+    }
+
+    busy = false;
+    $('ask-btn').disabled = false;
+    $('question-input').focus();
+    scrollTranscript();
+  }
+
+  // SSE reader with stall guard: if the stream closes without a 'done' event,
+  // continue gracefully with whatever text arrived.
+  async function streamWitness(el) {
+    const resp = await fetch('/api/witness', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ rawData, messages: history }),
+    });
+    if (!resp.ok || !resp.body) {
+      let msg = 'HTTP ' + resp.status;
+      try { msg = (await resp.json()).error || msg; } catch (_) {}
+      throw new Error(msg);
+    }
+
+    const reader = resp.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = '';
+    let answer = '';
+    let gotDone = false;
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buffer += decoder.decode(value, { stream: true });
+      const chunks = buffer.split('\n\n');
+      buffer = chunks.pop();
+      for (const chunk of chunks) {
+        for (const line of chunk.split('\n')) {
+          if (!line.startsWith('data: ')) continue;
+          let ev;
+          try { ev = JSON.parse(line.slice(6)); } catch (_) { continue; }
+          if (ev.type === 'text') {
+            answer += ev.text;
+            el.textContent = answer;
+            scrollTranscript();
+          } else if (ev.type === 'done') {
+            gotDone = true;
+          } else if (ev.type === 'error') {
+            if (!answer) throw new Error(ev.error || 'stream error');
+          }
+        }
+      }
+      if (gotDone) break;
+    }
+    // Stall guard: stream closed without 'done' — proceed with what we have.
+    return answer;
+  }
+
+  async function verifyAnswer(question, answer, turnEl) {
+    const wrap = document.createElement('div');
+    wrap.className = 'verdict-wrap';
+    const badge = document.createElement('span');
+    badge.className = 'verdict-badge pending';
+    badge.textContent = 'VERIFIER AUDITING RECORD...';
+    wrap.appendChild(badge);
+    turnEl.appendChild(wrap);
+    scrollTranscript();
+
+    try {
+      const resp = await fetch('/api/verify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ rawData, question, answer }),
+      });
+      const data = await resp.json();
+      if (!resp.ok) throw new Error(data.error || 'verification failed');
+
+      badge.className = 'verdict-badge ' + data.verdict;
+      badge.textContent = data.verdict === 'SUPPORTED' ? 'SUPPORTED BY THE RECORD'
+        : data.verdict === 'CONTRADICTED' ? 'CONTRADICTED — FABRICATION EXPOSED'
+        : 'UNVERIFIED';
+
+      const detail = document.createElement('div');
+      detail.className = 'verdict-detail';
+      const evEl = document.createElement('div');
+      evEl.className = 'ev';
+      evEl.textContent = 'RECORD: ' + data.evidence;
+      const exEl = document.createElement('div');
+      exEl.textContent = 'VERIFIER: ' + data.explanation;
+      detail.appendChild(evEl);
+      detail.appendChild(exEl);
+      wrap.appendChild(detail);
+
+      if (data.verdict === 'CONTRADICTED') {
+        score += 1;
+        $('score-count').textContent = String(score);
+      }
+    } catch (err) {
+      badge.className = 'verdict-badge pending';
+      badge.textContent = 'VERIFIER UNAVAILABLE: ' + err.message;
+    }
+    scrollTranscript();
+  }
+
+  // ── Wiring ─────────────────────────────────────────────────────────────────
+  $('open-file-btn').addEventListener('click', openCaseFile);
+  $('zip-input').addEventListener('keydown', (e) => { if (e.key === 'Enter') openCaseFile(); });
+  $('ask-btn').addEventListener('click', examine);
+  $('question-input').addEventListener('keydown', (e) => { if (e.key === 'Enter') examine(); });
+  document.querySelectorAll('.hint-q').forEach(el => {
+    el.addEventListener('click', () => {
+      $('question-input').value = el.textContent;
+      $('question-input').focus();
+    });
+  });
+})();
+</script>
+</body>
+</html>
