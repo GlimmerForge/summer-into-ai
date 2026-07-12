@@ -208,7 +208,7 @@
               "content": [
                 {
                   "type": "text",
-                  "text": "ElevenLabs auto-speak — founders read their openings aloud in sequence as they finish, with a toggle and per-founder Speak buttons for full arguments"
+                  "text": "Six contrasting ElevenLabs voices with auto-speak — founders voice their opening lines in sequence, and Chief Justice Marshall announces the final ruling aloud"
                 }
               ]
             }
@@ -326,11 +326,11 @@
                       "type": "strong"
                     }
                   ],
-                  "text": "ElevenLabs voice — auto-speak"
+                  "text": "Six distinct ElevenLabs voices"
                 },
                 {
                   "type": "text",
-                  "text": " — each founder has a unique voice. As each finishes their opening, their words are read aloud automatically in sequence (toggleable), just like the original Convention — or click Speak for the full argument."
+                  "text": " — each founder auto-speaks their opening lines as they finish (Franklin is an old sage, Hamilton a young firebrand), and when the court adjourns, Chief Justice Marshall announces his ruling aloud from the bench. Click Speak on any founder for their full argument."
                 }
               ]
             }
