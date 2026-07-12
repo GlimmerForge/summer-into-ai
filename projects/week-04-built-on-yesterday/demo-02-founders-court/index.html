@@ -194,7 +194,8 @@
     }
     #auto-speak-toggle.on { color: var(--amber); border-color: var(--amber); }
 
-    .founder-col.speaking .founder-name {
+    .speech-card.speaking { border-left-color: var(--amber); }
+    .speech-card.speaking .founder-name {
       text-shadow: 0 0 14px rgba(212, 175, 55, 0.9);
     }
 
@@ -241,30 +242,105 @@
     }
 
     /* 5-column grid */
-    .founders-grid {
-      display: grid;
-      grid-template-columns: repeat(5, 1fr);
-      /* Force the single row to the container height so columns scroll internally */
-      grid-auto-rows: 100%;
-      gap: 0.75rem;
-      /* Cap to viewport so columns scroll instead of growing the page */
-      height: calc(100vh - 150px);
-      min-height: 420px;
+    /* ── Founder status row (compact, like the original Convention) ── */
+    .founder-status-row {
+      display: flex;
+      justify-content: center;
+      gap: 0.6rem;
+      flex-wrap: wrap;
+      margin-bottom: 1rem;
     }
 
-    .founder-col {
+    .status-card {
       background: var(--surface);
       border: 1px solid var(--border);
-      border-radius: 4px;
-      display: flex;
-      flex-direction: column;
-      overflow: hidden;
-      min-height: 0;
+      border-radius: 6px;
+      padding: 0.6rem 0.9rem 0.55rem;
+      text-align: center;
+      min-width: 118px;
+      transition: border-color 0.3s;
     }
 
-    .founder-header {
-      padding: 0.6rem 0.75rem 0.5rem;
-      border-bottom: 2px solid var(--founder-color, #666);
+    .status-card.speaking-now { border-color: var(--amber); }
+
+    .status-avatar {
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      margin: 0 auto 0.35rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.7rem;
+      font-weight: 700;
+      font-family: monospace;
+      color: #0d0d12;
+      background: var(--founder-color, #888);
+    }
+
+    .status-name {
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: var(--founder-color, var(--cream));
+    }
+
+    .status-state {
+      font-size: 0.6rem;
+      color: var(--muted);
+      font-style: italic;
+      margin-top: 2px;
+      min-height: 0.9rem;
+    }
+
+    .status-card .vote-chip { margin: 0.3rem auto 0; }
+
+    /* ── Transcript feed (centered, readable) ── */
+    .transcript {
+      max-width: 860px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+
+    .round-divider {
+      text-align: center;
+      font-size: 0.62rem;
+      letter-spacing: 0.3em;
+      color: var(--muted);
+      font-family: monospace;
+      text-transform: uppercase;
+      padding: 0.5rem 0 0.1rem;
+    }
+
+    .speech-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-left: 3px solid var(--founder-color, #666);
+      border-radius: 4px;
+      padding: 0.7rem 1rem 0.8rem;
+    }
+
+    .speech-head {
+      display: flex;
+      align-items: center;
+      gap: 0.55rem;
+      margin-bottom: 0.45rem;
+    }
+
+    .speech-avatar {
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.55rem;
+      font-weight: 700;
+      font-family: monospace;
+      color: #0d0d12;
+      background: var(--founder-color, #888);
+      flex-shrink: 0;
     }
 
     .founder-name {
@@ -273,21 +349,21 @@
       color: var(--founder-color, var(--cream));
     }
 
-    .founder-role {
-      font-size: 0.65rem;
+    .speech-round {
+      font-size: 0.58rem;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
       color: var(--muted);
-      font-style: italic;
-      margin-top: 1px;
+      font-family: monospace;
+      border: 1px solid var(--border);
+      border-radius: 3px;
+      padding: 1px 6px;
     }
 
-    .founder-body {
-      flex: 1;
-      overflow-y: auto;
-      padding: 0.6rem 0.75rem;
-      display: flex;
-      flex-direction: column;
-      gap: 0.5rem;
-    }
+    .speech-head .speak-btn { margin: 0 0 0 auto; }
+    .speech-head .vote-chip { margin-left: auto; }
+    .speech-head .speak-btn + .vote-chip,
+    .speech-head .vote-chip ~ .speak-btn { margin-left: 0.5rem; }
 
     .thinking-section {
       display: none;
@@ -366,7 +442,6 @@
     }
 
     .speak-btn {
-      margin-top: 0.4rem;
       background: transparent;
       border: 1px solid var(--border);
       color: var(--cream-dim);
@@ -387,21 +462,6 @@
     .speak-btn:disabled { opacity: 0.5; cursor: default; }
     .speak-btn.visible { display: block; }
 
-    /* ── Rebuttal section ── */
-    .rebuttal-divider {
-      border-top: 1px dashed #333;
-      margin: 0.6rem 0;
-      font-size: 0.55rem;
-      letter-spacing: 0.2em;
-      color: #444;
-      text-align: center;
-      font-family: monospace;
-      display: none;
-      flex-direction: column;
-      align-items: center;
-      padding-top: 0.3rem;
-    }
-
     .rebuttal-text {
       font-family: Georgia, serif;
       font-size: 0.82rem;
@@ -420,7 +480,8 @@
     /* ── PHASE 3: Verdict ── */
     #verdict-banner {
       display: none;
-      margin-top: 1rem;
+      max-width: 860px;
+      margin: 1rem auto 0;
       padding: 1.25rem 2rem;
       border: 1px solid var(--amber);
       border-radius: 6px;
@@ -512,7 +573,7 @@
       white-space: pre-wrap;
     }
 
-    .founder-col.debate-winner {
+    .speech-card.debate-winner, .status-card.debate-winner {
       box-shadow: 0 0 0 2px var(--amber), 0 0 24px rgba(212, 175, 55, 0.25);
     }
 
@@ -533,17 +594,9 @@
     #btn-reset:hover { background: rgba(212,160,23,0.1); }
 
     /* ── Responsive ── */
-    @media (max-width: 900px) {
-      .founders-grid {
-        grid-template-columns: repeat(3, 1fr);
-      }
-    }
-
     @media (max-width: 600px) {
       .topics-grid { grid-template-columns: 1fr; }
-      .founders-grid {
-        grid-template-columns: 1fr;
-      }
+      .status-card { min-width: 96px; padding: 0.5rem 0.6rem; }
     }
 
     /* scrollbar styling */
@@ -581,7 +634,8 @@
     </div>
   </div>
 
-  <div class="founders-grid" id="founders-grid"></div>
+  <div class="founder-status-row" id="founder-status-row"></div>
+  <div class="transcript" id="transcript"></div>
 
   <div id="verdict-banner">
     <div class="verdict-label">Court Adjourned</div>
@@ -714,6 +768,46 @@ btnConvene.addEventListener('click', () => {
 document.getElementById('btn-reset').addEventListener('click', resetToSelect);
 
 // ── Phase 2: Debate ──
+function initials(name) {
+  return name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
+}
+
+function wireThinkingToggle(labelId, textId) {
+  document.getElementById(labelId).addEventListener('click', () => {
+    document.getElementById(labelId).classList.toggle('expanded');
+    document.getElementById(textId).classList.toggle('expanded');
+  });
+}
+
+// One transcript card per founder per round. Round 1 keeps legacy IDs (argument-, vote lives in status row).
+function makeSpeechCard(f, round) {
+  const card = document.createElement('div');
+  card.className = 'speech-card';
+  card.id = round === 1 ? `col-${f.id}` : `col-r2-${f.id}`;
+  card.style.setProperty('--founder-color', f.color);
+
+  const suffix = round === 1 ? '' : 'r2-';
+  card.innerHTML = `
+    <div class="speech-head">
+      <span class="speech-avatar">${initials(f.name)}</span>
+      <span class="founder-name">${f.name}</span>
+      <span class="speech-round">${round === 1 ? 'Opening' : 'Rebuttal'}</span>
+      ${round === 1 ? `<button class="speak-btn" id="speak-${f.id}" onclick="speakFounder('${f.id}')">&#9654; Speak</button>` : ''}
+    </div>
+    <div class="thinking-section" id="thinking-section-${suffix}${f.id}">
+      <div class="thinking-label" id="thinking-label-${suffix}${f.id}">Reasoning</div>
+      <div class="thinking-text" id="thinking-text-${suffix}${f.id}"></div>
+    </div>
+    <div class="${round === 1 ? 'argument-text' : 'rebuttal-text'}" id="${round === 1 ? 'argument' : 'rebuttal'}-${f.id}"></div>
+  `;
+  return card;
+}
+
+function setFounderState(founderId, text) {
+  const el = document.getElementById(`state-${founderId}`);
+  if (el) el.textContent = text;
+}
+
 function buildDebateUI(topic) {
   document.getElementById('debate-topic-name').textContent = topic.label;
 
@@ -728,55 +822,29 @@ function buildDebateUI(topic) {
     dotsEl.appendChild(dot);
   });
 
-  // Founders columns
-  const grid = document.getElementById('founders-grid');
-  grid.innerHTML = '';
+  // Status row — compact at-a-glance state per founder
+  const statusRow = document.getElementById('founder-status-row');
+  statusRow.innerHTML = '';
   FOUNDERS.forEach(f => {
-    const col = document.createElement('div');
-    col.className = 'founder-col';
-    col.id = `col-${f.id}`;
-    col.style.setProperty('--founder-color', f.color);
-
-    col.innerHTML = `
-      <div class="founder-header">
-        <div class="founder-name">${f.name}</div>
-        <div class="founder-role">${f.role}</div>
-      </div>
-      <div class="founder-body">
-        <div class="thinking-section" id="thinking-section-${f.id}">
-          <div class="thinking-label" id="thinking-label-${f.id}">Reasoning</div>
-          <div class="thinking-text" id="thinking-text-${f.id}"></div>
-        </div>
-        <div class="argument-text" id="argument-${f.id}"></div>
-        <div class="vote-chip" id="vote-${f.id}"></div>
-        <button class="speak-btn" id="speak-${f.id}" onclick="speakFounder('${f.id}')">&#9654; Speak</button>
-        <div class="rebuttal-divider" id="rebuttal-divider-${f.id}">
-          <span class="rebuttal-label">REBUTTAL</span>
-        </div>
-        <div class="thinking-section" id="thinking-section-r2-${f.id}">
-          <div class="thinking-label" id="thinking-label-r2-${f.id}">Round 2 Reasoning</div>
-          <div class="thinking-text" id="thinking-text-r2-${f.id}"></div>
-        </div>
-        <div class="rebuttal-text" id="rebuttal-${f.id}"></div>
-      </div>
+    const card = document.createElement('div');
+    card.className = 'status-card';
+    card.id = `status-${f.id}`;
+    card.style.setProperty('--founder-color', f.color);
+    card.innerHTML = `
+      <div class="status-avatar">${initials(f.name)}</div>
+      <div class="status-name">${f.name.split(' ').pop()}</div>
+      <div class="status-state" id="state-${f.id}">convening&hellip;</div>
+      <div class="vote-chip" id="vote-${f.id}"></div>
     `;
-    grid.appendChild(col);
+    statusRow.appendChild(card);
+  });
 
-    // Toggle round 1 thinking on label click
-    document.getElementById(`thinking-label-${f.id}`).addEventListener('click', () => {
-      const lbl = document.getElementById(`thinking-label-${f.id}`);
-      const txt = document.getElementById(`thinking-text-${f.id}`);
-      lbl.classList.toggle('expanded');
-      txt.classList.toggle('expanded');
-    });
-
-    // Toggle round 2 thinking on label click (starts collapsed)
-    document.getElementById(`thinking-label-r2-${f.id}`).addEventListener('click', () => {
-      const lbl = document.getElementById(`thinking-label-r2-${f.id}`);
-      const txt = document.getElementById(`thinking-text-r2-${f.id}`);
-      lbl.classList.toggle('expanded');
-      txt.classList.toggle('expanded');
-    });
+  // Transcript — round-1 speech cards
+  const transcript = document.getElementById('transcript');
+  transcript.innerHTML = '<div class="round-divider">Opening Statements</div>';
+  FOUNDERS.forEach(f => {
+    transcript.appendChild(makeSpeechCard(f, 1));
+    wireThinkingToggle(`thinking-label-${f.id}`, `thinking-text-${f.id}`);
   });
 }
 
@@ -873,6 +941,7 @@ async function startFounderStream(founder, topic, round = 1, priorArguments = []
 
 function handleFounderEvent(founderId, event) {
   if (event.type === 'thinking') {
+    setFounderState(founderId, currentRound === 1 ? 'reasoning…' : 'weighing rebuttals…');
     if (currentRound === 1) {
       // Round 1: auto-expand thinking as it arrives
       const section = document.getElementById(`thinking-section-${founderId}`);
@@ -896,6 +965,7 @@ function handleFounderEvent(founderId, event) {
     }
 
   } else if (event.type === 'text') {
+    setFounderState(founderId, currentRound === 1 ? 'speaking…' : 'rebutting…');
     if (currentRound === 1) {
       founderArguments[founderId] += event.delta;
       const argEl = document.getElementById(`argument-${founderId}`);
@@ -928,6 +998,7 @@ function handleFounderEvent(founderId, event) {
     updateTally();
 
   } else if (event.type === 'done') {
+    setFounderState(founderId, currentRound === 1 ? 'opening delivered' : 'rested');
     const dot = document.getElementById(`dot-${founderId}`);
     if (dot) { dot.classList.remove('active'); dot.classList.add('done'); }
 
@@ -975,9 +1046,17 @@ function startRound2() {
   const header = document.getElementById('debate-topic-name');
   header.textContent = header.textContent + ' — REBUTTAL';
 
-  // Show rebuttal dividers and reactivate progress dots
+  // Append rebuttal round to the transcript; reactivate progress dots
+  const transcript = document.getElementById('transcript');
+  const divider = document.createElement('div');
+  divider.className = 'round-divider';
+  divider.textContent = 'Rebuttal Round';
+  transcript.appendChild(divider);
+
   FOUNDERS.forEach(f => {
-    document.getElementById(`rebuttal-divider-${f.id}`).style.display = 'flex';
+    transcript.appendChild(makeSpeechCard(f, 2));
+    wireThinkingToggle(`thinking-label-r2-${f.id}`, `thinking-text-r2-${f.id}`);
+    setFounderState(f.id, 'reading opponents…');
     const dot = document.getElementById(`dot-${f.id}`);
     dot.classList.remove('done');
     dot.classList.add('active');
@@ -1069,10 +1148,12 @@ async function requestMarshallOpinion() {
           winnerEl.innerHTML = `Best advocate: <span class="winner-name">${ev.winnerName}</span> — ${ev.winnerReason}`;
           opinionEl.textContent = ev.opinion;
 
-          // Crown the winning founder's column
-          document.querySelectorAll('.founder-col').forEach(c => c.classList.remove('debate-winner'));
-          const winCol = document.getElementById(`col-${ev.winner}`);
-          if (winCol) winCol.classList.add('debate-winner');
+          // Crown the winner: status card + both speech cards
+          document.querySelectorAll('.speech-card, .status-card').forEach(c => c.classList.remove('debate-winner'));
+          for (const id of [`col-${ev.winner}`, `col-r2-${ev.winner}`, `status-${ev.winner}`]) {
+            document.getElementById(id)?.classList.add('debate-winner');
+          }
+          setFounderState(ev.winner, '★ best advocate');
         } else if (ev.type === 'error') {
           statusEl.textContent = 'The Chief Justice declines to rule: ' + ev.message;
         }
@@ -1110,9 +1191,15 @@ function playVoice(founderId, text, onStart) {
       if (!data.audio) return resolve(false);
 
       const audio = new Audio(`data:${data.mimeType};base64,${data.audio}`);
+      const statusCard = document.getElementById(`status-${founderId}`);
       if (col) col.classList.add('speaking');
+      if (statusCard) statusCard.classList.add('speaking-now');
       if (onStart) onStart();
-      const done = () => { if (col) col.classList.remove('speaking'); resolve(true); };
+      const done = () => {
+        if (col) col.classList.remove('speaking');
+        if (statusCard) statusCard.classList.remove('speaking-now');
+        resolve(true);
+      };
       audio.onended = done;
       audio.onerror = done;
       audio.play().catch(done);

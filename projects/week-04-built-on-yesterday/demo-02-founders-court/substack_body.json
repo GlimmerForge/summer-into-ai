@@ -399,7 +399,7 @@
               "content": [
                 {
                   "type": "text",
-                  "text": "After round 1 completes, round 2 fires automatically — the "
+                  "text": "After round 1 completes, the "
                 },
                 {
                   "type": "text",
@@ -408,11 +408,11 @@
                       "type": "strong"
                     }
                   ],
-                  "text": "REBUTTAL"
+                  "text": "Rebuttal Round"
                 },
                 {
                   "type": "text",
-                  "text": " section appears below each opening statement as founders attack each other by name."
+                  "text": " opens automatically in the courtroom transcript — each founder attacks the strongest opposing claim by name."
                 }
               ]
             }
