@@ -688,6 +688,16 @@
     to { stroke-dashoffset: -36; }
   }
 
+  .agent-dot.map-ping {
+    animation: mapPing 0.8s ease-in-out 4;
+    transform-box: fill-box;
+    transform-origin: center;
+  }
+  @keyframes mapPing {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(2.2); }
+  }
+
   .agent-dot {
     transition: fill 0.6s, r 0.3s;
   }
@@ -1057,6 +1067,48 @@ function updateMap() {
   setLine('line-jr-355', 'culper_jr', 'agent_355');
 }
 
+// Washington's judgment reshapes the network every mission — the map is alive
+function applyOutcomeToMap(outcome) {
+  const affected = (gameState.currentMissionData && gameState.currentMissionData.affectedAgent) || null;
+  const activeAgents = AGENTS.filter(a => gameState.agentStatuses[a.id] === 'active').map(a => a.id);
+  const compromisedAgents = AGENTS.filter(a => gameState.agentStatuses[a.id] === 'compromised').map(a => a.id);
+  const pick = arr => arr[Math.floor(Math.random() * arr.length)];
+
+  let changed = null;
+  if (outcome === 'FAILURE') {
+    // A failure exposes someone: escalate a compromised agent to burned, or compromise an active one
+    const target = (affected && gameState.agentStatuses[affected] !== 'burned') ? affected
+      : (compromisedAgents.length ? pick(compromisedAgents) : (activeAgents.length ? pick(activeAgents) : null));
+    if (target) {
+      gameState.agentStatuses[target] = gameState.agentStatuses[target] === 'compromised' ? 'burned' : 'compromised';
+      changed = target;
+    }
+  } else if (outcome === 'PARTIAL') {
+    // Sloppy tradecraft draws attention half the time
+    if (Math.random() < 0.5 && activeAgents.length) {
+      const target = (affected && gameState.agentStatuses[affected] === 'active') ? affected : pick(activeAgents);
+      gameState.agentStatuses[target] = 'compromised';
+      changed = target;
+    }
+  } else if (outcome === 'SUCCESS') {
+    // Good work lets a compromised agent go quiet and recover
+    if (compromisedAgents.length && Math.random() < 0.6) {
+      const target = pick(compromisedAgents);
+      gameState.agentStatuses[target] = 'active';
+      changed = target;
+    }
+  }
+
+  updateMap();
+  if (changed) {
+    const dot = document.getElementById('dot-' + changed);
+    if (dot) {
+      dot.classList.add('map-ping');
+      setTimeout(() => dot.classList.remove('map-ping'), 3200);
+    }
+  }
+}
+
 // ==== PIPS ====
 function updatePips() {
   for (let i = 1; i <= 5; i++) {
@@ -1121,6 +1173,15 @@ async function loadMission(num) {
 // ==== RENDER MISSION ====
 function renderMission(data, type, num) {
   document.getElementById('mission-loading').style.display = 'none';
+
+  // Pulse the agent this mission involves — the map tracks the story
+  if (data.affectedAgent) {
+    const dot = document.getElementById('dot-' + data.affectedAgent);
+    if (dot) {
+      dot.classList.add('map-ping');
+      setTimeout(() => dot.classList.remove('map-ping'), 3200);
+    }
+  }
 
   document.getElementById('mission-label').textContent = `MISSION ${num} OF 5`;
   const badge = document.getElementById('mission-type-badge');
@@ -1330,6 +1391,9 @@ async function submitResponse() {
           // Apply network change
           gameState.networkIntegrity = Math.max(0, Math.min(100, gameState.networkIntegrity + networkChange));
           updateNetworkBar(gameState.networkIntegrity);
+
+          // Every judgment moves the map: failures degrade agents, successes stabilize them
+          applyOutcomeToMap(outcome || 'PARTIAL');
 
           const notice = document.getElementById('network-change-notice');
           notice.style.display = 'block';
