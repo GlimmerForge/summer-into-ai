@@ -1194,10 +1194,14 @@ async function requestMarshallOpinion() {
           }
           setFounderState(ev.winner, '★ best advocate');
 
-          // The Chief Justice announces his ruling aloud
+          // The Chief Justice announces his ruling aloud — queued, so he
+          // waits for whoever holds the floor instead of cutting them off
           if (autoSpeak) {
-            const ruling = `Order. This court has reached its judgment. Best advocate: ${ev.winnerName}. ${ev.winnerReason}`;
-            playVoice('marshall', ruling);
+            speakQueue.push({
+              founderId: 'marshall',
+              text: `Order. This court has reached its judgment. Best advocate: ${ev.winnerName}. ${ev.winnerReason}`
+            });
+            processSpeakQueue();
           }
 
           document.getElementById('verdict-banner').scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -1309,7 +1313,15 @@ function enqueueAutoSpeak(founderId, round = 1) {
 async function processSpeakQueue() {
   if (speaking || !speakQueue.length) return;
   speaking = true;
-  const { founderId, round } = speakQueue.shift();
+  const { founderId, round, text: override } = speakQueue.shift();
+
+  // Explicit text (e.g. Marshall's ruling) is spoken verbatim, in turn
+  if (override) {
+    if (autoSpeak) await playVoice(founderId, override);
+    speaking = false;
+    processSpeakQueue();
+    return;
+  }
 
   // Clean for TTS: drop vote marker, markdown symbols, and any header/title lines
   const source = round === 2 ? (founderRebuttals[founderId] || '') : (founderArguments[founderId] || '');
