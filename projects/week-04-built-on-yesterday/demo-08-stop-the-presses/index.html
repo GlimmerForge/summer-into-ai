@@ -1,0 +1,965 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Stop the Presses — a 1776 Disinformation Game</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=UnifrakturMaguntia&family=IM+Fell+English:ital@0;1&family=IM+Fell+English+SC&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: #e8dfc8;
+  background-image:
+    radial-gradient(ellipse 120% 80% at 30% 20%, rgba(160,120,60,0.06) 0%, transparent 60%),
+    radial-gradient(ellipse 80% 60% at 80% 70%, rgba(140,100,40,0.05) 0%, transparent 50%);
+  min-height: 100vh;
+  font-family: 'IM Fell English', Georgia, serif;
+  color: #1a1208;
+  padding: 20px 14px 60px;
+}
+
+#wrap { max-width: 1040px; margin: 0 auto; }
+
+/* ── MASTHEAD ── */
+#masthead {
+  text-align: center;
+  border-bottom: 3px double #1a1208;
+  padding-bottom: 10px;
+  margin-bottom: 6px;
+}
+.built-on {
+  display: inline-block;
+  font-family: 'IM Fell English SC', serif;
+  font-size: 12px;
+  letter-spacing: 0.14em;
+  color: #5a4a2a;
+  border: 1px solid #8a7a50;
+  padding: 3px 12px;
+  margin-bottom: 8px;
+  background: rgba(255,255,255,0.35);
+}
+.paper-name {
+  font-family: 'UnifrakturMaguntia', serif;
+  font-size: clamp(38px, 6.6vw, 64px);
+  line-height: 1.05;
+}
+.paper-sub {
+  font-family: 'IM Fell English SC', serif;
+  font-size: 12px;
+  letter-spacing: 0.28em;
+  color: #6a5a3a;
+  margin-top: 2px;
+}
+#date-line {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+  font-family: 'IM Fell English SC', serif;
+  font-size: 13px;
+  letter-spacing: 0.08em;
+  color: #3a2c14;
+  border-bottom: 1px solid #1a1208;
+  padding: 4px 2px 6px;
+  margin-bottom: 18px;
+}
+
+/* ── SCORE STRIP ── */
+#score-strip {
+  display: none;
+  justify-content: center;
+  gap: 14px;
+  flex-wrap: wrap;
+  margin: 0 0 22px;
+}
+.chip {
+  border: 2px solid #1a1208;
+  background: #f7f0dc;
+  box-shadow: 3px 3px 0 rgba(0,0,0,0.15);
+  padding: 8px 18px;
+  text-align: center;
+  min-width: 140px;
+}
+.chip .lbl {
+  font-family: 'IM Fell English SC', serif;
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  color: #6a5a3a;
+}
+.chip .val {
+  font-size: 24px;
+  line-height: 1.1;
+}
+#rep-val.bad { color: #8a1a12; }
+
+/* ── SCREENS ── */
+.screen { display: none; }
+.screen.active { display: block; }
+
+/* ── TITLE SCREEN ── */
+#title-screen { text-align: center; padding: 30px 10px 10px; }
+#title-screen .press-art { font-size: 64px; filter: grayscale(1) contrast(1.2); }
+#title-screen h2 {
+  font-family: 'IM Fell English SC', serif;
+  font-size: 26px;
+  letter-spacing: 0.1em;
+  margin: 16px 0 12px;
+}
+#title-screen p {
+  max-width: 620px;
+  margin: 0 auto 12px;
+  font-size: 17px;
+  line-height: 1.55;
+}
+#title-screen .rules {
+  font-style: italic;
+  color: #4a3a1c;
+  font-size: 15px;
+}
+
+.big-btn {
+  font-family: 'IM Fell English SC', serif;
+  font-size: 19px;
+  letter-spacing: 0.12em;
+  background: #1a1208;
+  color: #f0e8d0;
+  border: none;
+  padding: 14px 38px;
+  cursor: pointer;
+  margin-top: 22px;
+  box-shadow: 4px 4px 0 #b0a070;
+  transition: transform 0.08s ease, box-shadow 0.08s ease;
+}
+.big-btn:hover:not(:disabled) { transform: translate(-1px,-1px); box-shadow: 5px 5px 0 #b0a070; }
+.big-btn:active:not(:disabled) { transform: translate(2px,2px); box-shadow: 1px 1px 0 #b0a070; }
+.big-btn:disabled { opacity: 0.4; cursor: default; }
+.big-btn.danger { background: #6a1410; }
+
+/* ── DESK SCREEN ── */
+#desk-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 4px;
+}
+#desk-head h2 {
+  font-family: 'IM Fell English SC', serif;
+  font-size: 22px;
+  letter-spacing: 0.1em;
+}
+#tokens-line {
+  font-family: 'IM Fell English SC', serif;
+  font-size: 13px;
+  letter-spacing: 0.1em;
+  color: #4a3a1c;
+}
+#desk-hint {
+  font-style: italic;
+  color: #5a4a2a;
+  font-size: 14px;
+  margin-bottom: 14px;
+}
+
+#dispatch-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 16px;
+}
+
+.dispatch-card {
+  border: 2px solid #1a1208;
+  background: #f7f0dc;
+  box-shadow: 4px 4px 0 rgba(0,0,0,0.14);
+  padding: 14px 16px 12px;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+}
+.dispatch-card.decided-print { outline: 3px solid #1a1208; outline-offset: -6px; }
+.dispatch-card.decided-hold { opacity: 0.72; }
+.d-source {
+  font-family: 'IM Fell English SC', serif;
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  color: #6a5a3a;
+  border-bottom: 1px dotted #8a7a50;
+  padding-bottom: 4px;
+  margin-bottom: 8px;
+}
+.d-headline {
+  font-family: 'IM Fell English SC', serif;
+  font-size: 19px;
+  line-height: 1.2;
+  margin-bottom: 8px;
+}
+.d-body { font-size: 15px; line-height: 1.5; flex: 1; }
+
+.verify-note {
+  margin-top: 10px;
+  border: 1px dashed #8a6a2a;
+  background: rgba(200,170,90,0.16);
+  padding: 8px 10px;
+  font-style: italic;
+  font-size: 13.5px;
+  line-height: 1.45;
+  color: #4a3610;
+}
+.verify-note .vn-lbl {
+  display: block;
+  font-family: 'IM Fell English SC', serif;
+  font-style: normal;
+  font-size: 10px;
+  letter-spacing: 0.16em;
+  color: #7a5a1a;
+  margin-bottom: 3px;
+}
+
+.d-actions { display: flex; gap: 6px; margin-top: 12px; }
+.d-actions button {
+  font-family: 'IM Fell English SC', serif;
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  padding: 7px 4px;
+  flex: 1;
+  cursor: pointer;
+  border: 2px solid #1a1208;
+  background: #ede4c8;
+  color: #1a1208;
+  transition: background 0.1s ease;
+}
+.d-actions button:hover:not(:disabled) { background: #ddd0a8; }
+.d-actions button:disabled { opacity: 0.45; cursor: default; }
+.btn-print.on { background: #1a1208; color: #f0e8d0; }
+.btn-hold.on { background: #8a7a50; color: #f7f0dc; border-color: #5a4a2a; }
+.btn-investigate { border-style: dashed; }
+
+#press-row { text-align: center; }
+#press-note { font-style: italic; font-size: 14px; color: #6a5a3a; margin-top: 8px; }
+
+/* ── REVEAL SCREEN ── */
+#edition-sheet {
+  max-width: 760px;
+  margin: 0 auto 24px;
+  background: #faf4e2;
+  border: 2px solid #1a1208;
+  box-shadow: 5px 5px 0 #b0a070, 10px 10px 0 rgba(0,0,0,0.10);
+  padding: 26px 30px 30px;
+}
+#sheet-masthead { text-align: center; border-bottom: 3px double #1a1208; padding-bottom: 8px; margin-bottom: 6px; }
+#sheet-masthead .paper-name { font-size: clamp(30px, 5vw, 46px); }
+#sheet-date {
+  font-family: 'IM Fell English SC', serif;
+  font-size: 12px;
+  letter-spacing: 0.12em;
+  text-align: center;
+  border-bottom: 1px solid #1a1208;
+  padding: 3px 0 5px;
+  margin-bottom: 14px;
+}
+.sheet-item {
+  position: relative;
+  border-bottom: 1px dotted #8a7a50;
+  padding: 12px 4px 14px;
+}
+.sheet-item:last-child { border-bottom: none; }
+.sheet-item .d-headline { font-size: 22px; text-align: center; margin-bottom: 6px; }
+.sheet-item .d-body { font-size: 15.5px; }
+.sheet-blank {
+  text-align: center;
+  font-style: italic;
+  color: #7a6a44;
+  padding: 30px 10px;
+}
+
+.stamp {
+  position: absolute;
+  top: 46%;
+  right: 24px;
+  font-family: 'IM Fell English SC', serif;
+  font-size: 15px;
+  letter-spacing: 0.14em;
+  padding: 5px 12px;
+  border: 3px solid;
+  transform: rotate(-8deg) scale(2.4);
+  opacity: 0;
+  pointer-events: none;
+  mix-blend-mode: multiply;
+}
+.stamp.landed {
+  animation: stampIn 0.32s cubic-bezier(0.2, 1.6, 0.4, 1) forwards;
+}
+@keyframes stampIn {
+  0%   { opacity: 0; transform: rotate(-8deg) scale(2.4); }
+  70%  { opacity: 1; transform: rotate(-8deg) scale(0.94); }
+  100% { opacity: 0.92; transform: rotate(-8deg) scale(1); }
+}
+.stamp.true  { color: #1a4a14; border-color: #1a4a14; background: rgba(60,140,50,0.08); }
+.stamp.false {
+  color: #a01208;
+  border-color: #a01208;
+  background: rgba(200,30,10,0.07);
+  font-size: 17px;
+}
+.tell-line {
+  margin-top: 8px;
+  font-style: italic;
+  font-size: 13.5px;
+  color: #7a1a10;
+  border-left: 3px solid #a01208;
+  padding-left: 10px;
+  display: none;
+}
+.tell-line.show { display: block; }
+
+#held-report {
+  max-width: 760px;
+  margin: 0 auto 26px;
+  font-size: 14.5px;
+}
+#held-report h3 {
+  font-family: 'IM Fell English SC', serif;
+  font-size: 15px;
+  letter-spacing: 0.12em;
+  margin-bottom: 6px;
+}
+.held-line { padding: 3px 0; border-bottom: 1px dotted #b8a878; }
+.held-tag {
+  font-family: 'IM Fell English SC', serif;
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  padding: 1px 8px;
+  border: 1px solid;
+  margin-right: 8px;
+  white-space: nowrap;
+}
+.held-tag.avoided { color: #1a4a14; border-color: #1a4a14; }
+.held-tag.missed  { color: #7a5a1a; border-color: #7a5a1a; }
+
+#reaction-box {
+  max-width: 760px;
+  margin: 0 auto;
+  border: 2px solid #1a1208;
+  background: #f2e9cf;
+  box-shadow: 4px 4px 0 rgba(0,0,0,0.12);
+  padding: 18px 22px 20px;
+}
+#reaction-box h3 {
+  font-family: 'IM Fell English SC', serif;
+  font-size: 16px;
+  letter-spacing: 0.14em;
+  border-bottom: 1px solid #8a7a50;
+  padding-bottom: 6px;
+  margin-bottom: 10px;
+}
+#reaction-text {
+  font-size: 15.5px;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  min-height: 40px;
+}
+#reaction-text .cursor {
+  display: inline-block;
+  width: 8px;
+  height: 16px;
+  background: #1a1208;
+  vertical-align: -2px;
+  animation: blink 0.9s steps(1) infinite;
+}
+@keyframes blink { 50% { opacity: 0; } }
+
+#reveal-next-row { text-align: center; }
+
+/* ── FINAL SCREEN ── */
+#final-screen { text-align: center; padding-top: 20px; }
+#final-title-lbl {
+  font-family: 'IM Fell English SC', serif;
+  font-size: 14px;
+  letter-spacing: 0.2em;
+  color: #6a5a3a;
+}
+#final-title {
+  font-family: 'UnifrakturMaguntia', serif;
+  font-size: clamp(34px, 6vw, 56px);
+  margin: 8px 0 6px;
+}
+#final-title.bad { color: #8a1a12; }
+#final-verdict {
+  max-width: 560px;
+  margin: 0 auto 18px;
+  font-style: italic;
+  font-size: 16px;
+  line-height: 1.55;
+}
+#final-stats {
+  display: flex;
+  justify-content: center;
+  gap: 14px;
+  flex-wrap: wrap;
+  margin-bottom: 8px;
+}
+
+/* ── SPINNER / STATUS ── */
+#status-line {
+  text-align: center;
+  font-style: italic;
+  color: #5a4a2a;
+  font-size: 16px;
+  padding: 46px 10px;
+}
+#status-line .press-art {
+  display: block;
+  font-size: 50px;
+  filter: grayscale(1) contrast(1.2);
+  animation: pressThud 1.4s ease-in-out infinite;
+  margin-bottom: 12px;
+}
+@keyframes pressThud {
+  0%, 100% { transform: translateY(0); }
+  45%       { transform: translateY(-7px); }
+  55%       { transform: translateY(2px); }
+}
+.err-box {
+  max-width: 520px;
+  margin: 20px auto 0;
+  border: 2px solid #8a1a12;
+  color: #6a1410;
+  background: rgba(200,40,20,0.06);
+  padding: 12px 16px;
+  font-size: 14.5px;
+  text-align: center;
+}
+</style>
+</head>
+<body>
+<div id="wrap">
+
+  <header id="masthead">
+    <div class="built-on">Built on: The Broadside (Week 2)</div>
+    <div class="paper-name">The Pennsylvania Gazette</div>
+    <div class="paper-sub">Containing the Freshest Advices, Foreign and Domestick</div>
+  </header>
+  <div id="date-line">
+    <span id="dl-edition">Philadelphia, July 1776</span>
+    <span id="dl-price">Price: Two Coppers</span>
+  </div>
+
+  <div id="score-strip">
+    <div class="chip"><div class="lbl">Edition</div><div class="val" id="edition-val">1 of 3</div></div>
+    <div class="chip"><div class="lbl">Circulation</div><div class="val" id="circ-val">200</div></div>
+    <div class="chip"><div class="lbl">Reputation</div><div class="val" id="rep-val">100</div></div>
+  </div>
+
+  <!-- TITLE -->
+  <section id="title-screen" class="screen active">
+    <div class="press-art">&#128424;&#65039;</div>
+    <h2>Stop the Presses</h2>
+    <p>Philadelphia, July 1776. You are the printer of this city's boldest broadsheet. Dispatches pour into your shop — riders from New-York, letters from the South, whispers off the wharves. Most are true. Some were written in a British officer's tent, planted to poison the cause and ruin your name.</p>
+    <p class="rules">Each edition brings five dispatches. PRINT what sells, HOLD what smells, and spend your two investigation tokens wisely — your riders can check a story, but ink and time are dear. Print the truth and your circulation soars. Print a British plant and Philadelphia will know you for a fool — or worse.</p>
+    <button id="start-btn" class="big-btn">Open the Shop</button>
+  </section>
+
+  <!-- STATUS -->
+  <section id="status-screen" class="screen">
+    <div id="status-line"><span class="press-art">&#128424;&#65039;</span><span id="status-text">The post rider approaches&hellip;</span></div>
+    <div id="status-err" style="display:none" class="err-box"></div>
+    <div id="retry-row" style="display:none; text-align:center"><button id="retry-btn" class="big-btn">Try Again</button></div>
+  </section>
+
+  <!-- DESK -->
+  <section id="desk-screen" class="screen">
+    <div id="desk-head">
+      <h2 id="desk-title">The Composing Desk — Edition 1</h2>
+      <div id="tokens-line">Investigation tokens: <span id="tokens-val">&#9679;&#9679;</span></div>
+    </div>
+    <p id="desk-hint">Mark every dispatch PRINT or HOLD. Investigate a suspect story and your riders will report back. When the forme is set — run the presses.</p>
+    <div id="dispatch-list"></div>
+    <div id="press-row">
+      <button id="run-presses-btn" class="big-btn danger" disabled>Run the Presses</button>
+      <div id="press-note">Decide every dispatch before the forme is locked.</div>
+    </div>
+  </section>
+
+  <!-- REVEAL -->
+  <section id="reveal-screen" class="screen">
+    <div id="edition-sheet">
+      <div id="sheet-masthead"><div class="paper-name">The Pennsylvania Gazette</div></div>
+      <div id="sheet-date">Saturday, July 6, 1776</div>
+      <div id="sheet-items"></div>
+    </div>
+    <div id="held-report"></div>
+    <div id="reaction-box">
+      <h3>Word from the London Coffee-House</h3>
+      <div id="reaction-text"></div>
+    </div>
+    <div id="reveal-next-row"><button id="next-btn" class="big-btn" style="display:none">Next Edition</button></div>
+  </section>
+
+  <!-- FINAL -->
+  <section id="final-screen" class="screen">
+    <div id="final-title-lbl">The Town Renders Its Verdict</div>
+    <div id="final-title"></div>
+    <div id="final-verdict"></div>
+    <div id="final-stats">
+      <div class="chip"><div class="lbl">Final Circulation</div><div class="val" id="f-circ"></div></div>
+      <div class="chip"><div class="lbl">Final Reputation</div><div class="val" id="f-rep"></div></div>
+      <div class="chip"><div class="lbl">Plants Printed</div><div class="val" id="f-plants"></div></div>
+      <div class="chip"><div class="lbl">Plants Caught</div><div class="val" id="f-caught"></div></div>
+    </div>
+    <button id="again-btn" class="big-btn">Print Another Run</button>
+  </section>
+
+</div>
+
+<script>
+'use strict';
+
+const TOTAL_EDITIONS = 3;
+const TOKENS_PER_EDITION = 2;
+
+const state = {
+  edition: 1,
+  circulation: 200,
+  reputation: 100,
+  tokens: TOKENS_PER_EDITION,
+  editionDate: '',
+  dispatches: [],          // full objects incl. hidden isTrue / tell — never rendered until reveal
+  decisions: {},           // id -> 'print' | 'hold'
+  investigated: {},        // id -> hint text
+  usedHeadlines: [],
+  plantsPrinted: 0,
+  plantsCaught: 0,
+  busy: false
+};
+
+const $ = id => document.getElementById(id);
+
+function show(screenId) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  $(screenId).classList.add('active');
+}
+
+function updateStrip() {
+  $('score-strip').style.display = 'flex';
+  $('edition-val').textContent = state.edition + ' of ' + TOTAL_EDITIONS;
+  $('circ-val').textContent = String(state.circulation);
+  const rep = $('rep-val');
+  rep.textContent = String(state.reputation);
+  rep.classList.toggle('bad', state.reputation < 50);
+}
+
+function setStatus(msg) {
+  $('status-text').textContent = msg;
+  $('status-err').style.display = 'none';
+  $('retry-row').style.display = 'none';
+  show('status-screen');
+}
+
+function statusError(msg) {
+  $('status-err').textContent = msg;
+  $('status-err').style.display = 'block';
+  $('retry-row').style.display = 'block';
+}
+
+/* ── LOAD EDITION ── */
+async function loadEdition() {
+  setStatus('The post rider approaches with dispatches for Edition ' + state.edition + '…');
+  updateStrip();
+  try {
+    const resp = await fetch('/api/dispatches', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ editionNumber: state.edition, usedHeadlines: state.usedHeadlines })
+    });
+    if (!resp.ok) {
+      const e = await resp.json().catch(() => ({}));
+      throw new Error(e.error || ('Server error ' + resp.status));
+    }
+    const data = await resp.json();
+    state.editionDate = data.editionDate;
+    state.dispatches = data.dispatches;
+    state.decisions = {};
+    state.investigated = {};
+    state.tokens = TOKENS_PER_EDITION;
+    data.dispatches.forEach(d => state.usedHeadlines.push(d.headline));
+    renderDesk();
+  } catch (err) {
+    statusError('The rider was waylaid: ' + err.message);
+  }
+}
+
+/* ── DESK ── */
+function renderDesk() {
+  $('desk-title').textContent = 'The Composing Desk — Edition ' + state.edition + ' — ' + state.editionDate;
+  renderTokens();
+  const list = $('dispatch-list');
+  list.textContent = '';
+  state.dispatches.forEach(d => {
+    const card = document.createElement('div');
+    card.className = 'dispatch-card';
+    card.dataset.id = d.id;
+
+    const src = document.createElement('div');
+    src.className = 'd-source';
+    src.textContent = d.source;
+
+    const hl = document.createElement('div');
+    hl.className = 'd-headline';
+    hl.textContent = d.headline;
+
+    const bodyEl = document.createElement('div');
+    bodyEl.className = 'd-body';
+    bodyEl.textContent = d.body;
+
+    const note = document.createElement('div');
+    note.className = 'verify-note';
+    note.style.display = 'none';
+
+    const actions = document.createElement('div');
+    actions.className = 'd-actions';
+
+    const bPrint = document.createElement('button');
+    bPrint.className = 'btn-print';
+    bPrint.textContent = 'Print';
+    bPrint.addEventListener('click', () => decide(d.id, 'print'));
+
+    const bHold = document.createElement('button');
+    bHold.className = 'btn-hold';
+    bHold.textContent = 'Hold';
+    bHold.addEventListener('click', () => decide(d.id, 'hold'));
+
+    const bInv = document.createElement('button');
+    bInv.className = 'btn-investigate';
+    bInv.textContent = 'Investigate';
+    bInv.addEventListener('click', () => investigate(d.id, bInv, note));
+
+    actions.append(bPrint, bHold, bInv);
+    card.append(src, hl, bodyEl, note, actions);
+    list.appendChild(card);
+  });
+  $('run-presses-btn').disabled = true;
+  $('press-note').textContent = 'Decide every dispatch before the forme is locked.';
+  show('desk-screen');
+  updateStrip();
+}
+
+function renderTokens() {
+  $('tokens-val').textContent = state.tokens > 0
+    ? '●'.repeat(state.tokens) + '○'.repeat(TOKENS_PER_EDITION - state.tokens)
+    : '○'.repeat(TOKENS_PER_EDITION);
+  document.querySelectorAll('.btn-investigate').forEach(b => {
+    if (state.tokens <= 0) b.disabled = true;
+  });
+}
+
+function decide(id, choice) {
+  state.decisions[id] = choice;
+  const card = document.querySelector('.dispatch-card[data-id="' + CSS.escape(id) + '"]');
+  card.classList.toggle('decided-print', choice === 'print');
+  card.classList.toggle('decided-hold', choice === 'hold');
+  card.querySelector('.btn-print').classList.toggle('on', choice === 'print');
+  card.querySelector('.btn-hold').classList.toggle('on', choice === 'hold');
+  const remaining = state.dispatches.length - Object.keys(state.decisions).length;
+  if (remaining <= 0) {
+    $('run-presses-btn').disabled = false;
+    $('press-note').textContent = 'The forme is set. Ink the type and pull the bar.';
+  } else {
+    $('press-note').textContent = remaining + ' dispatch' + (remaining === 1 ? '' : 'es') + ' still undecided.';
+  }
+}
+
+async function investigate(id, btn, noteEl) {
+  if (state.tokens <= 0 || state.investigated[id] !== undefined || state.busy) return;
+  state.tokens -= 1;
+  state.investigated[id] = '';
+  btn.disabled = true;
+  btn.textContent = 'Riders out…';
+  renderTokens();
+  const d = state.dispatches.find(x => x.id === id);
+  try {
+    const resp = await fetch('/api/investigate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        source: d.source, headline: d.headline, dispatchBody: d.body,
+        isTrue: d.isTrue, tell: d.tell, editionNumber: state.edition
+      })
+    });
+    if (!resp.ok) {
+      const e = await resp.json().catch(() => ({}));
+      throw new Error(e.error || ('Server error ' + resp.status));
+    }
+    const data = await resp.json();
+    state.investigated[id] = data.hint;
+    noteEl.textContent = '';
+    const lbl = document.createElement('span');
+    lbl.className = 'vn-lbl';
+    lbl.textContent = "Your riders report";
+    noteEl.appendChild(lbl);
+    noteEl.appendChild(document.createTextNode(data.hint));
+    noteEl.style.display = 'block';
+    btn.textContent = 'Investigated';
+  } catch (err) {
+    // refund the token on failure
+    state.tokens += 1;
+    delete state.investigated[id];
+    btn.disabled = false;
+    btn.textContent = 'Investigate';
+    renderTokens();
+    noteEl.textContent = 'The rider returned empty-handed (' + err.message + '). Token refunded.';
+    noteEl.style.display = 'block';
+  }
+}
+
+/* ── RUN THE PRESSES / REVEAL ── */
+function runPresses() {
+  if (state.busy) return;
+  state.busy = true;
+  $('run-presses-btn').disabled = true;
+
+  const printed = state.dispatches.filter(d => state.decisions[d.id] === 'print');
+  const held = state.dispatches.filter(d => state.decisions[d.id] === 'hold');
+
+  // Build the broadsheet
+  $('sheet-date').textContent = state.editionDate + ' — No. ' + (state.edition + 112);
+  const items = $('sheet-items');
+  items.textContent = '';
+
+  if (printed.length === 0) {
+    const blank = document.createElement('div');
+    blank.className = 'sheet-blank';
+    blank.textContent = 'This week the printer found nothing fit to print. The sheet carries only shipping notices and an advertisement for runaway hogs.';
+    items.appendChild(blank);
+  }
+
+  const stampEls = [];
+  printed.forEach(d => {
+    const item = document.createElement('div');
+    item.className = 'sheet-item';
+
+    const hl = document.createElement('div');
+    hl.className = 'd-headline';
+    hl.textContent = d.headline;
+
+    const bodyEl = document.createElement('div');
+    bodyEl.className = 'd-body';
+    bodyEl.textContent = d.body;
+
+    const stamp = document.createElement('div');
+    stamp.className = 'stamp ' + (d.isTrue ? 'true' : 'false');
+    stamp.textContent = d.isTrue ? 'Confirmed True' : 'DISINFORMATION';
+
+    item.append(hl, bodyEl, stamp);
+
+    if (!d.isTrue) {
+      const tell = document.createElement('div');
+      tell.className = 'tell-line';
+      tell.textContent = 'The tell you might have caught: ' + d.tell;
+      item.appendChild(tell);
+      stampEls.push({ stamp, tell, isTrue: false });
+    } else {
+      stampEls.push({ stamp, tell: null, isTrue: true });
+    }
+    items.appendChild(item);
+  });
+
+  // Held report
+  const heldBox = $('held-report');
+  heldBox.textContent = '';
+  if (held.length) {
+    const h3 = document.createElement('h3');
+    h3.textContent = 'Left on the Composing Stone';
+    heldBox.appendChild(h3);
+    held.forEach(d => {
+      const line = document.createElement('div');
+      line.className = 'held-line';
+      const tag = document.createElement('span');
+      if (d.isTrue) {
+        tag.className = 'held-tag missed';
+        tag.textContent = 'Missed Story';
+      } else {
+        tag.className = 'held-tag avoided';
+        tag.textContent = 'Plant Avoided';
+      }
+      line.appendChild(tag);
+      line.appendChild(document.createTextNode(d.headline + (d.isTrue ? '' : ' — ' + d.tell)));
+      heldBox.appendChild(line);
+    });
+  }
+
+  // Scoring
+  let circGain = 0, repDelta = 0;
+  printed.forEach(d => {
+    if (d.isTrue) { circGain += 350 + 50 * state.edition; }
+    else { repDelta -= 20; circGain += 100; state.plantsPrinted += 1; }
+  });
+  held.forEach(d => {
+    if (!d.isTrue) { repDelta += 5; state.plantsCaught += 1; }
+  });
+  if (printed.length === 0) circGain -= 50;
+
+  $('reaction-text').textContent = '';
+  $('next-btn').style.display = 'none';
+  show('reveal-screen');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+
+  // Staggered stamps, then apply score, then stream reaction
+  stampEls.forEach((s, i) => {
+    setTimeout(() => {
+      s.stamp.classList.add('landed');
+      if (s.tell) setTimeout(() => s.tell.classList.add('show'), 350);
+    }, 700 + i * 850);
+  });
+
+  const stampsDone = 700 + stampEls.length * 850 + 500;
+  setTimeout(() => {
+    state.circulation = Math.max(0, state.circulation + circGain);
+    state.reputation = Math.max(0, Math.min(100, state.reputation + repDelta));
+    updateStrip();
+    streamReaction(printed, held);
+  }, stampsDone);
+}
+
+function streamReaction(printed, held) {
+  const target = $('reaction-text');
+  target.textContent = '';
+  const cursor = document.createElement('span');
+  cursor.className = 'cursor';
+  target.appendChild(cursor);
+
+  let gotDone = false;
+  let finished = false;
+
+  const finish = () => {
+    if (finished) return;
+    finished = true;
+    cursor.remove();
+    if (!target.textContent.trim()) {
+      target.textContent = 'The town reads in silence to-night; word of its temper will reach you by morning.';
+    }
+    afterReaction();
+  };
+
+  // Stall guard: hard cap
+  const guard = setTimeout(finish, 90000);
+
+  fetch('/api/reaction', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      editionNumber: state.edition,
+      editionDate: state.editionDate,
+      printed: printed.map(d => ({ headline: d.headline, isTrue: d.isTrue })),
+      held: held.map(d => ({ headline: d.headline, isTrue: d.isTrue })),
+      circulation: state.circulation,
+      reputation: state.reputation
+    })
+  }).then(async resp => {
+    if (!resp.ok || !resp.body) throw new Error('Reaction stream failed (' + resp.status + ')');
+    const reader = resp.body.getReader();
+    const decoder = new TextDecoder();
+    let buf = '';
+    for (;;) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buf += decoder.decode(value, { stream: true });
+      const parts = buf.split('\n\n');
+      buf = parts.pop();
+      for (const part of parts) {
+        const line = part.trim();
+        if (!line.startsWith('data:')) continue;
+        let msg;
+        try { msg = JSON.parse(line.slice(5).trim()); } catch { continue; }
+        if (msg.type === 'text') {
+          cursor.before(document.createTextNode(msg.delta));
+        } else if (msg.type === 'done') {
+          gotDone = true;
+        } else if (msg.type === 'error') {
+          cursor.before(document.createTextNode('\n[' + msg.message + ']'));
+        }
+      }
+    }
+    clearTimeout(guard);
+    finish();
+  }).catch(err => {
+    clearTimeout(guard);
+    if (!target.textContent.trim()) {
+      target.textContent = 'No word from the coffee-house to-night (' + err.message + ').';
+    }
+    finish();
+  });
+}
+
+function afterReaction() {
+  state.busy = false;
+  const btn = $('next-btn');
+  btn.textContent = state.edition >= TOTAL_EDITIONS ? 'See the Town’s Verdict' : 'Next Edition';
+  btn.style.display = 'inline-block';
+}
+
+/* ── FINAL ── */
+function nextStep() {
+  if (state.edition >= TOTAL_EDITIONS) {
+    showFinal();
+  } else {
+    state.edition += 1;
+    loadEdition();
+  }
+}
+
+function showFinal() {
+  const rep = state.reputation, circ = state.circulation;
+  let title, verdict, bad = false;
+  if (rep >= 85 && circ >= 2200) {
+    title = 'Voice of the Revolution';
+    verdict = 'Your sheet is read aloud on every corner from the wharves to the State House. Congress itself sends for your proofs. The British name you in their dispatches — as a problem.';
+  } else if (rep >= 70) {
+    title = 'Trusted Printer of Philadelphia';
+    verdict = 'Careful, honest, and mostly right. Your subscribers renew, your rivals grumble, and no man calls your paper a Tory rag — this season, at least.';
+  } else if (rep >= 45) {
+    title = 'Reckless Pamphleteer';
+    verdict = 'You sold plenty of papers, and plenty of lies with them. The coffee-house reads you for amusement now, not for news. Riders sell their best dispatches elsewhere.';
+  } else {
+    title = 'British Mouthpiece';
+    verdict = 'Lord Howe could not have asked for a better servant had he paid you in guineas. Boys chalk the King’s cypher on your shutters, and honest printers cross the street to avoid you.';
+    bad = true;
+  }
+  $('final-title').textContent = title;
+  $('final-title').classList.toggle('bad', bad);
+  $('final-verdict').textContent = verdict;
+  $('f-circ').textContent = String(circ);
+  $('f-rep').textContent = String(rep);
+  $('f-plants').textContent = String(state.plantsPrinted);
+  $('f-caught').textContent = String(state.plantsCaught);
+  show('final-screen');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function resetGame() {
+  state.edition = 1;
+  state.circulation = 200;
+  state.reputation = 100;
+  state.tokens = TOKENS_PER_EDITION;
+  state.dispatches = [];
+  state.decisions = {};
+  state.investigated = {};
+  state.usedHeadlines = [];
+  state.plantsPrinted = 0;
+  state.plantsCaught = 0;
+  state.busy = false;
+  loadEdition();
+}
+
+/* ── WIRING ── */
+$('start-btn').addEventListener('click', () => loadEdition());
+$('retry-btn').addEventListener('click', () => loadEdition());
+$('run-presses-btn').addEventListener('click', runPresses);
+$('next-btn').addEventListener('click', nextStep);
+$('again-btn').addEventListener('click', resetGame);
+</script>
+</body>
+</html>
