@@ -1045,9 +1045,9 @@ function handleFounderEvent(founderId, event) {
       // Show speak button
       const speakBtn = document.getElementById(`speak-${founderId}`);
       if (speakBtn) speakBtn.classList.add('visible');
-      // Auto-speak the opening (sequential queue, like the original Convention)
-      enqueueAutoSpeak(founderId);
     }
+    // Auto-speak the opening / rebuttal hook (sequential queue)
+    enqueueAutoSpeak(founderId, round);
     markFounderDone(founderId, round);
 
   } else if (event.type === 'error') {
@@ -1298,27 +1298,29 @@ function playVoice(founderId, text, onStart) {
   });
 }
 
-// Auto-speak: queue each founder's opening as they finish; play one at a time
-function enqueueAutoSpeak(founderId) {
+// Auto-speak: queue each founder's opening (round 1) or rebuttal (round 2)
+// as they finish; play one at a time
+function enqueueAutoSpeak(founderId, round = 1) {
   if (!autoSpeak) return;
-  speakQueue.push(founderId);
+  speakQueue.push({ founderId, round });
   processSpeakQueue();
 }
 
 async function processSpeakQueue() {
   if (speaking || !speakQueue.length) return;
   speaking = true;
-  const founderId = speakQueue.shift();
+  const { founderId, round } = speakQueue.shift();
 
   // Clean for TTS: drop vote marker, markdown symbols, and any header/title lines
-  const full = (founderArguments[founderId] || '')
+  const source = round === 2 ? (founderRebuttals[founderId] || '') : (founderArguments[founderId] || '');
+  const full = source
     .replace(/\[VOTE:(FOR|AGAINST)\]/g, '')
     .replace(/^#{1,4}\s?.*$/gm, '')       // header lines
     .replace(/[*#_>`]/g, '')              // stray markdown chars
     .replace(/\n{3,}/g, '\n\n')
     .trim();
 
-  // Speak the opening hook only — 1-2 complete sentences (~300 chars).
+  // Speak the hook only — 1-2 complete sentences (~300 chars).
   // Full arguments are on the per-founder Speak button; Marshall voices the verdict.
   let text = '';
   for (const sentence of full.match(/[^.!?]+[.!?]+(\s|$)/g) || [full]) {
