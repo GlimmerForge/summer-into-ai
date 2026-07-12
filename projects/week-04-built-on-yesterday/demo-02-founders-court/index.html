@@ -1088,6 +1088,9 @@ function startRound2() {
   divider.className = 'round-divider';
   divider.textContent = 'Rebuttal Round';
   transcript.appendChild(divider);
+  // Bring the user to the rebuttals as they begin — otherwise the verdict's
+  // scroll leaps straight past this whole section
+  setTimeout(() => divider.scrollIntoView({ behavior: 'smooth', block: 'start' }), 400);
 
   FOUNDERS.forEach(f => {
     transcript.appendChild(makeSpeechCard(f, 2));
@@ -1126,7 +1129,7 @@ function showVerdict() {
 
   document.getElementById('verdict-result').textContent = result;
   document.getElementById('verdict-banner').classList.add('visible');
-  document.getElementById('verdict-banner').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  // No scroll here — let the user finish reading rebuttals; Marshall's opinion scrolls when it lands
 
   requestMarshallOpinion();
 }
@@ -1196,6 +1199,8 @@ async function requestMarshallOpinion() {
             const ruling = `Order. This court has reached its judgment. Best advocate: ${ev.winnerName}. ${ev.winnerReason}`;
             playVoice('marshall', ruling);
           }
+
+          document.getElementById('verdict-banner').scrollIntoView({ behavior: 'smooth', block: 'start' });
         } else if (ev.type === 'error') {
           statusEl.textContent = 'The Chief Justice declines to rule: ' + ev.message;
         }
