@@ -261,6 +261,28 @@ body {
   padding: 3px 0 5px;
   margin-bottom: 14px;
 }
+.woodcut-fig { margin: 10px auto 12px; text-align: center; max-width: 62%; }
+.woodcut {
+  width: 100%;
+  display: block;
+  border: 1px solid #b9ab8d;
+  filter: grayscale(1) contrast(1.18) sepia(0.28);
+  mix-blend-mode: multiply;
+}
+.woodcut-caption {
+  font-style: italic;
+  font-size: 11px;
+  color: #6b5d43;
+  margin-top: 4px;
+}
+.woodcut-placeholder {
+  font-style: italic;
+  font-size: 12px;
+  color: #8a7b5e;
+  border: 1px dashed #b9ab8d;
+  padding: 26px 10px;
+}
+
 .sheet-item {
   position: relative;
   border-bottom: 1px dotted #8a7a50;
@@ -737,7 +759,7 @@ function runPresses() {
   }
 
   const stampEls = [];
-  printed.forEach(d => {
+  printed.forEach((d, idx) => {
     const item = document.createElement('div');
     item.className = 'sheet-item';
 
@@ -749,11 +771,29 @@ function runPresses() {
     bodyEl.className = 'd-body';
     bodyEl.textContent = d.body;
 
+    // Lead story gets a woodcut engraving, cut fresh by the shop's engraver (Replicate)
+    if (idx === 0) {
+      const fig = document.createElement('figure');
+      fig.className = 'woodcut-fig';
+      fig.id = 'woodcut-fig';
+      const ph = document.createElement('div');
+      ph.className = 'woodcut-placeholder';
+      ph.textContent = 'The engraver cuts the block…';
+      fig.appendChild(ph);
+      item.appendChild(hl);
+      item.appendChild(fig);
+      item.appendChild(bodyEl);
+      requestWoodcut(d.headline);
+    } else {
+      item.appendChild(hl);
+      item.appendChild(bodyEl);
+    }
+
     const stamp = document.createElement('div');
     stamp.className = 'stamp ' + (d.isTrue ? 'true' : 'false');
     stamp.textContent = d.isTrue ? 'Confirmed True' : 'DISINFORMATION';
 
-    item.append(hl, bodyEl, stamp);
+    item.appendChild(stamp);
 
     if (!d.isTrue) {
       const tell = document.createElement('div');
@@ -822,6 +862,37 @@ function runPresses() {
     updateStrip();
     streamReaction(printed, held);
   }, stampsDone);
+}
+
+// Fetch the lead-story woodcut and swap it into the broadsheet when ready
+async function requestWoodcut(headline) {
+  try {
+    const res = await fetch('/api/woodcut', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ headline })
+    });
+    const data = await res.json();
+    const fig = document.getElementById('woodcut-fig');
+    if (!fig) return;
+    if (data.image) {
+      fig.textContent = '';
+      const img = document.createElement('img');
+      img.className = 'woodcut';
+      img.src = data.image;
+      img.alt = 'Woodcut engraving: ' + headline;
+      const cap = document.createElement('figcaption');
+      cap.className = 'woodcut-caption';
+      cap.textContent = 'Engraved for this Paper';
+      img.onload = () => fig.append(img, cap);
+      img.onerror = () => fig.remove();
+    } else {
+      fig.remove();
+    }
+  } catch (_) {
+    const fig = document.getElementById('woodcut-fig');
+    if (fig) fig.remove();
+  }
 }
 
 function streamReaction(printed, held) {

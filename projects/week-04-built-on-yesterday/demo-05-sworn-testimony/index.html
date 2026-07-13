@@ -117,6 +117,13 @@
     font-family: inherit; font-size: 14px; padding: 11px 14px;
   }
   #question-input:focus { outline: 1px solid var(--manila); }
+  #mic-btn {
+    background: var(--panel); border: 1px solid var(--line); color: var(--dim);
+    font-size: 17px; padding: 0 14px; cursor: pointer; transition: color .2s, border-color .2s;
+  }
+  #mic-btn:hover { color: var(--manila); border-color: var(--manila); }
+  #mic-btn.listening { color: var(--red); border-color: var(--red); animation: micPulse 1s infinite; }
+  @keyframes micPulse { 50% { background: rgba(194,59,59,0.18); } }
   .hints { margin-top: 10px; font-size: 12px; color: var(--dim); line-height: 1.7; }
   .hint-q { color: var(--manila); cursor: pointer; text-decoration: underline dotted; }
   .hint-q:hover { color: #e7d9af; }
@@ -170,6 +177,7 @@
     <div id="transcript"></div>
     <div class="ask-bar">
       <input id="question-input" placeholder="Ask the dossier a question, counselor..." autocomplete="off">
+      <button id="mic-btn" title="Hold to speak your question — examine the witness aloud">&#127908;</button>
       <button id="ask-btn">EXAMINE</button>
     </div>
     <div class="hints">
@@ -265,6 +273,46 @@
     const t = $('transcript');
     t.scrollTop = t.scrollHeight;
   }
+
+  // ── Voice examination: speak your question like a real attorney ────────────
+  (function initSpeech() {
+    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    const mic = $('mic-btn');
+    if (!SR) { mic.style.display = 'none'; return; }
+
+    const rec = new SR();
+    rec.lang = 'en-US';
+    rec.interimResults = true;
+    rec.continuous = false;
+    let listening = false;
+
+    mic.addEventListener('click', () => {
+      if (listening) { rec.stop(); return; }
+      try { rec.start(); } catch (_) {}
+    });
+
+    rec.onstart = () => {
+      listening = true;
+      mic.classList.add('listening');
+      $('question-input').placeholder = 'Listening, counselor…';
+    };
+    rec.onresult = (e) => {
+      let text = '';
+      for (const r of e.results) text += r[0].transcript;
+      $('question-input').value = text;
+    };
+    rec.onend = () => {
+      listening = false;
+      mic.classList.remove('listening');
+      $('question-input').placeholder = 'Ask the dossier a question, counselor...';
+      // A spoken question is a submitted question — proceed to examination
+      if ($('question-input').value.trim().length > 8) examine();
+    };
+    rec.onerror = () => {
+      listening = false;
+      mic.classList.remove('listening');
+    };
+  })();
 
   // ── Cross-examination ──────────────────────────────────────────────────────
   async function examine() {
