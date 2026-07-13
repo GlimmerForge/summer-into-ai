@@ -121,9 +121,19 @@ File the after-action judgment now using the file_judgment tool.`;
 
     judgment.score = Math.min(100, Math.max(0, Math.round(Number(judgment.score) || 0)));
     judgment.casualtiesAverted = Math.max(0, Math.round(Number(judgment.casualtiesAverted) || 0));
-    judgment.outcomes = (judgment.outcomes || []).map((o) => ({
+
+    // The model occasionally returns outcomes as an object keyed by threat id
+    // instead of the schema'd array — accept both shapes.
+    let rawOutcomes = judgment.outcomes;
+    if (rawOutcomes && !Array.isArray(rawOutcomes) && typeof rawOutcomes === 'object') {
+      rawOutcomes = Object.entries(rawOutcomes).map(([threatId, v]) =>
+        (v && typeof v === 'object') ? { threatId, ...v } : { threatId, result: String(v) }
+      );
+    }
+    if (!Array.isArray(rawOutcomes)) rawOutcomes = [];
+    judgment.outcomes = rawOutcomes.map((o) => ({
       threatId: String(o.threatId || ''),
-      result: String(o.result || 'PARTIAL'),
+      result: String(o.result || o.outcome || 'PARTIAL'),
       detail: String(o.detail || ''),
     }));
 
