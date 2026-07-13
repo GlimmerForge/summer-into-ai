@@ -213,6 +213,23 @@
               ]
             }
           ]
+        },
+        {
+          "type": "list_item",
+          "content": [
+            {
+              "type": "paragraph",
+              "attrs": {
+                "textAlign": null
+              },
+              "content": [
+                {
+                  "type": "text",
+                  "text": "New since launch: pick your jurisdiction from a live map or city search, and conduct the examination by voice"
+                }
+              ]
+            }
+          ]
         }
       ]
     },
@@ -339,7 +356,7 @@
               "content": [
                 {
                   "type": "text",
-                  "text": "Enter any US ZIP code and open the case file."
+                  "text": "Enter a ZIP, type a city name (live suggestions), or just click anywhere on the map — even the smallest towns resolve to a jurisdiction via the Census Bureau geocoder."
                 }
               ]
             }
@@ -356,7 +373,20 @@
               "content": [
                 {
                   "type": "text",
-                  "text": "Read the dossier, then cross-examine: ask about pollution counts, poverty rates, disaster history — or use the suggested questions."
+                  "text": "Read the case file, then cross-examine — type your question, or press the "
+                },
+                {
+                  "type": "text",
+                  "marks": [
+                    {
+                      "type": "strong"
+                    }
+                  ],
+                  "text": "mic"
+                },
+                {
+                  "type": "text",
+                  "text": " and ask it aloud like opposing counsel."
                 }
               ]
             }
