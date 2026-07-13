@@ -1,0 +1,523 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FULL DISCLOSURE — Joint Inquiry</title>
+<style>
+  :root {
+    --bg: #0b0e13;
+    --panel: #12161e;
+    --panel-edge: #232a36;
+    --ink: #c7d0dc;
+    --dim: #6b7686;
+    --accent: #e8b64c;
+    --red: #d9534f;
+    --green: #5cb87a;
+    --stamp: #b33a3a;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: "IBM Plex Mono", ui-monospace, "Cascadia Mono", "Courier New", monospace;
+    font-size: 14px;
+    line-height: 1.55;
+    min-height: 100vh;
+    background-image: repeating-linear-gradient(0deg, transparent, transparent 3px, rgba(255,255,255,0.008) 3px, rgba(255,255,255,0.008) 4px);
+  }
+  .wrap { max-width: 1060px; margin: 0 auto; padding: 28px 18px 80px; }
+
+  /* ── Header ── */
+  header { border: 1px solid var(--panel-edge); background: var(--panel); padding: 20px 22px; position: relative; overflow: hidden; }
+  .classification-bar {
+    display: flex; justify-content: space-between; font-size: 10px; letter-spacing: 2px;
+    color: var(--dim); border-bottom: 1px dashed var(--panel-edge); padding-bottom: 8px; margin-bottom: 14px;
+  }
+  h1 { font-size: 28px; letter-spacing: 6px; color: #e8edf4; font-weight: 700; }
+  .subtitle { color: var(--dim); font-size: 12px; margin-top: 4px; letter-spacing: 1px; }
+  .built-on { margin-top: 12px; font-size: 11.5px; color: var(--accent); letter-spacing: 0.5px; }
+  .built-on span { color: var(--dim); }
+  .stamp {
+    position: absolute; top: 18px; right: 20px; transform: rotate(8deg);
+    border: 3px double var(--stamp); color: var(--stamp); padding: 5px 14px;
+    font-size: 15px; font-weight: 700; letter-spacing: 4px; opacity: 0.85; pointer-events: none;
+  }
+  @media (max-width: 720px) { .stamp { display: none; } }
+
+  /* ── Input ── */
+  .input-row { display: flex; gap: 10px; margin-top: 20px; flex-wrap: wrap; }
+  #company-input {
+    flex: 1; min-width: 220px; background: #0d1117; border: 1px solid var(--panel-edge);
+    color: var(--ink); padding: 12px 14px; font: inherit; letter-spacing: 1px;
+  }
+  #company-input:focus { outline: none; border-color: var(--accent); }
+  #investigate-btn {
+    background: var(--accent); color: #14100a; border: none; padding: 12px 26px;
+    font: inherit; font-weight: 700; letter-spacing: 2px; cursor: pointer;
+  }
+  #investigate-btn:hover:not(:disabled) { filter: brightness(1.1); }
+  #investigate-btn:disabled { opacity: 0.4; cursor: wait; }
+  .chips { margin-top: 10px; display: flex; gap: 8px; flex-wrap: wrap; }
+  .chip {
+    background: none; border: 1px solid var(--panel-edge); color: var(--dim);
+    padding: 4px 12px; font: inherit; font-size: 11.5px; cursor: pointer; letter-spacing: 1px;
+  }
+  .chip:hover { border-color: var(--accent); color: var(--accent); }
+  #global-status { margin-top: 12px; font-size: 12px; color: var(--dim); min-height: 18px; }
+  #global-status.error { color: var(--red); }
+
+  /* ── Bureau panels ── */
+  section h2 {
+    font-size: 13px; letter-spacing: 4px; color: var(--dim); margin: 34px 0 12px;
+    border-bottom: 1px solid var(--panel-edge); padding-bottom: 6px;
+  }
+  .bureau-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 14px; }
+  .bureau-panel {
+    background: var(--panel); border: 1px solid var(--panel-edge); padding: 16px;
+    min-height: 170px; position: relative; transition: border-color 0.4s;
+  }
+  .bureau-panel.loaded { border-color: #3d4a5e; }
+  .bureau-panel.failed { border-color: #4a2a2a; }
+  .panel-head { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+  .seal {
+    border: 1px solid var(--dim); color: var(--dim); font-size: 10px; font-weight: 700;
+    letter-spacing: 1px; padding: 4px 8px; border-radius: 50px; white-space: nowrap;
+  }
+  .bureau-panel.loaded .seal { border-color: var(--accent); color: var(--accent); }
+  .panel-title { font-size: 12px; letter-spacing: 1.5px; color: #dfe6ef; font-weight: 700; }
+  .panel-sub { font-size: 10px; color: var(--dim); letter-spacing: 0.5px; }
+  .panel-status { font-size: 11px; color: var(--dim); letter-spacing: 1px; }
+  .panel-status.blink::after { content: "▌"; animation: blink 1s steps(1) infinite; }
+  @keyframes blink { 50% { opacity: 0; } }
+  .headline-num { font-size: 30px; color: #eef3f9; font-weight: 700; margin: 6px 0 2px; }
+  .headline-label { font-size: 10.5px; color: var(--dim); letter-spacing: 1.5px; text-transform: uppercase; }
+  .panel-body { font-size: 12px; margin-top: 10px; }
+  .panel-body .row { display: flex; justify-content: space-between; gap: 12px; padding: 3px 0; border-bottom: 1px dotted #1d2430; }
+  .panel-body .row .k { color: var(--dim); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .panel-body .row .v { color: var(--ink); white-space: nowrap; }
+  .narr { border-left: 2px solid var(--panel-edge); padding: 4px 10px; margin-top: 8px; color: #9aa6b5; font-size: 11.5px; font-style: italic; }
+  .narr .meta { color: var(--dim); font-style: normal; font-size: 10px; letter-spacing: 1px; }
+  .no-records { color: var(--dim); font-size: 12px; margin-top: 14px; }
+  .no-records b { color: var(--red); letter-spacing: 2px; font-size: 13px; display: block; margin-bottom: 6px; }
+
+  /* ── Cross-reference ── */
+  #xref-section, #verdict-section { display: none; }
+  #thinking-panel {
+    background: #0d1117; border: 1px dashed var(--panel-edge); margin-bottom: 12px;
+  }
+  #thinking-panel summary {
+    cursor: pointer; padding: 9px 14px; font-size: 11px; letter-spacing: 2px; color: var(--dim);
+    list-style: none; user-select: none;
+  }
+  #thinking-panel summary::before { content: "▸ "; }
+  #thinking-panel[open] summary::before { content: "▾ "; }
+  #thinking-text {
+    padding: 4px 14px 14px; font-size: 11.5px; color: #7d8a9c; white-space: pre-wrap;
+    max-height: 260px; overflow-y: auto; font-style: italic;
+  }
+  #synthesis-box { background: var(--panel); border: 1px solid var(--panel-edge); padding: 18px 20px; }
+  #synthesis-text { white-space: pre-wrap; font-size: 13px; color: #cdd6e1; min-height: 40px; }
+  #synthesis-text.streaming::after { content: "▌"; color: var(--accent); animation: blink 1s steps(1) infinite; }
+  #xref-status { font-size: 11px; color: var(--dim); margin-bottom: 10px; letter-spacing: 1px; }
+
+  /* ── Verdict ── */
+  #verdict-box { background: var(--panel); border: 1px solid var(--panel-edge); padding: 22px; }
+  .meter-row { display: flex; align-items: baseline; gap: 18px; flex-wrap: wrap; }
+  #disclosure-index { font-size: 58px; font-weight: 700; color: var(--accent); line-height: 1; min-width: 110px; }
+  .meter-track { flex: 1; min-width: 220px; height: 14px; background: #0d1117; border: 1px solid var(--panel-edge); }
+  #meter-fill { height: 100%; width: 0%; background: linear-gradient(90deg, #5cb87a, #e8b64c 55%, #d9534f); transition: width 1.6s cubic-bezier(.2,.8,.3,1); }
+  .meter-label { font-size: 10px; letter-spacing: 2px; color: var(--dim); }
+  #verdict-headline { font-size: 19px; color: #eef3f9; margin: 18px 0 4px; letter-spacing: 0.5px; }
+  #one-liner { color: var(--dim); font-size: 12.5px; margin-bottom: 18px; }
+  #finding-cards { display: grid; gap: 10px; }
+  .finding-card { background: #0d1117; border: 1px solid var(--panel-edge); border-left: 3px solid var(--accent); padding: 12px 14px; }
+  .finding-card .badges { display: flex; gap: 6px; align-items: center; margin-bottom: 6px; flex-wrap: wrap; }
+  .ds-badge {
+    font-size: 10px; font-weight: 700; letter-spacing: 1.5px; padding: 2px 8px;
+    border: 1px solid var(--accent); color: var(--accent); border-radius: 2px;
+  }
+  .sev { margin-left: auto; font-size: 10px; color: var(--dim); letter-spacing: 1px; }
+  .sev .pips { color: var(--red); }
+  .finding-card p { font-size: 12.5px; color: #c3cddb; }
+
+  footer { margin-top: 40px; font-size: 10.5px; color: #454f5e; letter-spacing: 0.5px; text-align: center; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="classification-bar"><span>JOINT INQUIRY // CASE FILE 09-FD</span><span>SOURCE: LIVE FEDERAL APIs</span></div>
+    <div class="stamp">JOINT INQUIRY</div>
+    <h1>FULL DISCLOSURE</h1>
+    <div class="subtitle">ONE COMPANY. FOUR FEDERAL DATASETS. ONE CROSS-REFERENCED VERDICT.</div>
+    <div class="built-on">Built on: Money Trail + Class Action + Sworn Testimony + Side Effect Storm <span>(all Week 4)</span></div>
+
+    <div class="input-row">
+      <input id="company-input" type="text" placeholder="SUBJECT COMPANY — e.g. Wells Fargo, Pfizer, Exxon, Boeing" maxlength="60" autocomplete="off">
+      <button id="investigate-btn">OPEN INQUIRY</button>
+    </div>
+    <div class="chips">
+      <button class="chip" data-c="Wells Fargo">WELLS FARGO</button>
+      <button class="chip" data-c="Pfizer">PFIZER</button>
+      <button class="chip" data-c="Exxon">EXXON</button>
+      <button class="chip" data-c="Boeing">BOEING</button>
+      <button class="chip" data-c="Johnson &amp; Johnson">JOHNSON &amp; JOHNSON</button>
+    </div>
+    <div id="global-status"></div>
+  </header>
+
+  <section id="bureau-section" style="display:none">
+    <h2>BUREAU REPORTS</h2>
+    <div class="bureau-grid">
+      <div class="bureau-panel" id="panel-fec">
+        <div class="panel-head"><span class="seal">FEC</span>
+          <div><div class="panel-title">POLITICAL MONEY</div><div class="panel-sub">via Money Trail (demo-01)</div></div>
+        </div>
+        <div class="panel-status blink">AWAITING SUBJECT</div>
+        <div class="panel-body"></div>
+      </div>
+      <div class="bureau-panel" id="panel-cfpb">
+        <div class="panel-head"><span class="seal">CFPB</span>
+          <div><div class="panel-title">CONSUMER COMPLAINTS</div><div class="panel-sub">via Class Action (demo-07)</div></div>
+        </div>
+        <div class="panel-status blink">AWAITING SUBJECT</div>
+        <div class="panel-body"></div>
+      </div>
+      <div class="bureau-panel" id="panel-epa">
+        <div class="panel-head"><span class="seal">EPA</span>
+          <div><div class="panel-title">TOXIC RELEASES</div><div class="panel-sub">via Sworn Testimony (demo-05)</div></div>
+        </div>
+        <div class="panel-status blink">AWAITING SUBJECT</div>
+        <div class="panel-body"></div>
+      </div>
+      <div class="bureau-panel" id="panel-fda">
+        <div class="panel-head"><span class="seal">FDA</span>
+          <div><div class="panel-title">ADVERSE EVENTS</div><div class="panel-sub">via Side Effect Storm (demo-03)</div></div>
+        </div>
+        <div class="panel-status blink">AWAITING SUBJECT</div>
+        <div class="panel-body"></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="xref-section">
+    <h2>CROSS-REFERENCE ANALYSIS</h2>
+    <div id="xref-status">STANDING BY</div>
+    <details id="thinking-panel">
+      <summary>ANALYST WORKING NOTES (EXTENDED THINKING)</summary>
+      <div id="thinking-text"></div>
+    </details>
+    <div id="synthesis-box"><div id="synthesis-text"></div></div>
+  </section>
+
+  <section id="verdict-section">
+    <h2>VERDICT OF THE REVIEW BOARD</h2>
+    <div id="verdict-box">
+      <div class="meter-row">
+        <div id="disclosure-index">--</div>
+        <div style="flex:1; min-width:220px">
+          <div class="meter-label">DISCLOSURE INDEX — 0 (CLEAN) TO 100 (ALARMING)</div>
+          <div class="meter-track"><div id="meter-fill"></div></div>
+        </div>
+      </div>
+      <div id="verdict-headline"></div>
+      <div id="one-liner"></div>
+      <div id="finding-cards"></div>
+    </div>
+  </section>
+
+  <footer>
+    All data fetched live from api.open.fec.gov, consumerfinance.gov, data.epa.gov and api.fda.gov.
+    Analysis is AI-generated for a coding-competition demo — not an accusation, a legal finding, or investment advice.
+  </footer>
+</div>
+
+<script>
+(() => {
+  const $ = (id) => document.getElementById(id);
+  const input = $('company-input');
+  const btn = $('investigate-btn');
+  const globalStatus = $('global-status');
+  const DATASETS = ['fec', 'cfpb', 'epa', 'fda'];
+  const state = { company: '', data: {}, synthesis: '' };
+
+  const fmtMoney = (n) => {
+    if (n >= 1_000_000) return '$' + (n / 1_000_000).toFixed(1) + 'M';
+    return '$' + Math.round(n).toLocaleString();
+  };
+  const fmtNum = (n) => Number(n).toLocaleString();
+
+  // small DOM builders (all AI/remote text goes through textContent)
+  const el = (tag, cls, text) => {
+    const e = document.createElement(tag);
+    if (cls) e.className = cls;
+    if (text !== undefined) e.textContent = text;
+    return e;
+  };
+  const row = (k, v) => {
+    const r = el('div', 'row');
+    r.appendChild(el('span', 'k', k));
+    r.appendChild(el('span', 'v', v));
+    return r;
+  };
+  const headline = (num, label) => {
+    const frag = document.createDocumentFragment();
+    frag.appendChild(el('div', 'headline-num', num));
+    frag.appendChild(el('div', 'headline-label', label));
+    return frag;
+  };
+
+  function setPanel(name, statusText, blink) {
+    const panel = $('panel-' + name);
+    const status = panel.querySelector('.panel-status');
+    status.textContent = statusText;
+    status.classList.toggle('blink', !!blink);
+    return panel;
+  }
+
+  function renderNoRecords(panel, note) {
+    const body = panel.querySelector('.panel-body');
+    const box = el('div', 'no-records');
+    box.appendChild(el('b', null, 'NO RECORDS'));
+    box.appendChild(el('span', null, note || 'This agency has no file on the subject.'));
+    body.appendChild(box);
+  }
+
+  function renderFailed(panel, error) {
+    panel.classList.add('failed');
+    const body = panel.querySelector('.panel-body');
+    const box = el('div', 'no-records');
+    box.appendChild(el('b', null, 'UNAVAILABLE'));
+    box.appendChild(el('span', null, error || 'Agency did not respond.'));
+    body.appendChild(box);
+  }
+
+  const RENDERERS = {
+    fec(panel, d) {
+      const body = panel.querySelector('.panel-body');
+      body.appendChild(headline(fmtMoney(d.totalAmount), 'in top ' + d.sampleSize + ' employee contributions (2023-24)'));
+      (d.topRecipients || []).slice(0, 3).forEach(r => body.appendChild(row(r.name, fmtMoney(r.amount))));
+      (d.topDonors || []).slice(0, 2).forEach(dn => body.appendChild(row(dn.name + (dn.occupation ? ' — ' + dn.occupation : ''), fmtMoney(dn.amount))));
+    },
+    cfpb(panel, d) {
+      const body = panel.querySelector('.panel-body');
+      body.appendChild(headline(fmtNum(d.totalComplaints), 'complaints on file — ' + d.canonicalName));
+      (d.topIssues || []).slice(0, 3).forEach(i => body.appendChild(row(i.issue, fmtNum(i.count))));
+      (d.narratives || []).slice(0, 2).forEach(n => {
+        const q = el('div', 'narr');
+        q.appendChild(el('div', 'meta', (n.state || '??') + ' / ' + n.date + ' / ' + n.issue));
+        q.appendChild(el('div', null, '"' + n.excerpt + '..."'));
+        body.appendChild(q);
+      });
+    },
+    epa(panel, d) {
+      const body = panel.querySelector('.panel-body');
+      body.appendChild(headline(fmtNum(d.facilityCount) + (d.facilityCountCapped ? '+' : ''), 'TRI facilities in ' + d.states.length + ' state' + (d.states.length === 1 ? '' : 's')));
+      body.appendChild(row('States', d.states.slice(0, 10).join(' ') || '—'));
+      body.appendChild(row('Chemicals on file (' + d.chemFacilitiesSampled + ' facilities sampled)', fmtNum(d.totalChemicals)));
+      body.appendChild(row('Carcinogens', fmtNum(d.carcinogenCount)));
+      if (d.pfasCount > 0) body.appendChild(row('PFAS chemicals', fmtNum(d.pfasCount)));
+      (d.topFacilities || []).slice(0, 2).forEach(f => body.appendChild(row(f.name, (f.city ? f.city + ', ' : '') + f.state)));
+    },
+    fda(panel, d) {
+      const body = panel.querySelector('.panel-body');
+      body.appendChild(headline(fmtNum(d.reportedReactionCount), 'reports across top 10 adverse reactions'));
+      if (d.seriousPercent !== null && d.seriousPercent !== undefined) body.appendChild(row('Classified serious', d.seriousPercent + '%'));
+      (d.topReactions || []).slice(0, 4).forEach(r => body.appendChild(row(r.term, fmtNum(r.count))));
+    }
+  };
+
+  async function gatherOne(name) {
+    const panel = setPanel(name, 'REQUESTING RECORDS', true);
+    panel.classList.remove('loaded', 'failed');
+    panel.querySelector('.panel-body').replaceChildren();
+    try {
+      const r = await fetch('/api/gather', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ company: state.company, dataset: name })
+      });
+      const json = await r.json();
+      if (!r.ok) throw new Error(json.error || 'HTTP ' + r.status);
+      const d = json.result;
+      state.data[name] = d;
+
+      if (!d.available) {
+        setPanel(name, 'CONNECTION FAILED', false);
+        renderFailed(panel, d.error);
+      } else if (d.empty) {
+        setPanel(name, 'RECORD SILENT', false);
+        renderNoRecords(panel, d.note);
+      } else {
+        setPanel(name, 'RECORDS RECEIVED', false);
+        panel.classList.add('loaded');
+        RENDERERS[name](panel, d);
+      }
+    } catch (e) {
+      state.data[name] = { available: false, error: e.message };
+      setPanel(name, 'CONNECTION FAILED', false);
+      renderFailed(panel, e.message);
+    }
+  }
+
+  // ── SSE synthesis ──
+  async function synthesize() {
+    $('xref-section').style.display = 'block';
+    $('xref-status').textContent = 'CROSS-REFERENCING FOUR DATASETS — ANALYST THINKING LIVE';
+    const synthEl = $('synthesis-text');
+    const thinkEl = $('thinking-text');
+    synthEl.textContent = '';
+    thinkEl.textContent = '';
+    synthEl.classList.add('streaming');
+    $('xref-section').scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+    let gotDone = false;
+    try {
+      const resp = await fetch('/api/synthesize', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ company: state.company, data: state.data })
+      });
+      if (!resp.ok || !resp.body) throw new Error('Synthesis request failed (HTTP ' + resp.status + ')');
+
+      const reader = resp.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = '';
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+        const events = buffer.split('\n\n');
+        buffer = events.pop();
+        for (const evt of events) {
+          const line = evt.split('\n').find(l => l.startsWith('data: '));
+          if (!line) continue;
+          let msg;
+          try { msg = JSON.parse(line.slice(6)); } catch { continue; }
+          if (msg.type === 'thinking') {
+            thinkEl.textContent += msg.delta;
+            thinkEl.scrollTop = thinkEl.scrollHeight;
+          } else if (msg.type === 'text') {
+            if (!state.synthesis) $('thinking-panel').removeAttribute('open');
+            state.synthesis += msg.delta;
+            // belt-and-braces: strip code-fence lines if the model ignores the prompt
+            synthEl.textContent = state.synthesis.replace(/^```.*$\n?/gm, '').trimStart();
+          } else if (msg.type === 'done') {
+            gotDone = true;
+          } else if (msg.type === 'error') {
+            throw new Error(msg.message);
+          }
+        }
+      }
+    } catch (e) {
+      if (!state.synthesis) {
+        $('xref-status').textContent = 'ANALYSIS FAILED — ' + e.message.toUpperCase();
+        synthEl.classList.remove('streaming');
+        return false;
+      }
+    }
+    synthEl.classList.remove('streaming');
+    // Stall guard: stream closed without done but we have prose — proceed anyway
+    $('xref-status').textContent = gotDone
+      ? 'ANALYSIS COMPLETE — FORWARDED TO REVIEW BOARD'
+      : 'STREAM INTERRUPTED — PARTIAL ANALYSIS FORWARDED TO REVIEW BOARD';
+    return state.synthesis.length > 0;
+  }
+
+  // ── Verdict ──
+  function severityPips(n) {
+    return '■'.repeat(n) + '□'.repeat(10 - n);
+  }
+
+  async function verdict() {
+    $('verdict-section').style.display = 'block';
+    $('verdict-headline').textContent = 'Review board deliberating...';
+    try {
+      const r = await fetch('/api/verdict', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ company: state.company, data: state.data, synthesis: state.synthesis })
+      });
+      const v = await r.json();
+      if (!r.ok) throw new Error(v.error || 'HTTP ' + r.status);
+
+      // Animated meter
+      const idx = Math.max(0, Math.min(100, v.disclosureIndex | 0));
+      const idxEl = $('disclosure-index');
+      $('meter-fill').style.width = idx + '%';
+      idxEl.style.color = idx >= 65 ? 'var(--red)' : idx >= 35 ? 'var(--accent)' : 'var(--green)';
+      const t0 = performance.now(), dur = 1600;
+      (function tick(now) {
+        const p = Math.min(1, (now - t0) / dur);
+        idxEl.textContent = Math.round(idx * (1 - Math.pow(1 - p, 3)));
+        if (p < 1) requestAnimationFrame(tick);
+      })(t0);
+
+      $('verdict-headline').textContent = v.headline || '';
+      $('one-liner').textContent = v.oneLiner || '';
+
+      const cards = $('finding-cards');
+      cards.replaceChildren();
+      (v.keyFindings || []).forEach(f => {
+        const card = el('div', 'finding-card');
+        const badges = el('div', 'badges');
+        badges.appendChild(el('span', 'ds-badge', (f.datasets || []).join('×')));
+        const sev = el('span', 'sev');
+        sev.appendChild(el('span', null, 'SEVERITY '));
+        sev.appendChild(el('span', 'pips', severityPips(Math.max(1, Math.min(10, f.severity | 0)))));
+        badges.appendChild(sev);
+        card.appendChild(badges);
+        card.appendChild(el('p', null, f.finding || ''));
+        cards.appendChild(card);
+      });
+      $('verdict-section').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    } catch (e) {
+      $('verdict-headline').textContent = 'REVIEW BOARD ERROR — ' + e.message;
+    }
+  }
+
+  // ── Main flow ──
+  async function investigate() {
+    const company = input.value.trim();
+    if (company.length < 2) { globalStatus.textContent = 'ENTER A COMPANY NAME.'; return; }
+
+    state.company = company;
+    state.data = {};
+    state.synthesis = '';
+    btn.disabled = true;
+    globalStatus.className = '';
+    globalStatus.textContent = 'INQUIRY OPENED: ' + company.toUpperCase() + ' — QUERYING FOUR AGENCIES IN PARALLEL...';
+    $('bureau-section').style.display = 'block';
+    $('xref-section').style.display = 'none';
+    $('verdict-section').style.display = 'none';
+    $('thinking-panel').setAttribute('open', '');
+
+    try {
+      await Promise.all(DATASETS.map(gatherOne));
+
+      const usable = DATASETS.filter(n => state.data[n]?.available && !state.data[n]?.empty);
+      if (usable.length === 0) {
+        globalStatus.className = 'error';
+        globalStatus.textContent = 'ALL FOUR AGENCIES CAME BACK EMPTY OR UNREACHABLE FOR "' + company.toUpperCase() + '". TRY A LARGER COMPANY (WELLS FARGO, PFIZER, EXXON, BOEING).';
+        return;
+      }
+      globalStatus.textContent = usable.length + ' OF 4 AGENCIES RETURNED RECORDS. CROSS-REFERENCING...';
+
+      const ok = await synthesize();
+      if (ok) await verdict();
+    } finally {
+      btn.disabled = false;
+    }
+  }
+
+  btn.addEventListener('click', investigate);
+  input.addEventListener('keydown', (e) => { if (e.key === 'Enter' && !btn.disabled) investigate(); });
+  document.querySelectorAll('.chip').forEach(c => c.addEventListener('click', () => {
+    input.value = c.dataset.c;
+    if (!btn.disabled) investigate();
+  }));
+})();
+</script>
+</body>
+</html>
