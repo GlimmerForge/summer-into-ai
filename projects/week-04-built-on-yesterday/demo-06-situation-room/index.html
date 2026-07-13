@@ -81,17 +81,54 @@
 
   /* ---------- map ---------- */
   #map-wrap { position: sticky; top: 14px; align-self: start; }
-  #worldmap { width: 100%; height: auto; display: block; background: #050b13; border-radius: 4px; }
-  .land { fill: #10202e; stroke: #24445c; stroke-width: 1; }
+  #map-stage { position: relative; overflow: hidden; border-radius: 4px; }
+  #worldmap { width: 100%; height: auto; display: block; background: radial-gradient(ellipse at center, #071220 0%, #04090f 75%); border-radius: 4px; }
+  .land { fill: #12283a; stroke: #2e5876; stroke-width: 0.7; filter: drop-shadow(0 0 3px rgba(70,140,190,0.25)); }
+
+  /* Rotating radar sweep */
+  #radar-sweep {
+    position: absolute; inset: -55%;
+    background: conic-gradient(from 0deg, transparent 0deg, transparent 330deg, rgba(64,200,255,0.10) 352deg, rgba(64,200,255,0.28) 360deg);
+    animation: sweep 9s linear infinite;
+    pointer-events: none;
+    mix-blend-mode: screen;
+  }
+  @keyframes sweep { to { transform: rotate(360deg); } }
+
+  /* HUD corner brackets */
+  .hud-corner { position: absolute; width: 22px; height: 22px; border: 2px solid rgba(90,200,255,0.55); pointer-events: none; }
+  .hud-corner.tl { top: 6px; left: 6px; border-right: none; border-bottom: none; }
+  .hud-corner.tr { top: 6px; right: 6px; border-left: none; border-bottom: none; }
+  .hud-corner.bl { bottom: 6px; left: 6px; border-right: none; border-top: none; }
+  .hud-corner.br { bottom: 6px; right: 6px; border-left: none; border-top: none; }
+
+  /* CRT scanlines over the whole floor */
+  body::after {
+    content: '';
+    position: fixed; inset: 0;
+    background: repeating-linear-gradient(0deg, transparent, transparent 3px, rgba(120,200,255,0.012) 3px, rgba(120,200,255,0.012) 4px);
+    pointer-events: none;
+    z-index: 999;
+  }
   .grid-line { stroke: #10202e; stroke-width: 0.6; }
-  .quake-dot { fill: var(--cyan); opacity: 0.65; }
-  .threat-marker { fill: var(--red); }
+  .quake-dot { fill: var(--cyan); opacity: 0.65; filter: drop-shadow(0 0 3px rgba(64,200,255,0.8)); }
+  .threat-marker { fill: var(--red); filter: drop-shadow(0 0 5px rgba(255,60,60,0.9)); }
   .threat-ring { fill: none; stroke: var(--red); stroke-width: 1.5; animation: ping 1.8s ease-out infinite; transform-origin: center; }
   @keyframes ping { 0% { opacity: 0.9; } 100% { opacity: 0; } }
   .threat-label { fill: #ff8080; font-size: 13px; font-family: inherit; font-weight: bold; }
   #map-legend { display: flex; gap: 18px; margin-top: 8px; font-size: 11px; color: var(--dim); }
   .leg-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 5px; vertical-align: middle; }
   #feed-line { margin-top: 8px; font-size: 11px; color: var(--dim); letter-spacing: 1px; min-height: 15px; }
+
+  /* Live wire ticker: raw events scroll under the board */
+  #wire-ticker {
+    margin-top: 6px; overflow: hidden; white-space: nowrap;
+    border-top: 1px solid rgba(90,200,255,0.15);
+    padding-top: 6px; font-size: 11px; letter-spacing: 1px; color: #6fa8c5;
+  }
+  #wire-ticker .wire-inner { display: inline-block; padding-left: 100%; animation: wire 55s linear infinite; }
+  @keyframes wire { to { transform: translateX(-100%); } }
+  #wire-ticker .mag { color: var(--cyan); font-weight: bold; }
 
   /* ---------- briefing ---------- */
   #headline {
@@ -233,12 +270,18 @@
   <div id="map-wrap">
     <div class="panel">
       <div class="panel-title"><span>GLOBAL THREAT BOARD</span><span id="map-clock"></span></div>
-      <svg id="worldmap" viewBox="0 0 1000 500" preserveAspectRatio="xMidYMid meet"></svg>
+      <div id="map-stage">
+        <svg id="worldmap" viewBox="0 0 1000 500" preserveAspectRatio="xMidYMid meet"></svg>
+        <div id="radar-sweep"></div>
+        <span class="hud-corner tl"></span><span class="hud-corner tr"></span>
+        <span class="hud-corner bl"></span><span class="hud-corner br"></span>
+      </div>
       <div id="map-legend">
         <span><span class="leg-dot" style="background:var(--cyan)"></span>LIVE SEISMIC EVENT (USGS)</span>
         <span><span class="leg-dot" style="background:var(--red)"></span>ACTIVE THREAT</span>
       </div>
       <div id="feed-line"></div>
+      <div id="wire-ticker"><span class="wire-inner" id="wire-inner">AWAITING SEISMIC WIRE…</span></div>
     </div>
   </div>
 
@@ -363,17 +406,80 @@ function drawBaseMap() {
     const [, y] = proj(0, lat);
     svg.appendChild(el('line', { x1: 0, y1: y, x2: W, y2: y, class: 'grid-line' }));
   }
-  // continents
-  for (const poly of CONTINENTS) {
-    const pts = poly.map(([lon, lat]) => proj(lon, lat).map((n) => n.toFixed(1)).join(',')).join(' ');
-    svg.appendChild(el('polygon', { points: pts, class: 'land' }));
-  }
+  // land layer: real coastlines load async; coarse fallback drawn immediately
+  svg.appendChild(el('g', { id: 'land-layer' }));
+  drawFallbackLand();
+  loadRealLand();
   // marker layers
   svg.appendChild(el('g', { id: 'quake-layer' }));
   svg.appendChild(el('g', { id: 'threat-layer' }));
 }
 
+function drawFallbackLand() {
+  const layer = $('land-layer');
+  for (const poly of CONTINENTS) {
+    const pts = poly.map(([lon, lat]) => proj(lon, lat).map((n) => n.toFixed(1)).join(',')).join(' ');
+    layer.appendChild(el('polygon', { points: pts, class: 'land' }));
+  }
+}
+
+// Real Natural Earth coastlines (world-atlas TopoJSON) rendered through the
+// same equirectangular projection so live event plotting stays registered.
+async function loadRealLand() {
+  try {
+    const topo = await fetch('https://unpkg.com/world-atlas@2.0.2/land-110m.json').then(r => r.json());
+    const land = topo.objects.land;
+    // Minimal inline TopoJSON decoder (arcs → coordinates) — avoids a library
+    const tf = topo.transform;
+    const decodeArc = (arc) => {
+      let x = 0, y = 0;
+      return arc.map(([dx, dy]) => {
+        x += dx; y += dy;
+        return [x * tf.scale[0] + tf.translate[0], y * tf.scale[1] + tf.translate[1]];
+      });
+    };
+    const arcs = topo.arcs.map(decodeArc);
+    const ringCoords = (ring) => {
+      let out = [];
+      for (const idx of ring) {
+        let pts = idx >= 0 ? arcs[idx] : arcs[~idx].slice().reverse();
+        if (out.length) pts = pts.slice(1);
+        out = out.concat(pts);
+      }
+      return out;
+    };
+
+    let d = '';
+    const geoms = land.geometries || [land];
+    for (const g of geoms) {
+      const polys = g.type === 'Polygon' ? [g.arcs] : g.arcs; // MultiPolygon
+      for (const poly of polys) {
+        for (const ring of poly) {
+          const coords = ringCoords(ring);
+          d += coords.map(([lon, lat], i) => {
+            const [x, y] = proj(lon, lat);
+            return (i === 0 ? 'M' : 'L') + x.toFixed(1) + ',' + y.toFixed(1);
+          }).join('') + 'Z';
+        }
+      }
+    }
+    if (!d) return;
+    const layer = $('land-layer');
+    layer.textContent = '';
+    layer.appendChild(el('path', { d, class: 'land', 'fill-rule': 'evenodd' }));
+  } catch (_) { /* fallback blobs remain */ }
+}
+
 function plotQuakes(quakes) {
+  // Feed the live wire ticker with the strongest raw events
+  const wire = $('wire-inner');
+  if (wire && (quakes || []).length) {
+    const top = [...quakes].sort((a, b) => b.mag - a.mag).slice(0, 18);
+    wire.innerHTML = top.map(q =>
+      `<span class="mag">M${Number(q.mag).toFixed(1)}</span> ${String(q.place || 'unknown').replace(/[<>&]/g, '')}`
+    ).join(' &nbsp;&bull;&nbsp; ') + ' &nbsp;&bull;&nbsp; USGS LIVE WIRE — LAST 24H';
+  }
+
   const layer = $('quake-layer');
   layer.textContent = '';
   for (const q of quakes || []) {
