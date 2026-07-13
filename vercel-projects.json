@@ -106,5 +106,21 @@
   "projects/week-04-built-on-yesterday/demo-04-deep-cover": {
     "projectId": "prj_hmfF8MOOUEoBf1aIiA0gv8Tkplou",
     "orgId": "team_D79TvyBcfHAyncBLxxnY1foW"
+  },
+  "projects/week-04-built-on-yesterday/demo-05-sworn-testimony": {
+    "projectId": "prj_Og493TtJyMshDVb8MTk1L83EY69g",
+    "orgId": "team_D79TvyBcfHAyncBLxxnY1foW"
+  },
+  "projects/week-04-built-on-yesterday/demo-06-situation-room": {
+    "projectId": "prj_vsNcAyAgcpjXGmlOpfTV5rP7g3cc",
+    "orgId": "team_D79TvyBcfHAyncBLxxnY1foW"
+  },
+  "projects/week-04-built-on-yesterday/demo-07-class-action": {
+    "projectId": "prj_F9PZrS9EuxAtsjMnQzhBNJLXNsVp",
+    "orgId": "team_D79TvyBcfHAyncBLxxnY1foW"
+  },
+  "projects/week-04-built-on-yesterday/demo-08-stop-the-presses": {
+    "projectId": "prj_HWLXOs6Fei0C8Lg51JZn0MC4dkT4",
+    "orgId": "team_D79TvyBcfHAyncBLxxnY1foW"
   }
 }

@@ -1,5 +1,5 @@
 {
   "outputDirectory": ".",
-  "functions": { "api/*.js": { "maxDuration": 60 } },
+  "functions": { "api/*.js": { "maxDuration": 120 } },
   "ignoreCommand": "exit 0"
 }

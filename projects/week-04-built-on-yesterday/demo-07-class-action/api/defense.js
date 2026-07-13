@@ -39,7 +39,7 @@ export default async function handler(req, res) {
     const stream = await client.messages.create({
       model: 'claude-sonnet-4-6',
       max_tokens: 4000,
-      thinking: { type: 'adaptive' },
+      thinking: { type: 'enabled', budget_tokens: 2500 },
       system: `You are lead defense counsel for ${companyName} in a consumer class action. You are ruthless, precise, and expensive. Your job: dismantle the plaintiff's THREE specific exhibits, attacking each BY NAME (Exhibit A, Exhibit B, Exhibit C).
 
 Structure: a one-sentence opening, then one paragraph per exhibit (in order A, B, C), then a two-sentence closing demanding dismissal. Each exhibit paragraph must open with the exhibit name (e.g. "Exhibit B rests on...") and attack its specific weaknesses: thin complaint counts, unverified narratives, lack of alleged actual damages, causation gaps, statute-of-limitations issues, individualized facts that defeat class certification, or that complaint volume merely reflects market share.
