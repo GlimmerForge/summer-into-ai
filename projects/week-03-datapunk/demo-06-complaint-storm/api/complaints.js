@@ -60,7 +60,7 @@ export default async function handler(req, res) {
     id: h._id || Math.random().toString(36).slice(2),
     issue: h._source.issue || 'Other',
     subIssue: h._source.sub_issue || '',
-    narrative: h._source.consumer_complaint_narrative || '',
+    narrative: h._source.complaint_what_happened || '',
     response: h._source.company_response_to_consumer || '',
     date: h._source.date_received || '',
     product: h._source.product || '',

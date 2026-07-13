@@ -128,14 +128,14 @@
             {
               "type": "link",
               "attrs": {
-                "href": "https://github.com/GlimmerForge/summer-into-ai/blob/master/projects/week-02-red-white-boom/demo-04-the-broadside/README.md",
+                "href": "https://the-broadside-1776.vercel.app",
                 "target": "_blank",
                 "rel": "noopener noreferrer nofollow",
                 "class": null
               }
             }
           ],
-          "text": "The Broadside (Week 2)"
+          "text": "The Broadside (Week 2) — live demo"
         },
         {
           "type": "text",

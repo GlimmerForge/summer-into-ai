@@ -128,14 +128,14 @@
             {
               "type": "link",
               "attrs": {
-                "href": "https://github.com/GlimmerForge/summer-into-ai/blob/master/projects/week-03-datapunk/demo-06-complaint-storm/README.md",
+                "href": "https://demo-06-complaint-storm.vercel.app",
                 "target": "_blank",
                 "rel": "noopener noreferrer nofollow",
                 "class": null
               }
             }
           ],
-          "text": "Complaint Storm (Week 3)"
+          "text": "Complaint Storm (Week 3) — live demo"
         },
         {
           "type": "text",
