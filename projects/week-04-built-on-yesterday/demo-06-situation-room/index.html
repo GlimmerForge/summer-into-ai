@@ -331,7 +331,7 @@
       Live feeds — USGS seismic, NOAA space weather, global weather stations — stream into the
       WATCHFLOOR AI, which escalates real signals into a crisis briefing. You are the
       <b>Flight Director</b>: allocate a shift pool of <b>10 response units</b> across the threats,
-      over <b>3 rounds</b>. The pool does not replenish. The AI judges every call you make.
+      over <b>3 rounds</b>. Reinforcements (+5 units) arrive between rounds — but a squandered round cannot be taken back. The AI judges every call you make.
     </div>
     <button class="big-btn" id="start-btn">START SHIFT</button>
   </div>
@@ -704,6 +704,13 @@ async function executeResponse() {
 
     const j = payload.judgment;
     state.pool -= spent;
+    // Reinforcements arrive between rounds: +5 units, capped at the full pool.
+    // You can still overspend early and feel it — but never stand empty-handed.
+    if (state.round < 3) {
+      const before = state.pool;
+      state.pool = Math.min(TOTAL_POOL, state.pool + 5);
+      state.reinforced = state.pool - before;
+    }
     state.totalScore += j.score;
     state.totalCasualties += j.casualtiesAverted;
     state.complication = j.nextComplication;
@@ -752,7 +759,9 @@ function renderJudgment(j) {
     comp.classList.add('hidden');
   }
 
-  $('next-btn').textContent = state.round < 3 ? 'NEXT ROUND ▶' : 'END SHIFT — PERFORMANCE REVIEW ▶';
+  $('next-btn').textContent = state.round < 3
+    ? `NEXT ROUND ▶${state.reinforced ? '  (+' + state.reinforced + ' REINFORCEMENTS ARRIVED — ' + state.pool + ' UNITS READY)' : ''}`
+    : 'END SHIFT — PERFORMANCE REVIEW ▶';
   $('outcome-panel').classList.remove('hidden');
   $('outcome-panel').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 }
@@ -777,7 +786,7 @@ function showFinal() {
   $('final-score').textContent = state.totalScore;
   $('rank-title').textContent = rankFor(state.totalScore);
   $('final-detail').textContent =
-    `Across 3 rounds you committed ${TOTAL_POOL - state.pool} of ${TOTAL_POOL} response units, ` +
+    `Across 3 rounds you committed ${state.totalSpent} response units (reinforcements included), ` +
     `averted an estimated ${state.totalCasualties.toLocaleString()} casualties, ` +
     `and left ${state.pool} unit(s) in reserve. Every crisis this shift was seeded by real, live planetary data.`;
   $('final').classList.remove('hidden');
@@ -786,6 +795,7 @@ function showFinal() {
 function resetShift() {
   state.round = 1;
   state.pool = TOTAL_POOL;
+  state.totalSpent = 0;
   state.totalScore = 0;
   state.totalCasualties = 0;
   state.briefing = null;
