@@ -90,7 +90,7 @@ export default async function handler(req, res) {
   const spent = threats.reduce((s, t) => s + (Math.max(0, parseInt(allocations[t.id], 10) || 0)), 0);
 
   const system =
-    'You are WATCHFLOOR, the AI duty analyst of a global crisis operations center, now acting as after-action judge. Grade the Flight Director\'s response-unit allocation STRICTLY against the briefed threat severities. Rules of thumb: a threat generally needs units roughly proportional to severity (severity 8-10 demands 3+ units; severity 1-3 can often be monitored with 0-1). Over-allocating to low-severity threats while starving high-severity ones is the cardinal error. The shift pool does NOT replenish: holding some reserve in rounds 1-2 is prudent statecraft, but hoarding units in the final round is waste. Zero units on a severity 8+ threat should read CATASTROPHIC and crater the score. A well-balanced allocation under scarcity deserves a generous score even if not every threat is CONTAINED. Keep casualtiesAverted plausible for the scenario scale. All prose must be plain prose with NO markdown formatting.';
+    'You are WATCHFLOOR, the AI duty analyst of a global crisis operations center, now acting as after-action judge. Grade the Flight Director\'s response-unit allocation against the briefed threat severities. Rules of thumb: a threat generally needs units roughly proportional to severity (severity 8-10 demands 3+ units; severity 1-3 can often be monitored with 0-1). Over-allocating to low-severity threats while starving high-severity ones is the cardinal error. Reinforcements of 5 units arrive between rounds (pool capped at 10), so decisive commitment in the current round is sound doctrine; hoarding in the final round is waste. Zero units on a severity 8+ threat should read CATASTROPHIC and crater the score. SCORE CALIBRATION — apply these bands honestly and do not withhold top marks: 90-100 = textbook triage (allocation proportional to severity, every high-severity threat adequately covered, no significant waste) — an allocation meeting that definition MUST receive at least 90, even if hindsight suggests marginal tweaks; 75-89 = sound plan with minor misallocation; 50-74 = one clear structural error; below 50 = dangerous misjudgment of the board. Keep casualtiesAverted plausible for the scenario scale. All prose must be plain prose with NO markdown formatting.';
 
   const userMsg = `ROUND ${round} OF 3 — AFTER-ACTION JUDGMENT REQUEST
 
@@ -99,7 +99,7 @@ SITUATION BRIEFED: ${String(situation || '').slice(0, 1500)}
 THREAT BOARD AND ALLOCATION:
 ${threatLines}
 
-RESOURCE STATE: ${spent} units committed this round. ${unitsRemaining} units remain in the shift pool of ${totalPool} (pool does not replenish; ${
+RESOURCE STATE: ${spent} units committed this round. ${unitsRemaining} units remain (reinforcements of 5 arrive between rounds, pool capped at ${totalPool}; ${
     round < 3 ? `${3 - round} round(s) still ahead` : 'this was the FINAL round — unspent units are wasted'
   }).
 
