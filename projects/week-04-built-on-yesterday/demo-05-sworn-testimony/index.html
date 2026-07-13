@@ -110,6 +110,35 @@
   .verdict-detail { font-size: 12px; color: var(--dim); line-height: 1.55; }
   .verdict-detail .ev { color: var(--ink); }
 
+  /* City search */
+  #city-wrap { position: relative; flex: 1; min-width: 220px; }
+  #city-input {
+    width: 100%; background: var(--panel); border: 1px solid var(--line); color: var(--ink);
+    font-family: inherit; font-size: 14px; padding: 11px 14px; box-sizing: border-box;
+  }
+  #city-input:focus { outline: 1px solid var(--manila); }
+  #city-suggest {
+    position: absolute; top: 100%; left: 0; right: 0; z-index: 1200;
+    background: var(--panel-2); border: 1px solid var(--manila); border-top: none; display: none;
+  }
+  #city-suggest.open { display: block; }
+  .suggest-item { padding: 9px 14px; font-size: 13px; color: var(--dim); cursor: pointer; }
+  .suggest-item:hover { background: rgba(214,187,122,0.12); color: var(--ink); }
+
+  /* Map picker */
+  #city-chips { display: flex; flex-wrap: wrap; gap: 8px; margin: 10px 0; }
+  .city-chip {
+    border: 1px solid var(--line); color: var(--dim); padding: 5px 12px; font-size: 12px;
+    cursor: pointer; letter-spacing: 1px; transition: color .15s, border-color .15s;
+  }
+  .city-chip:hover { color: var(--manila); border-color: var(--manila); }
+  #map-pick {
+    height: 300px; border: 2px solid var(--line); margin-top: 4px;
+    filter: grayscale(1) invert(0.92) contrast(0.9) brightness(0.9) sepia(0.25);
+  }
+  #map-pick .leaflet-control-attribution { filter: invert(1); font-size: 9px; }
+  #map-status { font-size: 12px; color: var(--dim); margin-top: 8px; font-style: italic; }
+
   /* Ask bar */
   .ask-bar { display: flex; gap: 10px; border: 2px solid var(--line); border-top: none; background: var(--panel-2); padding: 14px 16px; flex-wrap: wrap; }
   #question-input {
@@ -129,6 +158,8 @@
   .hint-q:hover { color: #e7d9af; }
   footer { margin-top: 34px; color: var(--dim); font-size: 11px; text-align: center; letter-spacing: 1px; }
 </style>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 </head>
 <body>
 <div class="wrap">
@@ -141,12 +172,29 @@
   </header>
 
   <div id="entry-panel">
-    <div class="field-label">ENTER ZIP CODE UNDER EXAMINATION</div>
+    <div class="field-label">ENTER ZIP CODE — OR NAME A CITY</div>
     <div class="entry-row">
-      <input id="zip-input" maxlength="5" inputmode="numeric" placeholder="90210" autocomplete="off">
+      <input id="zip-input" maxlength="5" inputmode="numeric" placeholder="ZIP e.g. 90210" autocomplete="off">
+      <div id="city-wrap">
+        <input id="city-input" placeholder="…or a city: Chicago, Denver, Buffalo" autocomplete="off">
+        <div id="city-suggest"></div>
+      </div>
       <button id="open-file-btn">OPEN CASE FILE</button>
     </div>
     <div id="entry-error"></div>
+
+    <div class="field-label" style="margin-top:18px;">&mdash; OR SELECT A JURISDICTION FROM THE MAP &mdash;</div>
+    <div id="city-chips">
+      <span class="city-chip" data-zip="10001">New York</span>
+      <span class="city-chip" data-zip="90011">Los Angeles</span>
+      <span class="city-chip" data-zip="60614">Chicago</span>
+      <span class="city-chip" data-zip="77002">Houston</span>
+      <span class="city-chip" data-zip="19104">Philadelphia</span>
+      <span class="city-chip" data-zip="33101">Miami</span>
+    </div>
+    <div id="map-pick"></div>
+    <div id="map-status">Click anywhere in the United States to subpoena that jurisdiction&rsquo;s records.</div>
+
     <div class="hints">
       The clerk will pull real federal records for this ZIP: Census income and poverty, EPA Toxic Release Inventory facilities, FEMA disaster declarations. Then you cross-examine the file itself. Roughly one answer in three contains a fabrication. The Verifier audits every answer against the raw record &mdash; expose a <b style="color:var(--red)">CONTRADICTED</b> claim to score.
     </div>
@@ -462,7 +510,133 @@
   }
 
   // ── Wiring ─────────────────────────────────────────────────────────────────
-  $('open-file-btn').addEventListener('click', openCaseFile);
+  $('open-file-btn').addEventListener('click', async () => {
+    // A typed city takes precedence when the ZIP box is empty
+    if (!$('zip-input').value.trim() && $('city-input') && $('city-input').value.trim()) {
+      const handled = await resolveTypedCity();
+      if (handled) return;
+    }
+    openCaseFile();
+  });
+
+  // ── Jurisdiction pickers: map click, city search, city chips ────────────────
+  // Shared resolver: lat/lon → ZIP → open the case file.
+  // Census Bureau ZCTAs blanket the entire US, so any land click resolves;
+  // Nominatim reverse is the fallback if the census geocoder is unreachable.
+  async function resolveJurisdiction(lat, lng, labelHint) {
+    $('map-status').textContent = 'The clerk locates the jurisdiction…';
+    try {
+      const r = await fetch('/api/zip', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ lat, lng })
+      });
+      const j = await r.json();
+      if (j.zip) {
+        const place = labelHint || j.place || '';
+        $('map-status').textContent = `Jurisdiction located: ${place} ${j.zip} — pulling records…`;
+        $('zip-input').value = j.zip;
+        openCaseFile();
+      } else {
+        $('map-status').textContent = 'That location is outside United States jurisdiction, counselor. Try again.';
+      }
+    } catch (_) {
+      $('map-status').textContent = 'The clerk could not resolve that location. Enter a ZIP directly.';
+    }
+  }
+
+  // OPEN CASE FILE also accepts a typed city: resolve the top match first
+  async function resolveTypedCity() {
+    const q = $('city-input').value.trim();
+    if (!q) return false;
+    $('map-status').textContent = 'The clerk searches for that city…';
+    try {
+      const r = await fetch(`https://photon.komoot.io/api/?q=${encodeURIComponent(q)}&limit=10&lang=en`);
+      const j = await r.json();
+      const f = (j.features || []).find(f =>
+        f.properties.countrycode === 'US' && ['city', 'town', 'village'].includes(f.properties.osm_value));
+      if (f) {
+        const [lon, lat] = f.geometry.coordinates;
+        $('city-input').value = f.properties.name;
+        await resolveJurisdiction(lat, lon, f.properties.name);
+        return true;
+      }
+      $('map-status').textContent = `No United States city matching "${q}" on the docket, counselor.`;
+      return true;
+    } catch (_) { return false; }
+  }
+
+  // City search with live suggestions (Nominatim, US cities)
+  (function initCitySearch() {
+    const input = $('city-input');
+    const box = $('city-suggest');
+    let timer = null;
+
+    input.addEventListener('input', () => {
+      clearTimeout(timer);
+      const q = input.value.trim();
+      if (q.length < 3) { box.classList.remove('open'); return; }
+      timer = setTimeout(async () => {
+        try {
+          // Photon is built for prefix autocomplete ("chica" → Chicago)
+          const r = await fetch(`https://photon.komoot.io/api/?q=${encodeURIComponent(q)}&limit=12&lang=en`);
+          const j = await r.json();
+          box.textContent = '';
+          const seen = new Set();
+          for (const f of (j.features || [])) {
+            const p = f.properties || {};
+            if (p.countrycode !== 'US') continue;
+            if (!['city', 'town', 'village'].includes(p.osm_value)) continue;
+            const label = p.name + (p.state ? ', ' + p.state : '');
+            if (seen.has(label)) continue;
+            seen.add(label);
+            const [lon, lat] = f.geometry.coordinates;
+            const item = document.createElement('div');
+            item.className = 'suggest-item';
+            item.textContent = label;
+            item.addEventListener('click', () => {
+              box.classList.remove('open');
+              input.value = p.name;
+              resolveJurisdiction(lat, lon, p.name);
+            });
+            box.appendChild(item);
+            if (box.children.length >= 6) break;
+          }
+          box.classList.toggle('open', box.children.length > 0);
+        } catch (_) { box.classList.remove('open'); }
+      }, 350);
+    });
+
+    document.addEventListener('click', (e) => {
+      if (!e.target.closest('#city-wrap')) box.classList.remove('open');
+    });
+  })();
+
+  // Map picker
+  (function initMapPicker() {
+    if (typeof L === 'undefined') { $('map-pick').style.display = 'none'; $('map-status').style.display = 'none'; return; }
+
+    const map = L.map('map-pick', { attributionControl: true, zoomControl: true })
+      .setView([39.5, -96.5], 4);
+    L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 12,
+      attribution: '&copy; OpenStreetMap'
+    }).addTo(map);
+
+    let marker = null;
+    map.on('click', (e) => {
+      if (marker) marker.remove();
+      marker = L.marker([e.latlng.lat, e.latlng.lng]).addTo(map);
+      resolveJurisdiction(e.latlng.lat, e.latlng.lng);
+    });
+
+    document.querySelectorAll('.city-chip').forEach(chip => {
+      chip.addEventListener('click', () => {
+        $('zip-input').value = chip.dataset.zip;
+        openCaseFile();
+      });
+    });
+  })();
   $('zip-input').addEventListener('keydown', (e) => { if (e.key === 'Enter') openCaseFile(); });
   $('ask-btn').addEventListener('click', examine);
   $('question-input').addEventListener('keydown', (e) => { if (e.key === 'Enter') examine(); });
