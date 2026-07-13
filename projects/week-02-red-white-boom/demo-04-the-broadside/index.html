@@ -550,7 +550,7 @@ function fillParas(id, text) {
 }
 
 // ── FETCH WITH TIMEOUT ────────────────────────────────────────────────────────
-async function fetchJSON(url, body, timeoutMs = 25000) {
+async function fetchJSON(url, body, timeoutMs = 150000) {
   const ctrl = new AbortController();
   const timer = setTimeout(() => ctrl.abort(), timeoutMs);
   try {
