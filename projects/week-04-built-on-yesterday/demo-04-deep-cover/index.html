@@ -698,6 +698,33 @@
     50% { transform: scale(2.2); }
   }
 
+  .patrol-marker {
+    animation: patrolFade 6s ease-out forwards;
+    transform-box: fill-box;
+    transform-origin: center;
+  }
+  @keyframes patrolFade {
+    0% { opacity: 0; transform: scale(0.4); }
+    12% { opacity: 1; transform: scale(1.3); }
+    25% { transform: scale(1); }
+    80% { opacity: 0.85; }
+    100% { opacity: 0; }
+  }
+
+  #map-ticker {
+    margin-top: 0.4rem;
+    font-size: 0.62rem;
+    font-family: 'Courier New', monospace;
+    color: var(--parchment, #c8b98a);
+    opacity: 0.85;
+    line-height: 1.7;
+    min-height: 2.6rem;
+  }
+  #map-ticker .tick { display: block; border-left: 2px solid #333; padding-left: 6px; margin-bottom: 2px; }
+  #map-ticker .tick.alert { color: var(--orange, #cc9922); border-left-color: var(--orange, #cc9922); }
+  #map-ticker .tick.danger { color: var(--red, #cc3322); border-left-color: var(--red, #cc3322); }
+  #map-ticker .tick.good { color: var(--green, #22aa44); border-left-color: var(--green, #22aa44); }
+
   .agent-dot {
     transition: fill 0.6s, r 0.3s;
   }
@@ -853,7 +880,13 @@
         <!-- Agent 355: x=0.52, y=0.52 → 177,156 -->
         <circle id="dot-agent_355" class="agent-dot" cx="177" cy="157" r="5" fill="#22aa44" stroke="#0a0a08" stroke-width="1.5"/>
         <text x="162" y="151" text-anchor="end" font-size="6.5" fill="#44cc66" font-family="'Courier New', monospace">355</text>
+
+        <!-- Transient events: British patrols, sweeps -->
+        <g id="map-events"></g>
       </svg>
+
+      <!-- Field reports ticker -->
+      <div id="map-ticker"></div>
 
       <!-- Agent legend -->
       <div class="agent-legend" id="agent-legend">
@@ -1067,46 +1100,88 @@ function updateMap() {
   setLine('line-jr-355', 'culper_jr', 'agent_355');
 }
 
-// Washington's judgment reshapes the network every mission — the map is alive
+// ==== LIVING MAP: field reports, patrol markers, agent pings ====
+function mapEvent(text, cls) {
+  const ticker = document.getElementById('map-ticker');
+  if (!ticker) return;
+  const line = document.createElement('span');
+  line.className = 'tick' + (cls ? ' ' + cls : '');
+  line.textContent = `M${gameState.currentMission} · ${text}`;
+  ticker.prepend(line);
+  while (ticker.children.length > 4) ticker.removeChild(ticker.lastChild);
+}
+
+function pingAgent(id) {
+  const dot = document.getElementById('dot-' + id);
+  if (!dot) return;
+  dot.classList.add('map-ping');
+  setTimeout(() => dot.classList.remove('map-ping'), 3200);
+}
+
+// A red British patrol diamond appears near an agent, then fades
+function spawnPatrol(nearAgentId) {
+  const g = document.getElementById('map-events');
+  const dot = document.getElementById('dot-' + (nearAgentId || 'culper_jr'));
+  if (!g || !dot) return;
+  const x = parseFloat(dot.getAttribute('cx')) + (Math.random() * 44 - 22);
+  const y = parseFloat(dot.getAttribute('cy')) + (Math.random() * 30 - 15);
+  const m = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+  m.setAttribute('x', x - 4); m.setAttribute('y', y - 4);
+  m.setAttribute('width', 8); m.setAttribute('height', 8);
+  m.setAttribute('transform', `rotate(45 ${x} ${y})`);
+  m.setAttribute('fill', '#cc3322');
+  m.setAttribute('class', 'patrol-marker');
+  g.appendChild(m);
+  setTimeout(() => m.remove(), 6200);
+}
+
+const PLACES = { tallmadge: 'Fairfield', brewster: 'the Sound crossing', culper_sr: 'Setauket', culper_jr: 'New York City', agent_355: 'the city salons' };
+
+// Washington's judgment reshapes the network every mission — guaranteed visible event
 function applyOutcomeToMap(outcome) {
   const affected = (gameState.currentMissionData && gameState.currentMissionData.affectedAgent) || null;
   const activeAgents = AGENTS.filter(a => gameState.agentStatuses[a.id] === 'active').map(a => a.id);
   const compromisedAgents = AGENTS.filter(a => gameState.agentStatuses[a.id] === 'compromised').map(a => a.id);
   const pick = arr => arr[Math.floor(Math.random() * arr.length)];
+  const name = id => (AGENTS.find(a => a.id === id) || {}).codename || id;
 
   let changed = null;
   if (outcome === 'FAILURE') {
-    // A failure exposes someone: escalate a compromised agent to burned, or compromise an active one
     const target = (affected && gameState.agentStatuses[affected] !== 'burned') ? affected
       : (compromisedAgents.length ? pick(compromisedAgents) : (activeAgents.length ? pick(activeAgents) : null));
     if (target) {
-      gameState.agentStatuses[target] = gameState.agentStatuses[target] === 'compromised' ? 'burned' : 'compromised';
+      const burned = gameState.agentStatuses[target] === 'compromised';
+      gameState.agentStatuses[target] = burned ? 'burned' : 'compromised';
       changed = target;
+      spawnPatrol(target);
+      mapEvent(burned ? `${name(target)} BURNED — struck from the network` : `${name(target)} compromised near ${PLACES[target] || 'the lines'}`, 'danger');
     }
   } else if (outcome === 'PARTIAL') {
-    // Sloppy tradecraft draws attention half the time
-    if (Math.random() < 0.5 && activeAgents.length) {
-      const target = (affected && gameState.agentStatuses[affected] === 'active') ? affected : pick(activeAgents);
+    const target = (affected && gameState.agentStatuses[affected] === 'active') ? affected : (activeAgents.length ? pick(activeAgents) : null);
+    if (target && Math.random() < 0.5) {
       gameState.agentStatuses[target] = 'compromised';
       changed = target;
+      spawnPatrol(target);
+      mapEvent(`${name(target)} drew attention — patrols circling ${PLACES[target] || 'the area'}`, 'alert');
+    } else {
+      spawnPatrol(target || 'culper_jr');
+      mapEvent(`British patrols intensify near ${PLACES[target] || 'New York'} — network holds`, 'alert');
     }
   } else if (outcome === 'SUCCESS') {
-    // Good work lets a compromised agent go quiet and recover
     if (compromisedAgents.length && Math.random() < 0.6) {
       const target = pick(compromisedAgents);
       gameState.agentStatuses[target] = 'active';
       changed = target;
+      mapEvent(`${name(target)} has gone quiet and re-established cover`, 'good');
+    } else {
+      // Healthy network: green pulse ripples through every active agent
+      activeAgents.forEach((id, i) => setTimeout(() => pingAgent(id), i * 250));
+      mapEvent('All routes secure — couriers moving freely', 'good');
     }
   }
 
   updateMap();
-  if (changed) {
-    const dot = document.getElementById('dot-' + changed);
-    if (dot) {
-      dot.classList.add('map-ping');
-      setTimeout(() => dot.classList.remove('map-ping'), 3200);
-    }
-  }
+  if (changed) pingAgent(changed);
 }
 
 // ==== PIPS ====
@@ -1175,12 +1250,13 @@ function renderMission(data, type, num) {
   document.getElementById('mission-loading').style.display = 'none';
 
   // Pulse the agent this mission involves — the map tracks the story
-  if (data.affectedAgent) {
-    const dot = document.getElementById('dot-' + data.affectedAgent);
-    if (dot) {
-      dot.classList.add('map-ping');
-      setTimeout(() => dot.classList.remove('map-ping'), 3200);
-    }
+  if (data.affectedAgent && document.getElementById('dot-' + data.affectedAgent)) {
+    pingAgent(data.affectedAgent);
+    const nm = (AGENTS.find(a => a.id === data.affectedAgent) || {}).codename || data.affectedAgent;
+    mapEvent(`dispatch concerns ${nm}`);
+  } else {
+    pingAgent('brewster');
+    mapEvent('dispatch ferried across the Sound by Jonas');
   }
 
   document.getElementById('mission-label').textContent = `MISSION ${num} OF 5`;
