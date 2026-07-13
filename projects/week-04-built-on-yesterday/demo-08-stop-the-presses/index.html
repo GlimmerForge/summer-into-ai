@@ -883,7 +883,9 @@ async function requestWoodcut(headline) {
       img.alt = 'Woodcut engraving: ' + headline;
       const cap = document.createElement('figcaption');
       cap.className = 'woodcut-caption';
-      cap.textContent = 'Engraved for this Paper';
+      cap.textContent = data.title
+        ? `${data.title} (${data.date}) — from the archives`
+        : 'Engraved for this Paper';
       img.onload = () => fig.append(img, cap);
       img.onerror = () => fig.remove();
     } else {
